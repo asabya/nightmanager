@@ -121,10 +121,66 @@ export default function finderExtension(pi: ExtensionAPI) {
         };
       }
 
-      // Placeholder implementation — will be expanded in Task 2
+      // Build read-only tools for the subagent
+      const subagentTools: AgentTool[] = [
+        createReadTool(ctx.cwd),
+        createGrepTool(ctx.cwd),
+        createFindTool(ctx.cwd),
+        createLsTool(ctx.cwd),
+      ];
+
+      // Use the same model as the main session
+      const model = ctx.model;
+      if (!model) {
+        return {
+          content: [{ type: "text", text: "Error: No model available for finder subagent. Please set a model first." }],
+          details: { error: "no_model" },
+        };
+      }
+
+      const subagentSignal = signal ? AbortSignal.any([signal]) : undefined;
+
+      // Create the subagent Agent instance with isolated context
+      const agent = new Agent({
+        initialState: {
+          systemPrompt: FINDER_SYSTEM_PROMPT,
+          model,
+          tools: subagentTools,
+        },
+        streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: subagentSignal }),
+      });
+
+      // Send the search query as the first prompt
+      await agent.prompt(params.query);
+
+      // waitForIdle handles the full multi-turn loop:
+      // if the model responds with tool calls, it executes them and continues
+      await agent.waitForIdle();
+
+      // Extract result from agent state
+      const messages = agent.state.messages;
+      const lastAssistantMsg = messages
+        .filter((m): m is Extract<typeof m, { role: "assistant" }> => m.role === "assistant")
+        .pop();
+
+      if (!lastAssistantMsg) {
+        return {
+          content: [{ type: "text", text: "Error: Finder subagent returned no response." }],
+          details: { error: "no_response", turns: 0, filesFound: 0 },
+        };
+      }
+
+      // Extract text content from the last assistant message
+      const textParts = lastAssistantMsg.content.filter((c): c is TextContent => c.type === "text");
+      const text = textParts.map(c => c.text).join("\n").trim();
+
+      // Count tool calls to report turns
+      const toolCalls = messages.filter((m) => m.role === "assistant" && m.content.some((c) => c.type === "toolCall"));
+      const turnCount = toolCalls.length;
+
       return {
-        content: [{ type: "text", text: "Not yet implemented" }],
-        details: {},
+        content: [{ type: "text", text }],
+        details: { turns: turnCount, model: `${model.provider}/${model.id}` },
       };
     },
   });
