@@ -163,64 +163,79 @@ export default function finderExtension(pi: ExtensionAPI) {
       let turnCount = 0;
       const MAX_TURNS = 10;
 
-      // Subscribe to track turns and detect diminishing returns
-      agent.subscribe((event) => {
-        if (event.type === "turn_end") {
-          turnCount++;
+      try {
+        // Subscribe to track turns and detect diminishing returns
+        agent.subscribe((event) => {
+          if (event.type === "turn_end") {
+            turnCount++;
 
-          // Check for new files in tool results
-          let foundNewFiles = false;
-          for (const toolResult of event.toolResults) {
-            const content = toolResult.content || [];
-            for (const block of content) {
-              if (block.type === "text" && block.text) {
-                // Extract file paths from tool results (lines starting with /)
-                const lines = block.text.split("\n");
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed.startsWith("/")) {
-                    const filePath = trimmed.split(":")[0].split(" ")[0];
-                    if (!discoveredFiles.has(filePath)) {
-                      discoveredFiles.add(filePath);
-                      foundNewFiles = true;
+            // Check for new files in tool results
+            let foundNewFiles = false;
+            for (const toolResult of event.toolResults) {
+              const content = toolResult.content || [];
+              for (const block of content) {
+                if (block.type === "text" && block.text) {
+                  // Extract file paths from tool results (lines starting with /)
+                  const lines = block.text.split("\n");
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith("/")) {
+                      const filePath = trimmed.split(":")[0].split(" ")[0];
+                      if (!discoveredFiles.has(filePath)) {
+                        discoveredFiles.add(filePath);
+                        foundNewFiles = true;
+                      }
                     }
                   }
                 }
               }
             }
+
+            if (!foundNewFiles && turnCount > 1) {
+              consecutiveTurnsWithNoNewFiles++;
+            } else {
+              consecutiveTurnsWithNoNewFiles = 0;
+            }
+
+            // If diminishing returns detected, force summary
+            if (consecutiveTurnsWithNoNewFiles >= 2) {
+              agent.steer({
+                role: "user",
+                content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
+                timestamp: Date.now(),
+              });
+            }
+
+            // If max turns reached, force summary
+            if (turnCount >= MAX_TURNS) {
+              agent.steer({
+                role: "user",
+                content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
+                timestamp: Date.now(),
+              });
+            }
           }
+        });
 
-          if (!foundNewFiles && turnCount > 1) {
-            consecutiveTurnsWithNoNewFiles++;
-          } else {
-            consecutiveTurnsWithNoNewFiles = 0;
-          }
+        // Send the search query
+        await agent.prompt(params.query);
 
-          // If diminishing returns detected, force summary
-          if (consecutiveTurnsWithNoNewFiles >= 2) {
-            agent.steer({
-              role: "user",
-              content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
-              timestamp: Date.now(),
-            });
-          }
+        // Wait for the agent to finish
+        await agent.waitForIdle();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
-          // If max turns reached, force summary
-          if (turnCount >= MAX_TURNS) {
-            agent.steer({
-              role: "user",
-              content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
-              timestamp: Date.now(),
-            });
-          }
-        }
-      });
+        // Return partial results if available
+        const partialNote = discoveredFiles.size > 0
+          ? `\n\nPartial findings before error: ${discoveredFiles.size} files discovered.`
+          : "";
 
-      // Send the search query
-      await agent.prompt(params.query);
-
-      // Wait for the agent to finish
-      await agent.waitForIdle();
+        return {
+          content: [{ type: "text", text: `Error: Finder subagent failed: ${errorMessage}.${partialNote}` }],
+          details: { error: errorMessage, turns: turnCount, filesFound: discoveredFiles.size },
+        };
+      }
 
       // Clean up timeout
       clearTimeout(timeoutId);
