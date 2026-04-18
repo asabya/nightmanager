@@ -139,6 +139,13 @@ export default function finderExtension(pi: ExtensionAPI) {
       }
 
       const subagentSignal = signal ? AbortSignal.any([signal]) : undefined;
+      const timeoutAbort = new AbortController();
+
+      // 60-second timeout
+      const timeoutId = setTimeout(() => timeoutAbort.abort(), 60_000);
+      const combinedSignal = subagentSignal
+        ? AbortSignal.any([subagentSignal, timeoutAbort.signal])
+        : timeoutAbort.signal;
 
       // Create the subagent Agent instance with isolated context
       const agent = new Agent({
@@ -147,15 +154,76 @@ export default function finderExtension(pi: ExtensionAPI) {
           model,
           tools: subagentTools,
         },
-        streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: subagentSignal }),
+        streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: combinedSignal }),
       });
 
-      // Send the search query as the first prompt
+      // Track files discovered for diminishing returns detection
+      const discoveredFiles = new Set<string>();
+      let consecutiveTurnsWithNoNewFiles = 0;
+      let turnCount = 0;
+      const MAX_TURNS = 10;
+
+      // Subscribe to track turns and detect diminishing returns
+      agent.subscribe((event) => {
+        if (event.type === "turn_end") {
+          turnCount++;
+
+          // Check for new files in tool results
+          let foundNewFiles = false;
+          for (const toolResult of event.toolResults) {
+            const content = toolResult.content || [];
+            for (const block of content) {
+              if (block.type === "text" && block.text) {
+                // Extract file paths from tool results (lines starting with /)
+                const lines = block.text.split("\n");
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith("/")) {
+                    const filePath = trimmed.split(":")[0].split(" ")[0];
+                    if (!discoveredFiles.has(filePath)) {
+                      discoveredFiles.add(filePath);
+                      foundNewFiles = true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (!foundNewFiles && turnCount > 1) {
+            consecutiveTurnsWithNoNewFiles++;
+          } else {
+            consecutiveTurnsWithNoNewFiles = 0;
+          }
+
+          // If diminishing returns detected, force summary
+          if (consecutiveTurnsWithNoNewFiles >= 2) {
+            agent.steer({
+              role: "user",
+              content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
+              timestamp: Date.now(),
+            });
+          }
+
+          // If max turns reached, force summary
+          if (turnCount >= MAX_TURNS) {
+            agent.steer({
+              role: "user",
+              content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
+              timestamp: Date.now(),
+            });
+          }
+        }
+      });
+
+      // Send the search query
       await agent.prompt(params.query);
 
-      // waitForIdle handles the full multi-turn loop:
-      // if the model responds with tool calls, it executes them and continues
+      // Wait for the agent to finish
       await agent.waitForIdle();
+
+      // Clean up timeout
+      clearTimeout(timeoutId);
 
       // Extract result from agent state
       const messages = agent.state.messages;
@@ -164,23 +232,33 @@ export default function finderExtension(pi: ExtensionAPI) {
         .pop();
 
       if (!lastAssistantMsg) {
+        const isTimeout = timeoutAbort.signal.aborted && !signal?.aborted;
+        const timeoutNote = isTimeout ? "\n\n(Search timed out after 60s — partial results)" : "";
+        const partialFindings = discoveredFiles.size > 0
+          ? `Found ${discoveredFiles.size} files: ${[...discoveredFiles].slice(0, 10).join(", ")}${discoveredFiles.size > 10 ? "..." : ""}`
+          : "No files were found before the search ended.";
+
         return {
-          content: [{ type: "text", text: "Error: Finder subagent returned no response." }],
-          details: { error: "no_response", turns: 0, filesFound: 0 },
+          content: [{ type: "text", text: `Error: Finder subagent did not return a response.${timeoutNote}\n\n${partialFindings}` }],
+          details: { error: "no_response", turns: turnCount, filesFound: discoveredFiles.size, timedOut: isTimeout },
         };
       }
 
-      // Extract text content from the last assistant message
+      // Extract text content
       const textParts = lastAssistantMsg.content.filter((c): c is TextContent => c.type === "text");
       const text = textParts.map(c => c.text).join("\n").trim();
 
-      // Count tool calls to report turns
-      const toolCalls = messages.filter((m) => m.role === "assistant" && m.content.some((c) => c.type === "toolCall"));
-      const turnCount = toolCalls.length;
+      const isTimeout = timeoutAbort.signal.aborted && !signal?.aborted;
+      const timeoutNote = isTimeout ? "\n\n(Search timed out after 60s — results may be partial)" : "";
 
       return {
-        content: [{ type: "text", text }],
-        details: { turns: turnCount, model: `${model.provider}/${model.id}` },
+        content: [{ type: "text", text: text + timeoutNote }],
+        details: {
+          turns: turnCount,
+          filesFound: discoveredFiles.size,
+          model: `${model.provider}/${model.id}`,
+          timedOut: isTimeout,
+        },
       };
     },
   });
