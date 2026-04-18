@@ -261,5 +261,34 @@ export default function finderExtension(pi: ExtensionAPI) {
         },
       };
     },
+
+    renderCall(args: FinderInput, theme: any) {
+      const query = args.query || "";
+      const truncated = query.length > 80 ? query.slice(0, 80) + "..." : query;
+      return new Text(
+        `${theme.fg("toolTitle", theme.bold("finder"))} ${theme.fg("accent", `"${truncated}"`)}`,
+        0, 0
+      );
+    },
+
+    renderResult(result: any, { expanded }: { expanded: boolean }, theme: any) {
+      if (!expanded) {
+        const details = result.details || {};
+        const summary = details.filesFound
+          ? ` → ${details.filesFound} files found in ${details.turns} turns`
+          : "";
+        return new Text(summary, 0, 0);
+      }
+
+      const textContent = result.content?.find((c: any) => c.type === "text");
+      if (!textContent?.text) return new Text("", 0, 0);
+
+      const output = textContent.text
+        .split("\n")
+        .map((line: string) => theme.fg("toolOutput", line))
+        .join("\n");
+
+      return new Text(`\n${output}`, 0, 0);
+    },
   });
 }
