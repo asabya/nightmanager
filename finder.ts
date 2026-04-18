@@ -1,3 +1,21 @@
+/**
+ * Finder Subagent Extension for Pi
+ *
+ * Registers a `finder` tool that spawns a dedicated search subagent with:
+ * - Its own context window (isolated from the main agent)
+ * - Read-only tools only (read, grep, find, ls)
+ * - Exploration-focused system prompt with parallel search strategies
+ * - Automatic turn limiting (max 10 turns)
+ * - Diminishing returns detection (2 turns with no new files → force summary)
+ * - 60-second timeout
+ *
+ * Usage:
+ *   pi -e ./finder.ts
+ *   Then: "Use finder to find the auth middleware"
+ *
+ * For global installation, copy to ~/.pi/agent/extensions/finder.ts
+ */
+
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { createFindTool, createGrepTool, createLsTool, createReadTool } from "@mariozechner/pi-coding-agent";
 import { Agent, type AgentTool } from "@mariozechner/pi-agent-core";
