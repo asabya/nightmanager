@@ -218,25 +218,6 @@ Structure your response EXACTLY as follows. Do not add preamble or meta-commenta
 // Helper functions
 // =========================================================================
 
-const SPINNER_FRAMES = ["◜", "◠", "◝", "◞", "◡", "◟"];
-
-function getToolIcon(tool: string): string {
-  switch (tool) {
-    case "read":
-      return "📖";
-    case "grep":
-      return "🔍";
-    case "find":
-      return "📁";
-    case "ls":
-      return "📂";
-    case "bash":
-      return "⚡";
-    default:
-      return "•";
-  }
-}
-
 function formatToolInput(tool: string, input: unknown): string {
   const inputStr = typeof input === "string" ? input : JSON.stringify(input);
   const truncated = inputStr.length > 50 ? inputStr.slice(0, 50) + "..." : inputStr;
@@ -332,7 +313,6 @@ export default function finderExtension(pi: ExtensionAPI) {
       let turnCount = 0;
       const MAX_TURNS = 10;
       let forceSummarySent = false;
-      let spinnerFrame = 0;
 
       // Helper to emit progress updates via onUpdate
       const emitProgress = (status: FinderStatus) => {
@@ -376,7 +356,6 @@ export default function finderExtension(pi: ExtensionAPI) {
           finderProgress?.setMessage(`${getToolIcon(evt.toolName)} ${evt.toolName}...`);
           
           // Emit progress with new tool call
-          spinnerFrame = (spinnerFrame + 1) % SPINNER_FRAMES.length;
           emitProgress("searching");
         }
         
@@ -570,14 +549,13 @@ export default function finderExtension(pi: ExtensionAPI) {
       
       // During execution (streaming partial results)
       if (isPartial && details) {
-        const spinner = SPINNER_FRAMES[Date.now() % SPINNER_FRAMES.length];
-        const statusIcon = theme.fg("accent", spinner);
+        const statusIcon = details.status === "summarizing" ? "⏳" : "🔍";
         const statusText = details.status === "summarizing" 
           ? theme.fg("warning", "Summarizing...")
           : theme.fg("accent", "Searching...");
         
         // Build progress line
-        const progress = `${statusIcon} ${theme.fg("toolTitle", theme.bold("finder "))}${theme.fg("muted", `"${details.query.slice(0, 50)}${details.query.length > 50 ? "..." : ""}"`)}`;
+        const progress = `${theme.fg("accent", statusIcon)} ${theme.fg("toolTitle", theme.bold("finder "))}${theme.fg("muted", `"${details.query.slice(0, 50)}${details.query.length > 50 ? "..." : ""}"`)}`;
         const status = `  ${statusText} ${theme.fg("dim", `turn ${details.turnCount}/${details.maxTurns}, ${details.filesFound} files`)}`;
         
         // Show recent tool calls
@@ -585,10 +563,9 @@ export default function finderExtension(pi: ExtensionAPI) {
         
         if (details.toolCalls && details.toolCalls.length > 0) {
           for (const call of details.toolCalls.slice(-3)) {
-            const icon = getToolIcon(call.tool);
             const toolName = theme.fg("toolTitle", call.tool);
             const input = theme.fg("muted", call.input);
-            lines.push(`    ${icon} ${toolName} ${input}`);
+            lines.push(`    ${toolName} ${input}`);
           }
         }
         

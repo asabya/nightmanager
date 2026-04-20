@@ -2,11 +2,19 @@
 
 A research implementation of AMP-style subagent orchestration for the pi CLI agent.
 
+## How Model Selection Works
+
+The finder resolves its model in this order:
+1. **`~/.pi/agent/finder.json`** — simple `{"model": "provider/modelId"}` reference to any model in your `models.json`
+2. **Session model** — whatever model you have set for the current Pi session
+
+No separate provider registration needed. It reuses Pi's existing model registry for auth, base URLs, and headers.
+
 ## What It Does
 
 The `finder` tool spawns a dedicated search subagent with its own:
 - **Context window** — isolated from the main agent, conserving context
-- **Model** — uses the session's current model (configurable later)
+- **Model** — configurable via `~/.pi/agent/finder.json`, falls back to session model
 - **Tool set** — read-only tools only (read, grep, find, ls)
 - **System prompt** — tuned for codebase exploration with parallel search strategies
 
@@ -42,13 +50,22 @@ Main Agent
 
 ## Installation
 
-### Quick test
-```bash
-pi -e ./finder.ts
+### 1. Set the model (optional)
+Create `~/.pi/agent/finder.json` with a model reference:
+```json
+{
+  "model": "ollama/glm-5:cloud"
+}
 ```
+The format is `provider/modelId` — it must match an entry in your `~/.pi/agent/models.json`.
+If omitted, the finder uses whatever session model you have active.
 
-### Global installation
+### 2. Install
 ```bash
+# Quick test
+pi -e ./finder.ts
+
+# Or install globally
 cp finder.ts ~/.pi/agent/extensions/finder.ts
 ```
 
