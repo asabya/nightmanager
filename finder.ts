@@ -658,42 +658,16 @@ export default function finderExtension(pi: ExtensionAPI) {
     },
 
     renderCall(args: FinderInput, theme: any, _context: any) {
-      const query = args.query || "";
-      const truncated = query.length > 80 ? query.slice(0, 80) + "..." : query;
-      // Role badge style: [finder] with accent background
-      const badge = theme.bg("toolPendingBg", theme.fg("accent", theme.bold(" finder ")));
-      return new Text(
-        `${badge} ${theme.fg("muted", `"${truncated}"`)}`,
-        0, 0
-      );
+      // Widget handles progress display, return empty to avoid duplication
+      return new Text("", 0, 0);
     },
 
     renderResult(result: any, { expanded, isPartial }: { expanded: boolean; isPartial: boolean }, theme: any) {
       const details = result.details as FinderDetails | undefined;
       
-      // During execution (streaming partial results)
-      if (isPartial && details) {
-        const statusIcon = details.status === "summarizing" ? "⏳" : "🔍";
-        const statusText = details.status === "summarizing" 
-          ? theme.fg("warning", "Summarizing...")
-          : theme.fg("accent", "Searching...");
-        
-        // Build progress line
-        const progress = `${theme.fg("accent", statusIcon)} ${theme.fg("toolTitle", theme.bold("finder "))}${theme.fg("muted", `"${details.query.slice(0, 50)}${details.query.length > 50 ? "..." : ""}"`)}`;
-        const status = `  ${statusText} ${theme.fg("dim", `turn ${details.turnCount}/${details.maxTurns}, ${details.filesFound} files`)}`;
-        
-        // Show recent tool calls
-        const lines = [progress, status];
-        
-        if (details.toolCalls && details.toolCalls.length > 0) {
-          for (const call of details.toolCalls.slice(-3)) {
-            const toolName = theme.fg("toolTitle", call.tool);
-            const input = theme.fg("muted", call.input);
-            lines.push(`    ${toolName} ${input}`);
-          }
-        }
-        
-        return new Text(lines.join("\n"), 0, 0);
+      // During execution (streaming partial results) - widget handles progress
+      if (isPartial) {
+        return new Text("", 0, 0);
       }
       
       // Final result
