@@ -32,7 +32,7 @@ import { join } from "node:path";
  * Multi-line progress indicator for finder subagent searches.
  * Shows main task line + running tools (up to 5) with independent animated loaders.
  */
-interface FinderToolEntry {
+interface OracleToolEntry {
 	id: string;
 	toolName: string;
 	label: string;
@@ -46,12 +46,12 @@ function toTitleCase(value: string): string {
 	return value.length === 0 ? value : value[0].toUpperCase() + value.slice(1);
 }
 
-class FinderProgress implements Component {
+class OracleProgress implements Component {
 	private tui: TUI;
 	private theme: { fg: (color: string, text: string) => string };
 	private query: string;
 	private mainLoader: Loader;
-	private toolEntries: FinderToolEntry[];
+	private toolEntries: OracleToolEntry[];
 	private maxToolLines: number;
 	private nextToolSequence: number;
 
@@ -63,11 +63,6 @@ class FinderProgress implements Component {
 		this.tui = tui;
 		this.theme = theme;
 		this.query = query;
-		// Expected widget behavior:
-		// 1. tool_execution_start adds a visible running row: "Tool N <toolName>"
-		// 2. turn_end does not clear history; it marks running rows done
-		// 3. render() shows running rows first, then recent completed rows
-		// 4. render() shows at most 5 tool rows plus optional "+ N more"
 		this.toolEntries = [];
 		this.maxToolLines = 5;
 		this.nextToolSequence = 1;
@@ -76,13 +71,13 @@ class FinderProgress implements Component {
 			tui,
 			theme.fg.bind(theme, "accent"),
 			theme.fg.bind(theme, "muted"),
-			`Finder Task - ${query}`,
+			`Oracle - analyzing ${query}`,
 		);
 	}
 
 	addTool(toolName: string, label: string): void {
 		const sequence = this.nextToolSequence++;
-		const entry: FinderToolEntry = {
+		const entry: OracleToolEntry = {
 			id: `${sequence}:${toolName}`,
 			toolName,
 			label,
@@ -130,11 +125,6 @@ class FinderProgress implements Component {
 		this.clearTools();
 	}
 
-	// Render order:
-	// - main finder task line
-	// - running tools in sequence order (newer running tools below older ones)
-	// - completed tools at the bottom with a done indicator
-	// - overflow line when more than maxToolLines exist
 	render(width: number): string[] {
 		const lines: string[] = [];
 		const mainLines = this.mainLoader.render(width);
@@ -175,8 +165,7 @@ class FinderProgress implements Component {
 	}
 }
 
-// Progress widget reference for updates during search
-let finderProgress: FinderProgress | null = null;
+let oracleProgress: OracleProgress | null = null;
 
 // =========================================================================
 // Schema and Types
@@ -391,35 +380,45 @@ function basename(path: string): string {
 }
 
 function summarizeToolLabel(tool: string, input: unknown): string {
-  const args = input && typeof input === "object" ? input as Record<string, unknown> : undefined;
+  const args = input && typeof input === "object" ? (input as Record<string, unknown>) : undefined;
 
   if (tool === "read") {
     const path = typeof args?.path === "string" ? args.path : undefined;
-    return path ? `Read ${basename(path)}` : "Read file";
+    return path ? `Read ${basename(path)}` : "Read evidence";
   }
 
   if (tool === "find") {
-    const path = typeof args?.path === "string" ? args.path : undefined;
     const pattern = typeof args?.pattern === "string" ? args.pattern : undefined;
+    const path = typeof args?.path === "string" ? args.path : undefined;
     const target = pattern || path;
-    return target ? `Find ${basename(target)}` : "Find files";
+    return target ? `Find ${basename(target)}` : "Find evidence";
   }
 
   if (tool === "grep") {
     const pattern = typeof args?.pattern === "string" ? args.pattern : undefined;
-    return pattern ? `Grep ${pattern}` : "Grep";
+    return pattern ? `Trace ${pattern}` : "Trace pattern";
   }
 
   if (tool === "ls") {
     const path = typeof args?.path === "string" ? args.path : undefined;
-    return path ? `List ${basename(path)}` : "List files";
+    return path ? `Inspect ${basename(path)}` : "Inspect directory";
   }
 
   if (tool === "bash") {
-    const command = typeof args?.command === "string" ? args.command : typeof input === "string" ? input : undefined;
-    if (!command) return "Bash";
-    const compact = command.length > 40 ? `${command.slice(0, 40)}...` : command;
-    return `Bash ${compact}`;
+    const command = typeof args?.command === "string"
+      ? args.command
+      : typeof input === "string"
+        ? input
+        : undefined;
+
+    if (!command) return "Run verification";
+    if (command.includes("git blame")) return "Inspect git blame";
+    if (command.includes("git log")) return "Inspect git log";
+    if (command.includes("npm test") || command.includes("pnpm test") || command.includes("go test")) return "Run tests";
+    if (command.includes("npm run build") || command.includes("pnpm build") || command.includes("cargo build")) return "Run build";
+
+    const compact = command.length > 36 ? `${command.slice(0, 36)}...` : command;
+    return `Verify ${compact}`;
   }
 
   const fallback = formatToolInput(tool, input);
@@ -491,9 +490,9 @@ export default function oracleExtension(pi: ExtensionAPI) {
       }
 
       // Show progress widget above editor
-      ctx.ui.setWidget("finder", (tui, theme) => {
-        finderProgress = new FinderProgress(tui, theme, params.query);
-        return finderProgress;
+      ctx.ui.setWidget("oracle", (tui, theme) => {
+        oracleProgress = new OracleProgress(tui, theme, params.query);
+        return oracleProgress;
       }, { placement: "belowEditor" });
 
       // Create the subagent Agent instance with isolated context
@@ -556,7 +555,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
             filesRead.add((evt.args as { path: string }).path);
           }
           
-          finderProgress?.addTool(evt.toolName, summarizeToolLabel(evt.toolName, evt.args));
+          oracleProgress?.addTool(evt.toolName, summarizeToolLabel(evt.toolName, evt.args));
           emitProgress("investigating");
         }
         
@@ -564,7 +563,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
           turnCount++;
           const turnEvent = event as { toolResults?: Array<{ content?: Array<{ type: string; text?: string }> }> };
 
-          finderProgress?.markRunningToolsDone();
+          oracleProgress?.markRunningToolsDone();
 
           // Check for new files in tool results
           let foundNewFiles = false;
@@ -601,7 +600,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
           if (consecutiveTurnsWithNoNewFiles >= 2 && !forceSummarySent) {
             forceSummarySent = true;
             emitProgress("synthesizing");
-            finderProgress?.clearTools();
+            oracleProgress?.clearTools();
             agent.steer({
               role: "user",
               content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
@@ -613,7 +612,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
           if (turnCount >= MAX_TURNS && !forceSummarySent) {
             forceSummarySent = true;
             emitProgress("synthesizing");
-            finderProgress?.clearTools();
+            oracleProgress?.clearTools();
             agent.steer({
               role: "user",
               content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
@@ -690,9 +689,9 @@ export default function oracleExtension(pi: ExtensionAPI) {
         searchError = err instanceof Error ? err : new Error(String(err));
       } finally {
         // Clean up progress widget
-        ctx.ui.setWidget("finder", undefined);
-        finderProgress?.dispose();
-        finderProgress = null;
+        ctx.ui.setWidget("oracle", undefined);
+        oracleProgress?.dispose();
+        oracleProgress = null;
       }
       
       // Clean up timeout
@@ -753,7 +752,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
       if (details.status === "error") {
         const text = result.content?.[0];
         const errorMsg = details.error || "Unknown error";
-        let output = `${theme.fg("error", "✗ finder")}`;
+        let output = `${theme.fg("error", "✗ oracle")}`;
         output += `\n${theme.fg("error", `Error: ${errorMsg}`)}`;
         if (details.filesFound > 0) {
           output += `\n${theme.fg("warning", `Partial findings: ${details.filesFound} files before error`)}`;
