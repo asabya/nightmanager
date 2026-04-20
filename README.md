@@ -91,3 +91,58 @@ This implementation demonstrates key subagent orchestration patterns:
 3. **Model differentiation** — can use a different model (currently uses session's model)
 4. **Lifecycle management** — turn limits, timeouts, diminishing returns via `agent.subscribe()`
 5. **Structured communication** — defined input (query string) / output (structured text) contract
+
+## Oracle Subagent
+
+The `oracle` tool is a reasoning-focused sibling to Finder.
+
+### What It Does
+
+Oracle helps when the main agent is stuck on:
+- tricky debugging problems
+- ambiguous root-cause analysis
+- trade-off-aware planning
+- deciding the best next probe when evidence is incomplete
+
+Unlike Finder, Oracle is not optimized for broad search. It is optimized for evidence-backed explanation.
+
+### How Model Selection Works
+
+The oracle resolves its model in this order:
+1. `~/.pi/agent/oracle.json`
+2. the active session model
+
+Example config:
+
+```json
+{
+  "model": "ollama/glm-5:cloud"
+}
+```
+
+### Usage
+
+Quick test:
+
+```bash
+pi -e ./oracle.ts
+```
+
+Example prompts:
+
+```text
+Use oracle to debug why auth middleware fails intermittently
+Use oracle to reason about why the finder tool might stop too early
+Use oracle to plan the safest way to refactor the finder progress widget
+```
+
+### Output Shape
+
+Oracle returns:
+- `## Observation`
+- `## Hypothesis Table`
+- `## Evidence For`
+- `## Evidence Against / Gaps`
+- `## Current Best Explanation`
+- `## Recommendations`
+- `## Discriminating Probe`
