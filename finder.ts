@@ -97,6 +97,9 @@ class FinderProgress implements Component {
 		);
 		
 		this.toolLoaders.set(key, { loader, input });
+		
+		// Trigger re-render to show new tool
+		this.tui.requestRender();
 	}
 
 	/**
@@ -688,51 +691,12 @@ export default function finderExtension(pi: ExtensionAPI) {
         return new Text(output, 0, 0);
       }
       
-      // Success case
-      const badge = theme.bg("toolSuccessBg", theme.fg("success", theme.bold(" finder ")));
-      
+      // Success case - show result directly
       const text = result.content?.[0];
       const textContent = text?.type === "text" ? text.text : "";
       
-      // Header line
-      const header = `${badge} ${theme.fg("dim", `[${details.model}]`)} ${theme.fg("muted", `${details.turnCount} turns, ${details.filesFound} files`)}`;
-      
-      if (!expanded) {
-        // Collapsed view
-        const previewLines = textContent.split("\n").slice(0, 5);
-        let output = header;
-        
-        if (previewLines.length > 0 && previewLines[0]) {
-          output += `\n${theme.fg("toolOutput", previewLines[0].slice(0, 100))}`;
-          if (previewLines[0].length > 100 || previewLines.length > 1) {
-            output += `\n${theme.fg("dim", "... (Ctrl+O to expand)")}`;
-          }
-        }
-        
-        return new Text(output, 0, 0);
-      }
-      
-      // Expanded view
-      let output = header;
-      
-      // Show query
-      output += `\n${theme.fg("muted", "Query:")} ${theme.fg("dim", details.query)}`;
-      
-      // Show files discovered
-      if (details.filesDiscovered && details.filesDiscovered.length > 0) {
-        const filesToShow = details.filesDiscovered.slice(0, 10);
-        output += `\n${theme.fg("muted", "Files:")} ${theme.fg("dim", filesToShow.join(", "))}`;
-        if (details.filesDiscovered.length > 10) {
-          output += ` ${theme.fg("dim", `... +${details.filesDiscovered.length - 10} more`)}`;
-        }
-      }
-      
-      // Show output
-      if (textContent) {
-        output += `\n\n${theme.fg("toolOutput", truncateToWidth(textContent, 2000))}`;
-      }
-      
-      return new Text(output, 0, 0);
+      // Just show the response text, simplified format
+      return new Text(theme.fg("toolOutput", textContent), 0, 0);
     },
   });
 }
