@@ -29,7 +29,7 @@ import { join } from "node:path";
 // =========================================================================
 
 /**
- * Multi-line progress indicator for finder subagent searches.
+ * Multi-line progress indicator for Oracle reasoning runs.
  * Shows main task line + running tools (up to 5) with independent animated loaders.
  */
 interface OracleToolEntry {
@@ -379,6 +379,11 @@ function basename(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
+function extractEvidenceSources(text: string): string[] {
+  const matches = text.match(/\/[^\s:]+(?:\.[a-zA-Z0-9]+)?(?::\d+)?/g) || [];
+  return matches;
+}
+
 function summarizeToolLabel(tool: string, input: unknown): string {
   const args = input && typeof input === "object" ? (input as Record<string, unknown>) : undefined;
 
@@ -460,11 +465,11 @@ export default function oracleExtension(pi: ExtensionAPI) {
         createBashTool(ctx.cwd),
       ];
 
-      // Resolve model: finder.json → session model
+      // Resolve model: oracle.json → session model
       const model = resolveOracleModel(ctx.modelRegistry) ?? ctx.model;
       if (!model) {
         return {
-          content: [{ type: "text", text: "Error: No model available for finder subagent.\n\nTroubleshooting:\n  1. Create/edit ~/.pi/agent/finder.json with: {\"model\": \"provider/modelId\"}\n  2. Or set a session model with: /model provider/modelId" }],
+          content: [{ type: "text", text: "Error: No model available for oracle subagent.\n\nTroubleshooting:\n  1. Create/edit ~/.pi/agent/oracle.json with: {\"model\": \"provider/modelId\"}\n  2. Or set a session model with: /model provider/modelId" }],
           details: { error: "no_model", configPath: CONFIG_PATH },
         };
       }
@@ -474,8 +479,8 @@ export default function oracleExtension(pi: ExtensionAPI) {
       const subagentSignal = signal ? AbortSignal.any([signal]) : undefined;
       const timeoutAbort = new AbortController();
 
-      // 3-minute timeout for complex searches
-      const timeoutId = setTimeout(() => timeoutAbort.abort(), 180_000);
+      // 5-minute timeout for deep reasoning
+      const timeoutId = setTimeout(() => timeoutAbort.abort(), 300_000);
       const combinedSignal = subagentSignal
         ? AbortSignal.any([subagentSignal, timeoutAbort.signal])
         : timeoutAbort.signal;
@@ -505,33 +510,33 @@ export default function oracleExtension(pi: ExtensionAPI) {
         streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: combinedSignal, apiKey: resolvedAuth.apiKey, headers: resolvedAuth.headers }),
       });
 
-      // Track files discovered for diminishing returns detection
-      const discoveredFiles = new Set<string>();
+      // Track evidence sources for diminishing returns detection
+      const evidenceSources = new Set<string>();
       const filesRead = new Set<string>();
       const commandsRun: { tool: string; input: unknown }[] = [];
-      let consecutiveTurnsWithNoNewFiles = 0;
+      let consecutiveTurnsWithNoNewEvidence = 0;
       let turnCount = 0;
-      const MAX_TURNS = 10;
-      let forceSummarySent = false;
+      const MAX_TURNS = 15;
+      let forceSynthesisSent = false;
 
       // Helper to emit progress updates via onUpdate
       const emitProgress = (status: OracleStatus) => {
         if (!onUpdate) return;
-        
-        const recentTools = commandsRun.slice(-5).map(c => ({
+
+        const recentTools = commandsRun.slice(-5).map((c) => ({
           tool: c.tool,
           input: formatToolInput(c.tool, c.input),
         }));
 
         onUpdate({
-          content: [{ type: "text", text: "" }], // Empty text, details have the info
+          content: [{ type: "text", text: "" }],
           details: {
             query: params.query,
             status,
             model: modelId,
             turnCount,
             maxTurns: MAX_TURNS,
-            filesFound: discoveredFiles.size,
+            evidenceCount: evidenceSources.size,
             toolCalls: recentTools,
           } as OracleDetails,
         });
@@ -565,57 +570,54 @@ export default function oracleExtension(pi: ExtensionAPI) {
 
           oracleProgress?.markRunningToolsDone();
 
-          // Check for new files in tool results
-          let foundNewFiles = false;
+          let foundNewEvidence = false;
           for (const toolResult of turnEvent.toolResults || []) {
             const content = toolResult.content || [];
             for (const block of content) {
               if (block.type === "text" && block.text) {
-                // Extract file paths from tool results (lines starting with /)
-                const lines = block.text.split("\n");
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed.startsWith("/")) {
-                    const filePath = trimmed.split(":")[0].split(" ")[0];
-                    if (!discoveredFiles.has(filePath)) {
-                      discoveredFiles.add(filePath);
-                      foundNewFiles = true;
-                    }
+                const extracted = extractEvidenceSources(block.text);
+                for (const source of extracted) {
+                  if (!evidenceSources.has(source)) {
+                    evidenceSources.add(source);
+                    foundNewEvidence = true;
                   }
                 }
               }
             }
           }
 
-          if (!foundNewFiles && turnCount > 1) {
-            consecutiveTurnsWithNoNewFiles++;
+          if (!foundNewEvidence && turnCount > 1) {
+            consecutiveTurnsWithNoNewEvidence++;
           } else {
-            consecutiveTurnsWithNoNewFiles = 0;
+            consecutiveTurnsWithNoNewEvidence = 0;
           }
 
-          // Emit progress after turn
-          emitProgress("investigating");
+          emitProgress(consecutiveTurnsWithNoNewEvidence > 0 ? "reasoning" : "investigating");
 
-          // If diminishing returns detected, force summary (only once)
-          if (consecutiveTurnsWithNoNewFiles >= 2 && !forceSummarySent) {
-            forceSummarySent = true;
+          if (consecutiveTurnsWithNoNewEvidence >= 3 && !forceSynthesisSent) {
+            forceSynthesisSent = true;
             emitProgress("synthesizing");
             oracleProgress?.clearTools();
             agent.steer({
               role: "user",
-              content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
+              content: [{
+                type: "text",
+                text: "Evidence has plateaued for 3 rounds. Synthesize your findings now. Rank the remaining hypotheses, state the best explanation, and include the single best discriminating probe. Do not make more tool calls.",
+              }],
               timestamp: Date.now(),
             });
           }
 
-          // If max turns reached, force summary (only once)
-          if (turnCount >= MAX_TURNS && !forceSummarySent) {
-            forceSummarySent = true;
+          if (turnCount >= MAX_TURNS && !forceSynthesisSent) {
+            forceSynthesisSent = true;
             emitProgress("synthesizing");
             oracleProgress?.clearTools();
             agent.steer({
               role: "user",
-              content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
+              content: [{
+                type: "text",
+                text: "Maximum reasoning turns reached. Synthesize your findings now using the required output format. Rank the remaining hypotheses and include the best discriminating probe.",
+              }],
               timestamp: Date.now(),
             });
           }
@@ -626,9 +628,9 @@ export default function oracleExtension(pi: ExtensionAPI) {
       const getLogDetails = () => ({
         query: params.query,
         commandsRun: commandsRun.length,
-        toolsUsed: [...new Set(commandsRun.map(c => c.tool))],
+        toolsUsed: [...new Set(commandsRun.map((c) => c.tool))],
         filesRead: [...filesRead],
-        filesReturned: [...discoveredFiles],
+        evidenceSources: [...evidenceSources],
         turns: turnCount,
       });
 
@@ -640,14 +642,14 @@ export default function oracleExtension(pi: ExtensionAPI) {
           .pop();
 
         if (!lastAssistantMsg) {
-          const timeoutNote = isTimeout ? "\n\n(Search timed out after 180s — partial results)" : "";
-          const partialFindings = discoveredFiles.size > 0
-            ? `Found ${discoveredFiles.size} files: ${[...discoveredFiles].slice(0, 10).join(", ")}${discoveredFiles.size > 10 ? "..." : ""}`
-            : "No files were found before the search ended.";
+          const timeoutNote = isTimeout ? "\n\n(Reasoning timed out after 300s — partial results)" : "";
+          const partialFindings = evidenceSources.size > 0
+            ? `Collected ${evidenceSources.size} evidence sources: ${[...evidenceSources].slice(0, 10).join(", ")}${evidenceSources.size > 10 ? "..." : ""}`
+            : "No evidence sources were collected before reasoning ended.";
 
           return {
-            text: `Error: Finder subagent did not return a response.${timeoutNote}\n\n${partialFindings}`,
-            details: { error: "no_response", turns: turnCount, filesFound: discoveredFiles.size, timedOut: isTimeout, ...getLogDetails() },
+            text: `Error: Oracle subagent did not return a response.${timeoutNote}\n\n${partialFindings}`,
+            details: { error: "no_response", turns: turnCount, evidenceCount: evidenceSources.size, timedOut: isTimeout, ...getLogDetails() },
           };
         }
 
@@ -655,7 +657,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
         const textParts = lastAssistantMsg.content.filter((c): c is TextContent => c.type === "text");
         const text = textParts.map(c => c.text).join("\n").trim();
 
-        const timeoutNote = isTimeout ? "\n\n(Search timed out after 180s — results may be partial)" : "";
+        const timeoutNote = isTimeout ? "\n\n(Reasoning timed out after 300s — results may be partial)" : "";
         const errorNote = lastError ? `\n\nError: ${lastError}` : "";
         const finalText = text + timeoutNote + errorNote;
 
@@ -667,9 +669,9 @@ export default function oracleExtension(pi: ExtensionAPI) {
             model: modelId,
             turnCount,
             maxTurns: MAX_TURNS,
-            filesFound: discoveredFiles.size,
+            evidenceCount: evidenceSources.size,
             toolCalls: commandsRun.slice(-5).map(c => ({ tool: c.tool, input: formatToolInput(c.tool, c.input) })),
-            filesDiscovered: [...discoveredFiles],
+            evidenceSources: [...evidenceSources],
             timedOut: isTimeout,
             ...getLogDetails(),
           },
@@ -700,10 +702,10 @@ export default function oracleExtension(pi: ExtensionAPI) {
       // Handle error case
       if (searchError) {
         const errorMessage = searchError.message;
-        const partialNote = discoveredFiles.size > 0
-          ? `\n\nPartial findings before error: ${discoveredFiles.size} files discovered.`
+        const partialNote = evidenceSources.size > 0
+          ? `\n\nPartial findings before error: ${evidenceSources.size} evidence sources collected.`
           : "";
-        const responseText = `Error: Finder subagent failed: ${errorMessage}.${partialNote}`;
+        const responseText = `Error: Oracle subagent failed: ${errorMessage}.${partialNote}`;
         
         return {
           content: [{ type: "text", text: responseText }],
@@ -713,7 +715,7 @@ export default function oracleExtension(pi: ExtensionAPI) {
             model: modelId,
             error: errorMessage, 
             turnCount,
-            filesFound: discoveredFiles.size,
+            evidenceCount: evidenceSources.size,
             toolCalls: commandsRun.slice(-5).map(c => ({ tool: c.tool, input: formatToolInput(c.tool, c.input) })),
             ...getLogDetails() 
           } as OracleDetails,
@@ -754,8 +756,8 @@ export default function oracleExtension(pi: ExtensionAPI) {
         const errorMsg = details.error || "Unknown error";
         let output = `${theme.fg("error", "✗ oracle")}`;
         output += `\n${theme.fg("error", `Error: ${errorMsg}`)}`;
-        if (details.filesFound > 0) {
-          output += `\n${theme.fg("warning", `Partial findings: ${details.filesFound} files before error`)}`;
+        if (details.evidenceCount && details.evidenceCount > 0) {
+          output += `\n${theme.fg("warning", `Partial findings: ${details.evidenceCount} evidence sources before error`)}`;
         }
         return new Text(output, 0, 0);
       }
