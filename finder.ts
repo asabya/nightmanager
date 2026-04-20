@@ -3,25 +3,44 @@
  *
  * Registers a `finder` tool that spawns a dedicated search subagent with:
  * - Its own context window (isolated from the main agent)
- * - Read-only tools only (read, grep, find, ls)
+ * - Configurable model via ~/.pi/agent/finder.json (just a model reference string)
+ * - Read-only tools (read, grep, find, ls) + bash for fast searches
  * - Exploration-focused system prompt with parallel search strategies
  * - Automatic turn limiting (max 10 turns)
  * - Diminishing returns detection (2 turns with no new files → force summary)
- * - 60-second timeout
+ * - 3-minute timeout for complex searches
+ * - Inline progress display via onUpdate streaming
  *
  * Usage:
  *   pi -e ./finder.ts
  *   Then: "Use finder to find the auth middleware"
  *
- * For global installation, copy to ~/.pi/agent/extensions/finder.ts
+ * Config (~/.pi/agent/finder.json) — optional:
+ *   {
+ *     "model": "ollama/glm-5:cloud"
+ *   }
+ *
+ * Format is "provider/modelId" matching entries in your models.json.
+ * Falls back to the session model if no config is found.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { createFindTool, createGrepTool, createLsTool, createReadTool } from "@mariozechner/pi-coding-agent";
+import { createFindTool, createGrepTool, createLsTool, createReadTool, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Agent, type AgentTool } from "@mariozechner/pi-agent-core";
-import { stream, type TextContent } from "@mariozechner/pi-ai";
+import { stream, type Model, type TextContent } from "@mariozechner/pi-ai";
 import { Type, type Static } from "@sinclair/typebox";
-import { Text } from "@mariozechner/pi-tui";
+import { Text, truncateToWidth } from "@mariozechner/pi-tui";
+import { FinderProgress } from "./finder-progress.js";
+import { readFileSync } from "node:fs";
+
+// Progress widget reference for updates during search
+let finderProgress: FinderProgress | null = null;
+
+// =========================================================================
+// Schema and Types
+// =========================================================================
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 // =========================================================================
 // Schema and Types
@@ -34,6 +53,86 @@ const finderSchema = Type.Object({
 });
 
 type FinderInput = Static<typeof finderSchema>;
+
+/** Status of the finder subagent */
+type FinderStatus = "initializing" | "searching" | "summarizing" | "complete" | "error";
+
+/** A single tool call record for display */
+interface ToolCallRecord {
+  tool: string;
+  input: string; // Truncated input for display
+}
+
+/** Progress/result details for finder */
+interface FinderDetails {
+  query: string;
+  status: FinderStatus;
+  model: string;
+  turnCount: number;
+  maxTurns: number;
+  filesFound: number;
+  toolCalls: ToolCallRecord[];
+  error?: string;
+  filesDiscovered?: string[];
+  timedOut?: boolean;
+}
+
+// =========================================================================
+// Config loading — simple model reference only
+// =========================================================================
+
+interface FinderConfig {
+  model: string; // "provider/modelId" e.g. "ollama/glm-5:cloud"
+}
+
+const CONFIG_PATH = join(homedir(), ".pi", "agent", "finder.json");
+
+function loadFinderModelReference(): string | null {
+  try {
+    const raw = readFileSync(CONFIG_PATH, "utf-8");
+    const parsed: FinderConfig = JSON.parse(raw);
+    if (!parsed.model) {
+      return null;
+    }
+    return parsed.model;
+  } catch {
+    // Config file not found or invalid - use session model
+    return null;
+  }
+}
+
+// =========================================================================
+// Model resolution (lazy — uses modelRegistry from context)
+// =========================================================================
+
+let cachedFinderModel: Model<any> | null = null;
+
+function resolveFinderModel(modelRegistry: any): Model<any> | null {
+  if (cachedFinderModel) return cachedFinderModel;
+
+  const modelRef = loadFinderModelReference();
+  if (!modelRef) {
+    return null;
+  }
+
+  const parts = modelRef.split("/");
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const [provider, modelId] = parts;
+  if (!provider || !modelId) {
+    return null;
+  }
+
+  const model = modelRegistry.find(provider, modelId);
+  if (!model) {
+    return null;
+  }
+
+  cachedFinderModel = model as Model<any>;
+  return cachedFinderModel;
+}
 
 // =========================================================================
 // System Prompt
@@ -84,7 +183,7 @@ Structure your response EXACTLY as follows. Do not add preamble or meta-commenta
 
 ## Findings
 - **Files**: [/absolute/path/file1.ts — why relevant], [/absolute/path/file2.ts — why relevant]
-- **Root cause**: [One sentence identifying the core answer]
+- **Root cause**: [One sentence identifying the core answers]
 - **Evidence**: [Key code snippet, pattern, or data point that supports the finding]
 
 ## Impact
@@ -116,6 +215,38 @@ Structure your response EXACTLY as follows. Do not add preamble or meta-commenta
 - Did I address the underlying need?`;
 
 // =========================================================================
+// Helper functions
+// =========================================================================
+
+const SPINNER_FRAMES = ["◜", "◠", "◝", "◞", "◡", "◟"];
+
+function getToolIcon(tool: string): string {
+  switch (tool) {
+    case "read":
+      return "📖";
+    case "grep":
+      return "🔍";
+    case "find":
+      return "📁";
+    case "ls":
+      return "📂";
+    case "bash":
+      return "⚡";
+    default:
+      return "•";
+  }
+}
+
+function formatToolInput(tool: string, input: unknown): string {
+  const inputStr = typeof input === "string" ? input : JSON.stringify(input);
+  const truncated = inputStr.length > 50 ? inputStr.slice(0, 50) + "..." : inputStr;
+  
+  // Shorten paths for display
+  const shortened = truncated.replace(process.env.HOME || "/home", "~");
+  return shortened;
+}
+
+// =========================================================================
 // Finder Tool
 // =========================================================================
 
@@ -130,7 +261,7 @@ export default function finderExtension(pi: ExtensionAPI) {
       "The finder subagent excels at tracing relationships between files, understanding data flows, and finding all usages of a pattern.",
     ],
     parameters: finderSchema,
-    async execute(toolCallId: string, params: FinderInput, signal: AbortSignal | undefined, _onUpdate, ctx: ExtensionContext) {
+    async execute(toolCallId: string, params: FinderInput, signal: AbortSignal | undefined, onUpdate: ((partial: any) => void) | undefined, ctx: ExtensionContext) {
       // Validate query
       if (!params.query || params.query.trim().length === 0) {
         return {
@@ -139,31 +270,49 @@ export default function finderExtension(pi: ExtensionAPI) {
         };
       }
 
-      // Build read-only tools for the subagent
+      // Build tools for the subagent (read-only + bash for fast searches)
       const subagentTools: AgentTool[] = [
         createReadTool(ctx.cwd),
         createGrepTool(ctx.cwd),
         createFindTool(ctx.cwd),
         createLsTool(ctx.cwd),
+        createBashTool(ctx.cwd),
       ];
 
-      // Use the same model as the main session
-      const model = ctx.model;
+      // Resolve model: finder.json → session model
+      const model = resolveFinderModel(ctx.modelRegistry) ?? ctx.model;
       if (!model) {
         return {
-          content: [{ type: "text", text: "Error: No model available for finder subagent. Please set a model first." }],
-          details: { error: "no_model" },
+          content: [{ type: "text", text: "Error: No model available for finder subagent.\n\nTroubleshooting:\n  1. Create/edit ~/.pi/agent/finder.json with: {\"model\": \"provider/modelId\"}\n  2. Or set a session model with: /model provider/modelId" }],
+          details: { error: "no_model", configPath: CONFIG_PATH },
         };
       }
+
+      const modelId = `${model.provider}/${model.id}`;
 
       const subagentSignal = signal ? AbortSignal.any([signal]) : undefined;
       const timeoutAbort = new AbortController();
 
-      // 60-second timeout
-      const timeoutId = setTimeout(() => timeoutAbort.abort(), 60_000);
+      // 3-minute timeout for complex searches
+      const timeoutId = setTimeout(() => timeoutAbort.abort(), 180_000);
       const combinedSignal = subagentSignal
         ? AbortSignal.any([subagentSignal, timeoutAbort.signal])
         : timeoutAbort.signal;
+
+      // Resolve API key and headers for the model before streaming
+      const resolvedAuth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+      if (!resolvedAuth.ok) {
+        return {
+          content: [{ type: "text", text: `Error: Failed to resolve auth for model ${modelId}: ${resolvedAuth.error}` }],
+          details: { error: "auth_resolution_failed", authError: resolvedAuth.error },
+        };
+      }
+
+      // Show progress widget above editor
+      ctx.ui.setWidget("finder", (tui, theme) => {
+        finderProgress = new FinderProgress(tui, theme, "Searching...");
+        return finderProgress;
+      }, { placement: "aboveEditor" });
 
       // Create the subagent Agent instance with isolated context
       const agent = new Agent({
@@ -172,156 +321,343 @@ export default function finderExtension(pi: ExtensionAPI) {
           model,
           tools: subagentTools,
         },
-        streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: combinedSignal }),
+        streamFn: (m, c, opts) => stream(m, c, { ...opts, signal: combinedSignal, apiKey: resolvedAuth.apiKey, headers: resolvedAuth.headers }),
       });
 
       // Track files discovered for diminishing returns detection
       const discoveredFiles = new Set<string>();
+      const filesRead = new Set<string>();
+      const commandsRun: { tool: string; input: unknown }[] = [];
       let consecutiveTurnsWithNoNewFiles = 0;
       let turnCount = 0;
       const MAX_TURNS = 10;
+      let forceSummarySent = false;
+      let spinnerFrame = 0;
 
-      try {
-        // Subscribe to track turns and detect diminishing returns
-        agent.subscribe((event) => {
-          if (event.type === "turn_end") {
-            turnCount++;
+      // Helper to emit progress updates via onUpdate
+      const emitProgress = (status: FinderStatus) => {
+        if (!onUpdate) return;
+        
+        const recentTools = commandsRun.slice(-5).map(c => ({
+          tool: c.tool,
+          input: formatToolInput(c.tool, c.input),
+        }));
 
-            // Check for new files in tool results
-            let foundNewFiles = false;
-            for (const toolResult of event.toolResults) {
-              const content = toolResult.content || [];
-              for (const block of content) {
-                if (block.type === "text" && block.text) {
-                  // Extract file paths from tool results (lines starting with /)
-                  const lines = block.text.split("\n");
-                  for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (trimmed.startsWith("/")) {
-                      const filePath = trimmed.split(":")[0].split(" ")[0];
-                      if (!discoveredFiles.has(filePath)) {
-                        discoveredFiles.add(filePath);
-                        foundNewFiles = true;
-                      }
+        onUpdate({
+          content: [{ type: "text", text: "" }], // Empty text, details have the info
+          details: {
+            query: params.query,
+            status,
+            model: modelId,
+            turnCount,
+            maxTurns: MAX_TURNS,
+            filesFound: discoveredFiles.size,
+            toolCalls: recentTools,
+          } as FinderDetails,
+        });
+      };
+
+      // Set initial status
+      emitProgress("initializing");
+
+      // Subscribe to track turns and detect diminishing returns
+      agent.subscribe((event) => {
+        // Handle tool calls
+        if (event.type === "tool_execution_start") {
+          const evt = event as { toolName: string; args?: unknown };
+          commandsRun.push({ tool: evt.toolName, input: evt.args });
+          
+          // Track files being read
+          if (evt.toolName === "read" && (evt.args as { path?: string })?.path) {
+            filesRead.add((evt.args as { path: string }).path);
+          }
+          
+          // Update progress with current tool
+          finderProgress?.setMessage(`${getToolIcon(evt.toolName)} ${evt.toolName}...`);
+          
+          // Emit progress with new tool call
+          spinnerFrame = (spinnerFrame + 1) % SPINNER_FRAMES.length;
+          emitProgress("searching");
+        }
+        
+        if (event.type === "turn_end") {
+          turnCount++;
+          const turnEvent = event as { toolResults?: Array<{ content?: Array<{ type: string; text?: string }> }> };
+
+          // Check for new files in tool results
+          let foundNewFiles = false;
+          for (const toolResult of turnEvent.toolResults || []) {
+            const content = toolResult.content || [];
+            for (const block of content) {
+              if (block.type === "text" && block.text) {
+                // Extract file paths from tool results (lines starting with /)
+                const lines = block.text.split("\n");
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith("/")) {
+                    const filePath = trimmed.split(":")[0].split(" ")[0];
+                    if (!discoveredFiles.has(filePath)) {
+                      discoveredFiles.add(filePath);
+                      foundNewFiles = true;
                     }
                   }
                 }
               }
             }
-
-            if (!foundNewFiles && turnCount > 1) {
-              consecutiveTurnsWithNoNewFiles++;
-            } else {
-              consecutiveTurnsWithNoNewFiles = 0;
-            }
-
-            // If diminishing returns detected, force summary
-            if (consecutiveTurnsWithNoNewFiles >= 2) {
-              agent.steer({
-                role: "user",
-                content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
-                timestamp: Date.now(),
-              });
-            }
-
-            // If max turns reached, force summary
-            if (turnCount >= MAX_TURNS) {
-              agent.steer({
-                role: "user",
-                content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
-                timestamp: Date.now(),
-              });
-            }
           }
-        });
 
+          if (!foundNewFiles && turnCount > 1) {
+            consecutiveTurnsWithNoNewFiles++;
+          } else {
+            consecutiveTurnsWithNoNewFiles = 0;
+          }
+
+          // Update progress with files found
+          if (discoveredFiles.size > 0) {
+            const fileWord = discoveredFiles.size === 1 ? "file" : "files";
+            finderProgress?.setMessage(`Found ${discoveredFiles.size} ${fileWord}...`);
+          }
+
+          // Emit progress after turn
+          emitProgress("searching");
+
+          // If diminishing returns detected, force summary (only once)
+          if (consecutiveTurnsWithNoNewFiles >= 2 && !forceSummarySent) {
+            forceSummarySent = true;
+            emitProgress("summarizing");
+            finderProgress?.setMessage("Summarizing results...");
+            agent.steer({
+              role: "user",
+              content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
+              timestamp: Date.now(),
+            });
+          }
+
+          // If max turns reached, force summary (only once)
+          if (turnCount >= MAX_TURNS && !forceSummarySent) {
+            forceSummarySent = true;
+            emitProgress("summarizing");
+            finderProgress?.setMessage("Summarizing results...");
+            agent.steer({
+              role: "user",
+              content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
+              timestamp: Date.now(),
+            });
+          }
+        }
+      });
+
+      // Helper to build result
+      const getLogDetails = () => ({
+        query: params.query,
+        commandsRun: commandsRun.length,
+        toolsUsed: [...new Set(commandsRun.map(c => c.tool))],
+        filesRead: [...filesRead],
+        filesReturned: [...discoveredFiles],
+        turns: turnCount,
+      });
+
+      const buildResult = (isTimeout: boolean, lastError?: string): { text: string; details: Record<string, unknown> } => {
+        // Extract result from agent state
+        const messages = agent.state.messages;
+        const lastAssistantMsg = messages
+          .filter((m): m is Extract<typeof m, { role: "assistant" }> => m.role === "assistant")
+          .pop();
+
+        if (!lastAssistantMsg) {
+          const timeoutNote = isTimeout ? "\n\n(Search timed out after 180s — partial results)" : "";
+          const partialFindings = discoveredFiles.size > 0
+            ? `Found ${discoveredFiles.size} files: ${[...discoveredFiles].slice(0, 10).join(", ")}${discoveredFiles.size > 10 ? "..." : ""}`
+            : "No files were found before the search ended.";
+
+          return {
+            text: `Error: Finder subagent did not return a response.${timeoutNote}\n\n${partialFindings}`,
+            details: { error: "no_response", turns: turnCount, filesFound: discoveredFiles.size, timedOut: isTimeout, ...getLogDetails() },
+          };
+        }
+
+        // Extract text content
+        const textParts = lastAssistantMsg.content.filter((c): c is TextContent => c.type === "text");
+        const text = textParts.map(c => c.text).join("\n").trim();
+
+        const timeoutNote = isTimeout ? "\n\n(Search timed out after 180s — results may be partial)" : "";
+        const errorNote = lastError ? `\n\nError: ${lastError}` : "";
+        const finalText = text + timeoutNote + errorNote;
+
+        return {
+          text: finalText,
+          details: {
+            query: params.query,
+            status: "complete" as FinderStatus,
+            model: modelId,
+            turnCount,
+            maxTurns: MAX_TURNS,
+            filesFound: discoveredFiles.size,
+            toolCalls: commandsRun.slice(-5).map(c => ({ tool: c.tool, input: formatToolInput(c.tool, c.input) })),
+            filesDiscovered: [...discoveredFiles],
+            timedOut: isTimeout,
+            ...getLogDetails(),
+          },
+        };
+      };
+
+      // Run the search
+      let searchError: Error | null = null;
+      
+      try {
         // Send the search query
         await agent.prompt(params.query);
 
         // Wait for the agent to finish
         await agent.waitForIdle();
-      } catch (error) {
-        clearTimeout(timeoutId);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        // Return partial results if available
+      } catch (err) {
+        searchError = err instanceof Error ? err : new Error(String(err));
+      } finally {
+        // Clean up progress widget
+        ctx.ui.setWidget("finder", undefined);
+        finderProgress?.dispose();
+        finderProgress = null;
+      }
+      
+      // Clean up timeout
+      clearTimeout(timeoutId);
+      
+      // Handle error case
+      if (searchError) {
+        const errorMessage = searchError.message;
         const partialNote = discoveredFiles.size > 0
           ? `\n\nPartial findings before error: ${discoveredFiles.size} files discovered.`
           : "";
-
+        const responseText = `Error: Finder subagent failed: ${errorMessage}.${partialNote}`;
+        
         return {
-          content: [{ type: "text", text: `Error: Finder subagent failed: ${errorMessage}.${partialNote}` }],
-          details: { error: errorMessage, turns: turnCount, filesFound: discoveredFiles.size },
+          content: [{ type: "text", text: responseText }],
+          details: { 
+            query: params.query,
+            status: "error" as FinderStatus,
+            model: modelId,
+            error: errorMessage, 
+            turnCount,
+            filesFound: discoveredFiles.size,
+            toolCalls: commandsRun.slice(-5).map(c => ({ tool: c.tool, input: formatToolInput(c.tool, c.input) })),
+            ...getLogDetails() 
+          } as FinderDetails,
         };
       }
-
-      // Clean up timeout
-      clearTimeout(timeoutId);
-
-      // Extract result from agent state
-      const messages = agent.state.messages;
-      const lastAssistantMsg = messages
-        .filter((m): m is Extract<typeof m, { role: "assistant" }> => m.role === "assistant")
-        .pop();
-
-      if (!lastAssistantMsg) {
-        const isTimeout = timeoutAbort.signal.aborted && !signal?.aborted;
-        const timeoutNote = isTimeout ? "\n\n(Search timed out after 60s — partial results)" : "";
-        const partialFindings = discoveredFiles.size > 0
-          ? `Found ${discoveredFiles.size} files: ${[...discoveredFiles].slice(0, 10).join(", ")}${discoveredFiles.size > 10 ? "..." : ""}`
-          : "No files were found before the search ended.";
-
-        return {
-          content: [{ type: "text", text: `Error: Finder subagent did not return a response.${timeoutNote}\n\n${partialFindings}` }],
-          details: { error: "no_response", turns: turnCount, filesFound: discoveredFiles.size, timedOut: isTimeout },
-        };
-      }
-
-      // Extract text content
-      const textParts = lastAssistantMsg.content.filter((c): c is TextContent => c.type === "text");
-      const text = textParts.map(c => c.text).join("\n").trim();
-
-      const isTimeout = timeoutAbort.signal.aborted && !signal?.aborted;
-      const timeoutNote = isTimeout ? "\n\n(Search timed out after 60s — results may be partial)" : "";
-
+      
+      // Build and return final result
+      const result = buildResult(timeoutAbort.signal.aborted && !signal?.aborted);
+      
       return {
-        content: [{ type: "text", text: text + timeoutNote }],
-        details: {
-          turns: turnCount,
-          filesFound: discoveredFiles.size,
-          model: `${model.provider}/${model.id}`,
-          timedOut: isTimeout,
-        },
+        content: [{ type: "text", text: result.text }],
+        details: result.details,
       };
     },
 
-    renderCall(args: FinderInput, theme: any) {
+    renderCall(args: FinderInput, theme: any, _context: any) {
       const query = args.query || "";
       const truncated = query.length > 80 ? query.slice(0, 80) + "..." : query;
+      // Role badge style: [finder] with accent background
+      const badge = theme.bg("toolPendingBg", theme.fg("accent", theme.bold(" finder ")));
       return new Text(
-        `${theme.fg("toolTitle", theme.bold("finder"))} ${theme.fg("accent", `"${truncated}"`)}`,
+        `${badge} ${theme.fg("muted", `"${truncated}"`)}`,
         0, 0
       );
     },
 
-    renderResult(result: any, { expanded }: { expanded: boolean }, theme: any) {
-      if (!expanded) {
-        const details = result.details || {};
-        const summary = details.filesFound
-          ? ` → ${details.filesFound} files found in ${details.turns} turns`
-          : "";
-        return new Text(summary, 0, 0);
+    renderResult(result: any, { expanded, isPartial }: { expanded: boolean; isPartial: boolean }, theme: any) {
+      const details = result.details as FinderDetails | undefined;
+      
+      // During execution (streaming partial results)
+      if (isPartial && details) {
+        const spinner = SPINNER_FRAMES[Date.now() % SPINNER_FRAMES.length];
+        const statusIcon = theme.fg("accent", spinner);
+        const statusText = details.status === "summarizing" 
+          ? theme.fg("warning", "Summarizing...")
+          : theme.fg("accent", "Searching...");
+        
+        // Build progress line
+        const progress = `${statusIcon} ${theme.fg("toolTitle", theme.bold("finder "))}${theme.fg("muted", `"${details.query.slice(0, 50)}${details.query.length > 50 ? "..." : ""}"`)}`;
+        const status = `  ${statusText} ${theme.fg("dim", `turn ${details.turnCount}/${details.maxTurns}, ${details.filesFound} files`)}`;
+        
+        // Show recent tool calls
+        const lines = [progress, status];
+        
+        if (details.toolCalls && details.toolCalls.length > 0) {
+          for (const call of details.toolCalls.slice(-3)) {
+            const icon = getToolIcon(call.tool);
+            const toolName = theme.fg("toolTitle", call.tool);
+            const input = theme.fg("muted", call.input);
+            lines.push(`    ${icon} ${toolName} ${input}`);
+          }
+        }
+        
+        return new Text(lines.join("\n"), 0, 0);
       }
-
-      const textContent = result.content?.find((c: any) => c.type === "text");
-      if (!textContent?.text) return new Text("", 0, 0);
-
-      const output = textContent.text
-        .split("\n")
-        .map((line: string) => theme.fg("toolOutput", line))
-        .join("\n");
-
-      return new Text(`\n${output}`, 0, 0);
+      
+      // Final result
+      if (!details) {
+        const text = result.content?.[0];
+        return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+      }
+      
+      // Error case
+      if (details.status === "error") {
+        const text = result.content?.[0];
+        const errorMsg = details.error || "Unknown error";
+        let output = `${theme.fg("error", "✗ finder")}`;
+        output += `\n${theme.fg("error", `Error: ${errorMsg}`)}`;
+        if (details.filesFound > 0) {
+          output += `\n${theme.fg("warning", `Partial findings: ${details.filesFound} files before error`)}`;
+        }
+        return new Text(output, 0, 0);
+      }
+      
+      // Success case
+      const badge = theme.bg("toolSuccessBg", theme.fg("success", theme.bold(" finder ")));
+      
+      const text = result.content?.[0];
+      const textContent = text?.type === "text" ? text.text : "";
+      
+      // Header line
+      const header = `${badge} ${theme.fg("dim", `[${details.model}]`)} ${theme.fg("muted", `${details.turnCount} turns, ${details.filesFound} files`)}`;
+      
+      if (!expanded) {
+        // Collapsed view
+        const previewLines = textContent.split("\n").slice(0, 5);
+        let output = header;
+        
+        if (previewLines.length > 0 && previewLines[0]) {
+          output += `\n${theme.fg("toolOutput", previewLines[0].slice(0, 100))}`;
+          if (previewLines[0].length > 100 || previewLines.length > 1) {
+            output += `\n${theme.fg("dim", "... (Ctrl+O to expand)")}`;
+          }
+        }
+        
+        return new Text(output, 0, 0);
+      }
+      
+      // Expanded view
+      let output = header;
+      
+      // Show query
+      output += `\n${theme.fg("muted", "Query:")} ${theme.fg("dim", details.query)}`;
+      
+      // Show files discovered
+      if (details.filesDiscovered && details.filesDiscovered.length > 0) {
+        const filesToShow = details.filesDiscovered.slice(0, 10);
+        output += `\n${theme.fg("muted", "Files:")} ${theme.fg("dim", filesToShow.join(", "))}`;
+        if (details.filesDiscovered.length > 10) {
+          output += ` ${theme.fg("dim", `... +${details.filesDiscovered.length - 10} more`)}`;
+        }
+      }
+      
+      // Show output
+      if (textContent) {
+        output += `\n\n${theme.fg("toolOutput", truncateToWidth(textContent, 2000))}`;
+      }
+      
+      return new Text(output, 0, 0);
     },
   });
 }
