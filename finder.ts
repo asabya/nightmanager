@@ -42,15 +42,28 @@ import { join } from "node:path";
  * Multi-line progress indicator for finder subagent searches.
  * Shows main task line + running tools (up to 5) with independent animated loaders.
  */
+interface FinderToolEntry {
+	id: string;
+	toolName: string;
+	label: string;
+	status: "running" | "done";
+	sequence: number;
+	doneAt?: number;
+	loader?: Loader;
+}
+
+function toTitleCase(value: string): string {
+	return value.length === 0 ? value : value[0].toUpperCase() + value.slice(1);
+}
+
 class FinderProgress implements Component {
 	private tui: TUI;
 	private theme: { fg: (color: string, text: string) => string };
 	private query: string;
 	private mainLoader: Loader;
-	private toolLoaders: Map<string, { loader: Loader; input: string }>;
+	private toolEntries: FinderToolEntry[];
 	private maxToolLines: number;
-	private frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-	private toolFrameOffsets: Map<string, number>;
+	private nextToolSequence: number;
 
 	constructor(
 		tui: TUI,
@@ -60,11 +73,15 @@ class FinderProgress implements Component {
 		this.tui = tui;
 		this.theme = theme;
 		this.query = query;
-		this.toolLoaders = new Map();
-		this.toolFrameOffsets = new Map();
+		// Expected widget behavior:
+		// 1. tool_execution_start adds a visible running row: "Tool N <toolName>"
+		// 2. turn_end does not clear history; it marks running rows done
+		// 3. render() shows running rows first, then recent completed rows
+		// 4. render() shows at most 5 tool rows plus optional "+ N more"
+		this.toolEntries = [];
 		this.maxToolLines = 5;
-		
-		// Main loader always visible
+		this.nextToolSequence = 1;
+
 		this.mainLoader = new Loader(
 			tui,
 			theme.fg.bind(theme, "accent"),
@@ -73,60 +90,49 @@ class FinderProgress implements Component {
 		);
 	}
 
-	/**
-	 * Add a running tool to the display.
-	 * Creates a new loader for the tool with independent animation.
-	 */
-	addTool(toolName: string, input: string): void {
-		// Use toolName + truncated input as unique key
-		const key = `${toolName}:${input.slice(0, 30)}`;
-		
-		if (this.toolLoaders.has(key)) {
-			return; // Already tracking this tool
-		}
-		
-		// Give each tool loader a random frame offset for visual variety
-		const frameOffset = Math.floor(Math.random() * this.frames.length);
-		this.toolFrameOffsets.set(key, frameOffset);
-		
-		const loader = new Loader(
-			this.tui,
-			this.theme.fg.bind(this.theme, "accent"),
-			this.theme.fg.bind(this.theme, "dim"),
-			`${toolName} ${input}`,
-		);
-		
-		this.toolLoaders.set(key, { loader, input });
-		
-		// Trigger re-render to show new tool
+	addTool(toolName: string, label: string): void {
+		const sequence = this.nextToolSequence++;
+		const entry: FinderToolEntry = {
+			id: `${sequence}:${toolName}`,
+			toolName,
+			label,
+			status: "running",
+			sequence,
+			loader: new Loader(
+				this.tui,
+				this.theme.fg.bind(this.theme, "accent"),
+				this.theme.fg.bind(this.theme, "dim"),
+				label,
+			),
+		};
+
+		this.toolEntries.push(entry);
 		this.tui.requestRender();
 	}
 
-	/**
-	 * Remove a tool from the display when it completes.
-	 */
-	removeTool(toolName: string, input: string): void {
-		// Find matching key (input might be truncated differently)
-		const prefix = `${toolName}:`;
-		for (const [key, value] of this.toolLoaders) {
-			if (key.startsWith(prefix)) {
-				value.loader.stop();
-				this.toolLoaders.delete(key);
-				this.toolFrameOffsets.delete(key);
-				break;
-			}
+	markRunningToolsDone(): void {
+		const now = Date.now();
+		let changed = false;
+
+		for (const entry of this.toolEntries) {
+			if (entry.status !== "running") continue;
+			entry.status = "done";
+			entry.doneAt = now;
+			entry.loader?.stop();
+			entry.loader = undefined;
+			changed = true;
+		}
+
+		if (changed) {
+			this.tui.requestRender();
 		}
 	}
 
-	/**
-	 * Clear all tool loaders.
-	 */
 	clearTools(): void {
-		for (const { loader } of this.toolLoaders.values()) {
-			loader.stop();
+		for (const entry of this.toolEntries) {
+			entry.loader?.stop();
 		}
-		this.toolLoaders.clear();
-		this.toolFrameOffsets.clear();
+		this.toolEntries = [];
 	}
 
 	dispose(): void {
@@ -134,36 +140,47 @@ class FinderProgress implements Component {
 		this.clearTools();
 	}
 
+	// Render order:
+	// - main finder task line
+	// - running tools in sequence order (newer running tools below older ones)
+	// - completed tools at the bottom with a done indicator
+	// - overflow line when more than maxToolLines exist
 	render(width: number): string[] {
 		const lines: string[] = [];
-		
-		// Main line from mainLoader
 		const mainLines = this.mainLoader.render(width);
-		lines.push(mainLines[1] || ""); // Skip the empty first line from Loader.render
-		
-		// Tool lines (up to maxToolLines)
-		const toolEntries = [...this.toolLoaders.entries()];
-		const visibleTools = toolEntries.slice(0, this.maxToolLines);
-		const hiddenCount = toolEntries.length - this.maxToolLines;
-		
-		for (const [key, { loader }] of visibleTools) {
-			const toolLines = loader.render(width - 3); // Account for tab indent
-			const toolLine = toolLines[1] || "";
-			lines.push(`   ${toolLine}`); // Tab indent (3 spaces)
+		lines.push(mainLines[1] || "");
+
+		const running = this.toolEntries
+			.filter((entry) => entry.status === "running")
+			.sort((a, b) => a.sequence - b.sequence);
+		const completed = this.toolEntries
+			.filter((entry) => entry.status === "done")
+			.sort((a, b) => a.sequence - b.sequence);
+		const orderedEntries = [...running, ...completed];
+		const visibleEntries = orderedEntries.slice(0, this.maxToolLines);
+		const hiddenCount = Math.max(0, orderedEntries.length - visibleEntries.length);
+
+		for (const entry of visibleEntries) {
+			if (entry.status === "running" && entry.loader) {
+				const toolLines = entry.loader.render(width - 3);
+				const toolLine = toolLines[1] || this.theme.fg("accent", `⠼ ${entry.label}`);
+				lines.push(`   ${toolLine}`);
+			} else {
+				lines.push(`   ${this.theme.fg("dim", `✓ ${entry.label}`)}`);
+			}
 		}
-		
-		// Overflow indicator
+
 		if (hiddenCount > 0) {
 			lines.push(`   ${this.theme.fg("dim", `+ ${hiddenCount} more`)}`);
 		}
-		
+
 		return lines;
 	}
 
 	invalidate(): void {
 		this.mainLoader.invalidate();
-		for (const { loader } of this.toolLoaders.values()) {
-			loader.invalidate();
+		for (const entry of this.toolEntries) {
+			entry.loader?.invalidate();
 		}
 	}
 }
@@ -356,6 +373,50 @@ function formatToolInput(tool: string, input: unknown): string {
   return shortened;
 }
 
+function basename(path: string): string {
+  const normalized = path.replace(/\\/g, "/").replace(/\/$/, "");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] || path;
+}
+
+function summarizeToolLabel(tool: string, input: unknown): string {
+  const args = input && typeof input === "object" ? input as Record<string, unknown> : undefined;
+
+  if (tool === "read") {
+    const path = typeof args?.path === "string" ? args.path : undefined;
+    return path ? `Read ${basename(path)}` : "Read file";
+  }
+
+  if (tool === "find") {
+    const path = typeof args?.path === "string" ? args.path : undefined;
+    const pattern = typeof args?.pattern === "string" ? args.pattern : undefined;
+    const target = pattern || path;
+    return target ? `Find ${basename(target)}` : "Find files";
+  }
+
+  if (tool === "grep") {
+    const pattern = typeof args?.pattern === "string" ? args.pattern : undefined;
+    return pattern ? `Grep ${pattern}` : "Grep";
+  }
+
+  if (tool === "ls") {
+    const path = typeof args?.path === "string" ? args.path : undefined;
+    return path ? `List ${basename(path)}` : "List files";
+  }
+
+  if (tool === "bash") {
+    const command = typeof args?.command === "string" ? args.command : typeof input === "string" ? input : undefined;
+    if (!command) return "Bash";
+    const compact = command.length > 40 ? `${command.slice(0, 40)}...` : command;
+    return `Bash ${compact}`;
+  }
+
+  const fallback = formatToolInput(tool, input);
+  return fallback && fallback !== "{}"
+    ? `${toTitleCase(tool)} ${fallback}`
+    : toTitleCase(tool);
+}
+
 // =========================================================================
 // Finder Tool
 // =========================================================================
@@ -422,7 +483,7 @@ export default function finderExtension(pi: ExtensionAPI) {
       ctx.ui.setWidget("finder", (tui, theme) => {
         finderProgress = new FinderProgress(tui, theme, params.query);
         return finderProgress;
-      }, { placement: "aboveEditor" });
+      }, { placement: "belowEditor" });
 
       // Create the subagent Agent instance with isolated context
       const agent = new Agent({
@@ -469,6 +530,9 @@ export default function finderExtension(pi: ExtensionAPI) {
       // Set initial status
       emitProgress("initializing");
 
+      // Event expectations:
+      // - tool_execution_start appends a running widget row
+      // - turn_end marks current running rows done instead of clearing them
       // Subscribe to track turns and detect diminishing returns
       agent.subscribe((event) => {
         // Handle tool calls
@@ -481,11 +545,7 @@ export default function finderExtension(pi: ExtensionAPI) {
             filesRead.add((evt.args as { path: string }).path);
           }
           
-          // Add tool to progress display
-          const input = formatToolInput(evt.toolName, evt.args);
-          finderProgress?.addTool(evt.toolName, input);
-          
-          // Emit progress with new tool call
+          finderProgress?.addTool(evt.toolName, summarizeToolLabel(evt.toolName, evt.args));
           emitProgress("searching");
         }
         
@@ -493,8 +553,7 @@ export default function finderExtension(pi: ExtensionAPI) {
           turnCount++;
           const turnEvent = event as { toolResults?: Array<{ content?: Array<{ type: string; text?: string }> }> };
 
-          // Clear completed tools from progress display
-          finderProgress?.clearTools();
+          finderProgress?.markRunningToolsDone();
 
           // Check for new files in tool results
           let foundNewFiles = false;

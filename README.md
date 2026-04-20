@@ -65,9 +65,11 @@ If omitted, the finder uses whatever session model you have active.
 # Quick test
 pi -e ./finder.ts
 
-# Or install globally
+# Or install globally (single file - no dependencies)
 cp finder.ts ~/.pi/agent/extensions/finder.ts
 ```
+
+Note: The entire extension is self-contained in a single `finder.ts` file, including the progress widget.
 
 ## Usage
 
