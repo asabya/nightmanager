@@ -29,18 +29,144 @@ import { createFindTool, createGrepTool, createLsTool, createReadTool, createBas
 import { Agent, type AgentTool } from "@mariozechner/pi-agent-core";
 import { stream, type Model, type TextContent } from "@mariozechner/pi-ai";
 import { Type, type Static } from "@sinclair/typebox";
-import { Text, truncateToWidth } from "@mariozechner/pi-tui";
-import { FinderProgress } from "./finder-progress.js";
+import { Text, truncateToWidth, Loader, type TUI, type Component } from "@mariozechner/pi-tui";
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+// =========================================================================
+// Progress Widget (embedded for single-file deployment)
+// =========================================================================
+
+/**
+ * Multi-line progress indicator for finder subagent searches.
+ * Shows main task line + running tools (up to 5) with independent animated loaders.
+ */
+class FinderProgress implements Component {
+	private tui: TUI;
+	private theme: { fg: (color: string, text: string) => string };
+	private query: string;
+	private mainLoader: Loader;
+	private toolLoaders: Map<string, { loader: Loader; input: string }>;
+	private maxToolLines: number;
+	private frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+	private toolFrameOffsets: Map<string, number>;
+
+	constructor(
+		tui: TUI,
+		theme: { fg: (color: string, text: string) => string },
+		query: string,
+	) {
+		this.tui = tui;
+		this.theme = theme;
+		this.query = query;
+		this.toolLoaders = new Map();
+		this.toolFrameOffsets = new Map();
+		this.maxToolLines = 5;
+		
+		// Main loader always visible
+		this.mainLoader = new Loader(
+			tui,
+			theme.fg.bind(theme, "accent"),
+			theme.fg.bind(theme, "muted"),
+			`Finder Task - ${query}`,
+		);
+	}
+
+	/**
+	 * Add a running tool to the display.
+	 * Creates a new loader for the tool with independent animation.
+	 */
+	addTool(toolName: string, input: string): void {
+		// Use toolName + truncated input as unique key
+		const key = `${toolName}:${input.slice(0, 30)}`;
+		
+		if (this.toolLoaders.has(key)) {
+			return; // Already tracking this tool
+		}
+		
+		// Give each tool loader a random frame offset for visual variety
+		const frameOffset = Math.floor(Math.random() * this.frames.length);
+		this.toolFrameOffsets.set(key, frameOffset);
+		
+		const loader = new Loader(
+			this.tui,
+			this.theme.fg.bind(this.theme, "accent"),
+			this.theme.fg.bind(this.theme, "dim"),
+			`${toolName} ${input}`,
+		);
+		
+		this.toolLoaders.set(key, { loader, input });
+	}
+
+	/**
+	 * Remove a tool from the display when it completes.
+	 */
+	removeTool(toolName: string, input: string): void {
+		// Find matching key (input might be truncated differently)
+		const prefix = `${toolName}:`;
+		for (const [key, value] of this.toolLoaders) {
+			if (key.startsWith(prefix)) {
+				value.loader.stop();
+				this.toolLoaders.delete(key);
+				this.toolFrameOffsets.delete(key);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Clear all tool loaders.
+	 */
+	clearTools(): void {
+		for (const { loader } of this.toolLoaders.values()) {
+			loader.stop();
+		}
+		this.toolLoaders.clear();
+		this.toolFrameOffsets.clear();
+	}
+
+	dispose(): void {
+		this.mainLoader.stop();
+		this.clearTools();
+	}
+
+	render(width: number): string[] {
+		const lines: string[] = [];
+		
+		// Main line from mainLoader
+		const mainLines = this.mainLoader.render(width);
+		lines.push(mainLines[1] || ""); // Skip the empty first line from Loader.render
+		
+		// Tool lines (up to maxToolLines)
+		const toolEntries = [...this.toolLoaders.entries()];
+		const visibleTools = toolEntries.slice(0, this.maxToolLines);
+		const hiddenCount = toolEntries.length - this.maxToolLines;
+		
+		for (const [key, { loader }] of visibleTools) {
+			const toolLines = loader.render(width - 3); // Account for tab indent
+			const toolLine = toolLines[1] || "";
+			lines.push(`   ${toolLine}`); // Tab indent (3 spaces)
+		}
+		
+		// Overflow indicator
+		if (hiddenCount > 0) {
+			lines.push(`   ${this.theme.fg("dim", `+ ${hiddenCount} more`)}`);
+		}
+		
+		return lines;
+	}
+
+	invalidate(): void {
+		this.mainLoader.invalidate();
+		for (const { loader } of this.toolLoaders.values()) {
+			loader.invalidate();
+		}
+	}
+}
 
 // Progress widget reference for updates during search
 let finderProgress: FinderProgress | null = null;
-
-// =========================================================================
-// Schema and Types
-// =========================================================================
-import { homedir } from "node:os";
-import { join } from "node:path";
 
 // =========================================================================
 // Schema and Types
@@ -291,7 +417,7 @@ export default function finderExtension(pi: ExtensionAPI) {
 
       // Show progress widget above editor
       ctx.ui.setWidget("finder", (tui, theme) => {
-        finderProgress = new FinderProgress(tui, theme, "Searching...");
+        finderProgress = new FinderProgress(tui, theme, params.query);
         return finderProgress;
       }, { placement: "aboveEditor" });
 
@@ -352,8 +478,9 @@ export default function finderExtension(pi: ExtensionAPI) {
             filesRead.add((evt.args as { path: string }).path);
           }
           
-          // Update progress with current tool
-          finderProgress?.setMessage(`${getToolIcon(evt.toolName)} ${evt.toolName}...`);
+          // Add tool to progress display
+          const input = formatToolInput(evt.toolName, evt.args);
+          finderProgress?.addTool(evt.toolName, input);
           
           // Emit progress with new tool call
           emitProgress("searching");
@@ -362,6 +489,9 @@ export default function finderExtension(pi: ExtensionAPI) {
         if (event.type === "turn_end") {
           turnCount++;
           const turnEvent = event as { toolResults?: Array<{ content?: Array<{ type: string; text?: string }> }> };
+
+          // Clear completed tools from progress display
+          finderProgress?.clearTools();
 
           // Check for new files in tool results
           let foundNewFiles = false;
@@ -391,12 +521,6 @@ export default function finderExtension(pi: ExtensionAPI) {
             consecutiveTurnsWithNoNewFiles = 0;
           }
 
-          // Update progress with files found
-          if (discoveredFiles.size > 0) {
-            const fileWord = discoveredFiles.size === 1 ? "file" : "files";
-            finderProgress?.setMessage(`Found ${discoveredFiles.size} ${fileWord}...`);
-          }
-
           // Emit progress after turn
           emitProgress("searching");
 
@@ -404,7 +528,7 @@ export default function finderExtension(pi: ExtensionAPI) {
           if (consecutiveTurnsWithNoNewFiles >= 2 && !forceSummarySent) {
             forceSummarySent = true;
             emitProgress("summarizing");
-            finderProgress?.setMessage("Summarizing results...");
+            finderProgress?.clearTools();
             agent.steer({
               role: "user",
               content: [{ type: "text", text: "You have sufficient context. No new files were found in the last 2 rounds. Summarize all your findings now using the required output format. Do not make more tool calls." }],
@@ -416,7 +540,7 @@ export default function finderExtension(pi: ExtensionAPI) {
           if (turnCount >= MAX_TURNS && !forceSummarySent) {
             forceSummarySent = true;
             emitProgress("summarizing");
-            finderProgress?.setMessage("Summarizing results...");
+            finderProgress?.clearTools();
             agent.steer({
               role: "user",
               content: [{ type: "text", text: "Maximum search turns reached. Summarize all your findings now using the required output format." }],
