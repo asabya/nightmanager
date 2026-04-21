@@ -146,7 +146,8 @@ class OracleProgress implements Component {
 				const toolLine = toolLines[1] || this.theme.fg("accent", `⠼ ${entry.label}`);
 				lines.push(`   ${toolLine}`);
 			} else {
-				lines.push(`   ${this.theme.fg("dim", `✓ ${entry.label}`)}`);
+				const completedLabel = truncateToWidth(`✓ ${entry.label}`, Math.max(0, width - 3));
+				lines.push(`   ${this.theme.fg("dim", completedLabel)}`);
 			}
 		}
 
