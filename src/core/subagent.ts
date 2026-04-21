@@ -1,5 +1,5 @@
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Agent, type AgentTool } from "@mariozechner/pi-agent-core";
+import { Agent } from "@mariozechner/pi-agent-core";
 import { stream, type Model } from "@mariozechner/pi-ai";
 import { extractFinalText } from "./result.js";
 
@@ -7,7 +7,7 @@ export async function runIsolatedSubagent(options: {
   ctx: ExtensionContext;
   model: Model<any>;
   systemPrompt: string;
-  tools: AgentTool[];
+  tools: any[];
   task: string;
   signal?: AbortSignal;
   timeoutMs: number;
@@ -40,7 +40,7 @@ export async function runIsolatedSubagent(options: {
       timestamp: Date.now(),
     });
     await agent.waitForIdle();
-    return extractFinalText(agent.state.messages);
+    return extractFinalText(agent.state.messages as Array<{ role: string; content?: unknown }>);
   } finally {
     clearTimeout(timeoutId);
   }

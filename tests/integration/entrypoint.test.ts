@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 
-describe("package scaffold", () => {
-  it("creates the package entry files", () => {
-    expect(existsSync(resolve(process.cwd(), "package.json"))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), "tsconfig.json"))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), "vitest.config.ts"))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), "index.ts"))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), "src/index.ts"))).toBe(true);
+describe("combined entrypoint", () => {
+  it("registers finder and oracle tool modules", () => {
+    const source = readFileSync("src/index.ts", "utf-8");
+    expect(source).toContain("finderTool");
+    expect(source).toContain("oracleTool");
   });
 });
