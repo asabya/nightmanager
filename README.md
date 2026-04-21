@@ -1,116 +1,47 @@
-# Finder Subagent for Pi
+# Subagents for Pi
 
-A research implementation of AMP-style subagent orchestration for the pi CLI agent.
+A TypeScript + Pi package that bundles four specialized subagent tools:
 
-## How Model Selection Works
+- `finder` — codebase search specialist
+- `oracle` — reasoning and debugging specialist
+- `worker` — focused implementation specialist
+- `manager` — lightweight read-only router
 
-The finder resolves its model in this order:
-1. **`~/.pi/agent/finder.json`** — simple `{"model": "provider/modelId"}` reference to any model in your `models.json`
-2. **Session model** — whatever model you have set for the current Pi session
+The package is designed for a strong token-cost to performance ratio: lightweight prompts, isolated subagent context, and clear role boundaries.
 
-No separate provider registration needed. It reuses Pi's existing model registry for auth, base URLs, and headers.
+## Install
 
-## What It Does
+Local package install:
 
-The `finder` tool spawns a dedicated search subagent with its own:
-- **Context window** — isolated from the main agent, conserving context
-- **Model** — configurable via `~/.pi/agent/finder.json`, falls back to session model
-- **Tool set** — read-only tools only (read, grep, find, ls)
-- **System prompt** — tuned for codebase exploration with parallel search strategies
-
-## Architecture
-
-```
-Main Agent
-  │
-  ├─ calls finder(query: "find auth middleware")
-  │   │
-  │   ├─ creates Agent instance (subagent)
-  │   ├─ sends query with exploration system prompt
-  │   ├─ runs multi-turn loop:
-  │   │   ├─ model responds with tool calls
-  │   │   ├─ executes tools in parallel
-  │   │   ├─ tracks discovered files
-  │   │   └─ detects diminishing returns
-  │   └─ returns structured findings
-  │
-  └─ continues with findings in context
-```
-
-## Features
-
-- **Parallel searches** — subagent launches 3+ searches from different angles
-- **Broad-to-narrow strategy** — starts wide, refines based on findings
-- **Context budget awareness** — avoids reading entire large files
-- **Structured output** — Findings / Impact / Relationships / Recommendation / Next Steps
-- **Diminishing returns detection** — auto-stops when no new files found for 2 turns
-- **Turn limit** — max 10 turns prevents runaway searches
-- **Timeout** — 60-second hard cap
-- **Custom TUI rendering** — shows query in tool call, file count in collapsed result
-
-## Installation
-
-### 1. Set the model (optional)
-Create `~/.pi/agent/finder.json` with a model reference:
-```json
-{
-  "model": "ollama/glm-5:cloud"
-}
-```
-The format is `provider/modelId` — it must match an entry in your `~/.pi/agent/models.json`.
-If omitted, the finder uses whatever session model you have active.
-
-### 2. Install
 ```bash
-# Quick test
-pi -e ./finder.ts
-
-# Or install globally (single file - no dependencies)
-cp finder.ts ~/.pi/agent/extensions/finder.ts
+pi install /absolute/path/to/subagents
 ```
 
-Note: The entire extension is self-contained in a single `finder.ts` file, including the progress widget.
+Quick development usage from the repo:
 
-## Usage
-
-In pi, simply ask:
-```
-Use finder to find where authentication is handled
+```bash
+pi -e ./index.ts
 ```
 
-Or be more specific:
+Built usage:
+
+```bash
+npm run build
+pi -e ./dist/index.js
 ```
-Use finder to find all files related to JWT token validation and the middleware chain
-```
 
-## Research Notes
+## Tools
 
-This implementation demonstrates key subagent orchestration patterns:
-1. **Context isolation** — subagent has its own transcript via separate `Agent` instance
-2. **Tool scoping** — restricted to read-only tools (`read`, `grep`, `find`, `ls`)
-3. **Model differentiation** — can use a different model (currently uses session's model)
-4. **Lifecycle management** — turn limits, timeouts, diminishing returns via `agent.subscribe()`
-5. **Structured communication** — defined input (query string) / output (structured text) contract
+### `finder`
 
-## Oracle Subagent
+Use `finder` for codebase exploration tasks like:
+- where a feature is implemented
+- which files participate in a flow
+- how modules connect
 
-The `oracle` tool is a reasoning-focused sibling to Finder.
-
-### What It Does
-
-Oracle helps when the main agent is stuck on:
-- tricky debugging problems
-- ambiguous root-cause analysis
-- trade-off-aware planning
-- deciding the best next probe when evidence is incomplete
-
-Unlike Finder, Oracle is not optimized for broad search. It is optimized for evidence-backed explanation.
-
-### How Model Selection Works
-
-The oracle resolves its model in this order:
-1. `~/.pi/agent/oracle.json`
-2. the active session model
+Model selection order:
+1. `~/.pi/agent/finder.json`
+2. current Pi session model
 
 Example config:
 
@@ -120,29 +51,137 @@ Example config:
 }
 ```
 
-### Usage
+Example prompt:
 
-Quick test:
-
-```bash
-pi -e ./oracle.ts
+```text
+Use finder to find where authentication is handled
 ```
 
-Example prompts:
+### `oracle`
+
+Use `oracle` for reasoning-heavy tasks like:
+- debugging ambiguous failures
+- root-cause analysis
+- trade-off-aware planning
+- deciding the best next probe
+
+Model selection order:
+1. `~/.pi/agent/oracle.json`
+2. current Pi session model
+
+Example prompt:
 
 ```text
 Use oracle to debug why auth middleware fails intermittently
-Use oracle to reason about why the finder tool might stop too early
-Use oracle to plan the safest way to refactor the finder progress widget
 ```
 
-### Output Shape
+### `worker`
 
-Oracle returns:
-- `## Observation`
-- `## Hypothesis Table`
-- `## Evidence For`
-- `## Evidence Against / Gaps`
-- `## Current Best Explanation`
-- `## Recommendations`
-- `## Discriminating Probe`
+Use `worker` for implementation work that needs:
+- focused edits
+- smallest viable diff
+- concrete verification
+
+`worker` may use `finder` once if blocked by codebase uncertainty.
+It does not call `oracle` and does not recursively delegate.
+
+Model selection order:
+1. `~/.pi/agent/worker.json`
+2. current Pi session model
+
+Example prompt:
+
+```text
+Use worker to make the smallest possible fix and verify it
+```
+
+### `manager`
+
+Use `manager` when you want a lightweight router that picks the best next specialized tool.
+
+Default routing policy:
+- search -> `finder`
+- reasoning -> `oracle`
+- implementation -> `worker`
+- ambiguous -> clarifying question or recommendation
+
+`manager` is read-only and delegates to one best-fit tool by default.
+
+Model selection order:
+1. `~/.pi/agent/manager.json`
+2. current Pi session model
+
+Example prompt:
+
+```text
+Use manager to route this implementation task
+```
+
+## Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+Run specific test layers:
+
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+```
+
+Typecheck:
+
+```bash
+npm run typecheck
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Run from source:
+
+```bash
+pi -e ./index.ts
+```
+
+Run built output:
+
+```bash
+pi -e ./dist/index.js
+```
+
+## Package Shape
+
+```text
+subagents/
+  package.json
+  index.ts
+  src/
+    index.ts
+    tools/
+    core/
+    types/
+  tests/
+    unit/
+    integration/
+    e2e/
+```
+
+## Notes
+
+- The package uses one combined Pi extension entrypoint.
+- The internal code is modular for testability and maintenance.
+- The test strategy is layered: unit + integration + selective CLI smoke tests.
