@@ -8,7 +8,9 @@ import {
 import { Type, type Static } from "@sinclair/typebox";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { WORKER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { finderTool } from "./finder.js";
@@ -30,6 +32,16 @@ export const workerTool = defineTool({
     "Worker may use finder once when blocked by codebase uncertainty, but does not use oracle or recursively delegate.",
   ],
   parameters: workerSchema,
+  renderCall(args) {
+    const preview = args.task.length > 60 ? `${args.task.slice(0, 57)}...` : args.task;
+    return new Text(`worker ${preview}`, 0, 0);
+  },
+  renderResult(result, { expanded }, theme) {
+    const transcript = (result.details as { transcript?: unknown } | undefined)?.transcript;
+    if (transcript) return renderSubagentResult(transcript as any, expanded, theme);
+    const text = result.content[0];
+    return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+  },
   async execute(_toolCallId, params: WorkerInput, signal, _onUpdate, ctx) {
     if (!params.task.trim()) {
       return {
@@ -66,7 +78,18 @@ export const workerTool = defineTool({
       },
     });
 
-    const text = await runIsolatedSubagent({
+    const result = await runIsolatedSubagent({
+      subagentName: "worker",
+      onUpdate: (partial) => {
+        _onUpdate?.({
+          content: partial.content,
+          details: {
+            task: params.task,
+            finderFallbackUsed: finderUses > 0,
+            transcript: partial.details,
+          },
+        });
+      },
       ctx,
       model,
       systemPrompt: WORKER_SYSTEM_PROMPT,
@@ -83,8 +106,8 @@ export const workerTool = defineTool({
     });
 
     return {
-      content: [{ type: "text", text }],
-      details: { task: params.task, finderFallbackUsed: finderUses > 0 },
+      content: [{ type: "text", text: result.finalText }],
+      details: { task: params.task, finderFallbackUsed: finderUses > 0, transcript: result.details },
     };
   },
 });

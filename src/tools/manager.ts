@@ -2,7 +2,9 @@ import { defineTool } from "@mariozechner/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { finderTool } from "./finder.js";
@@ -26,6 +28,16 @@ export const managerTool = defineTool({
     "Manager is read-only and delegates to exactly one best-fit subagent by default.",
   ],
   parameters: managerSchema,
+  renderCall(args) {
+    const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
+    return new Text(`manager ${preview}`, 0, 0);
+  },
+  renderResult(result, { expanded }, theme) {
+    const transcript = (result.details as { transcript?: unknown } | undefined)?.transcript;
+    if (transcript) return renderSubagentResult(transcript as any, expanded, theme);
+    const text = result.content[0];
+    return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+  },
   async execute(_toolCallId, params: ManagerInput, signal, _onUpdate, ctx) {
     if (!params.query.trim()) {
       return {
@@ -62,7 +74,14 @@ export const managerTool = defineTool({
       },
     });
 
-    const text = await runIsolatedSubagent({
+    const result = await runIsolatedSubagent({
+      subagentName: "manager",
+      onUpdate: (partial) => {
+        _onUpdate?.({
+          content: partial.content,
+          details: { query: params.query, delegated, transcript: partial.details },
+        });
+      },
       ctx,
       model,
       systemPrompt: MANAGER_SYSTEM_PROMPT,
@@ -73,8 +92,8 @@ export const managerTool = defineTool({
     });
 
     return {
-      content: [{ type: "text", text }],
-      details: { query: params.query, delegated },
+      content: [{ type: "text", text: result.finalText }],
+      details: { query: params.query, delegated, transcript: result.details },
     };
   },
 });

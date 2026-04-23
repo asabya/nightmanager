@@ -2,7 +2,9 @@ import { defineTool, createReadTool, createGrepTool, createFindTool, createLsToo
 import { Type } from "@sinclair/typebox";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 const finderSchema = Type.Object({
     query: Type.String({ description: "Natural language search request" }),
@@ -62,6 +64,17 @@ export const finderTool = defineTool({
         "The finder subagent excels at tracing relationships between files, understanding data flows, and finding all usages of a pattern.",
     ],
     parameters: finderSchema,
+    renderCall(args) {
+        const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
+        return new Text(`finder ${preview}`, 0, 0);
+    },
+    renderResult(result, { expanded }, theme) {
+        const transcript = result.details?.transcript;
+        if (transcript)
+            return renderSubagentResult(transcript, expanded, theme);
+        const text = result.content[0];
+        return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
         if (!params.query.trim()) {
             return {
@@ -78,7 +91,14 @@ export const finderTool = defineTool({
                 isError: true,
             };
         }
-        const text = await runIsolatedSubagent({
+        const result = await runIsolatedSubagent({
+            subagentName: "finder",
+            onUpdate: (partial) => {
+                _onUpdate?.({
+                    content: partial.content,
+                    details: { query: params.query, transcript: partial.details },
+                });
+            },
             ctx,
             model,
             systemPrompt: FINDER_SYSTEM_PROMPT,
@@ -94,8 +114,8 @@ export const finderTool = defineTool({
             timeoutMs: 180_000,
         });
         return {
-            content: [{ type: "text", text }],
-            details: { query: params.query },
+            content: [{ type: "text", text: result.finalText }],
+            details: { query: params.query, transcript: result.details },
         };
     },
 });

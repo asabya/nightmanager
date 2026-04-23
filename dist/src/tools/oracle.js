@@ -2,7 +2,9 @@ import { defineTool, createReadTool, createGrepTool, createFindTool, createLsToo
 import { Type } from "@sinclair/typebox";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 const oracleSchema = Type.Object({
     query: Type.String({ description: "Reasoning or debugging request" }),
@@ -63,6 +65,17 @@ export const oracleTool = defineTool({
         "The oracle subagent excels at debugging tricky failures, ranking hypotheses, and recommending the best next probe.",
     ],
     parameters: oracleSchema,
+    renderCall(args) {
+        const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
+        return new Text(`oracle ${preview}`, 0, 0);
+    },
+    renderResult(result, { expanded }, theme) {
+        const transcript = result.details?.transcript;
+        if (transcript)
+            return renderSubagentResult(transcript, expanded, theme);
+        const text = result.content[0];
+        return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+    },
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
         if (!params.query.trim()) {
             return {
@@ -79,7 +92,14 @@ export const oracleTool = defineTool({
                 isError: true,
             };
         }
-        const text = await runIsolatedSubagent({
+        const result = await runIsolatedSubagent({
+            subagentName: "oracle",
+            onUpdate: (partial) => {
+                _onUpdate?.({
+                    content: partial.content,
+                    details: { query: params.query, transcript: partial.details },
+                });
+            },
             ctx,
             model,
             systemPrompt: ORACLE_SYSTEM_PROMPT,
@@ -95,8 +115,8 @@ export const oracleTool = defineTool({
             timeoutMs: 300_000,
         });
         return {
-            content: [{ type: "text", text }],
-            details: { query: params.query },
+            content: [{ type: "text", text: result.finalText }],
+            details: { query: params.query, transcript: result.details },
         };
     },
 });
