@@ -3,6 +3,8 @@
 
 **Four specialized Pi subagents for intelligent delegation.**
 
+> **Public site**: [subagents.deno.dev](https://subagents.deno.dev) — or see [landing/index.html](landing/index.html) for the source.
+
 | Tool | Role | Best For |
 |------|------|----------|
 | `finder` | Codebase search | Locating features, tracing module connections |
