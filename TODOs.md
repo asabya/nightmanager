@@ -6,7 +6,7 @@ Night Shift implementation queue.
 
 - `[bug]` — eligible; highest priority defect.
 - `[ready]` — eligible for autonomous implementation.
-- `[draft]` — not eligible; still being planned.
+- `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote to `[ready]` before Night Shift can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.
 - `[done]` — complete; include commit hash when available.
@@ -73,18 +73,18 @@ Notes:
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
 - See `Specs/worktree-nightshift.md` for full design.
 
-### [ready][P2][workflow] Add a Day Shift planner workflow for better specs
+### [done][P2][workflow] Add a Day Shift planner workflow for better specs
 
 Spec: `Specs/day-shift-planner-agent.md`
 
 Acceptance criteria:
 
-- [ ] A documented Day Shift planner workflow exists in repo docs.
-- [ ] Planner-created specs are written as `Specs/draft-*.md` by default.
-- [ ] Planner-created TODOs are `[draft]` by default.
-- [ ] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
-- [ ] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
-- [ ] At least one example prompt or prompt template is added for using the planner.
+- [x] A documented Day Shift planner workflow exists in repo docs.
+- [x] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [x] Planner-created TODOs are `[draft]` by default.
+- [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
+- [x] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
+- [x] At least one example prompt or prompt template is added for using the planner.
 
 Validation:
 
@@ -96,5 +96,36 @@ npm run build
 
 Notes:
 
-- Implement the documentation/prompt workflow first.
+- Implementation complete: AGENT_LOOP.md, docs/nightshift.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
+
+### [ready][P2][ui] Style landing page with X aesthetics
+
+Spec: `Specs/x-styled-landing.md`
+
+Acceptance criteria:
+
+- [ ] A static HTML landing page exists at `landing/index.html`
+- [ ] Design follows X dark theme aesthetic
+- [ ] CSS variables use OKLCH color system with dark background (#1a1a1a equivalent)
+- [ ] Typography uses Inter font family
+- [ ] Landing page includes: header, hero, features section, tool cards, CTA, footer
+- [ ] Smooth scroll and subtle fade-in animations
+- [ ] Responsive design for mobile/desktop
+- [ ] Links back to existing documentation work
+
+Validation:
+
+```bash
+# Verify HTML is well-formed
+# No validation errors in browser console
+```
+
+Notes:
+
+
+- Design inspired by X landing page
+- Color scheme: dark charcoal background with near-white text
+- Font: Inter (body), Cal Sans or similar for display headings
+- Create static HTML, not dynamic Pi-generated
+- Keep existing Pi subagent tools unchanged

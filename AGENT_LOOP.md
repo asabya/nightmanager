@@ -21,6 +21,25 @@ The goal is not to make agents guess better. The goal is to make the project eas
 4. Strengthen docs and validations before the agent runs.
 5. End the day without babysitting implementation.
 
+### Day Shift Planner (Optional)
+
+Optionally, use the Day Shift planner workflow to help brainstorm and organize rough ideas:
+
+- Use `.pi/prompts/day-planner.md` as a reusable prompt template.
+- The planner asks clarifying questions when requirements are underspecified.
+- It produces draft specs as `Specs/draft-*.md` (ignored by Night Shift).
+- Planner-created TODOs are `[draft]` by default.
+- **Output is advisory**: the human must review and approve before changing `[draft]` to `[ready]`.
+- See the readiness checklist in `.pi/prompts/day-planner.md` for what to confirm.
+
+Example prompts:
+
+> Help me brainstorm a spec for file-based handoffs.
+
+> Turn this rough idea into a draft Night Shift spec and TODO candidate, but do not mark it ready.
+
+The planner is not autonomous execution — it helps the human think, but does not implement code.
+
 ## Night Shift — Autonomous Execution
 
 A Night Shift run should perform at most one TODO unless explicitly instructed otherwise.
