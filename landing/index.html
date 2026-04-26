@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subagents for Pi</title>
+  <meta name="description" content="Four specialized Pi subagents for intelligent delegation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Custom Properties - X Dark Theme */
+    :root {
+      /* Background - dark charcoal */
+      --color-bg: oklch(0.19 264);
+      --color-bg-elevated: oklch(0.22 264);
+      
+      /* Surface */
+      --color-surface: oklch(0.97 0.008 264);
+      --color-surface-muted: oklch(0.85 0.008 264);
+      
+      /* Text */
+      --color-text-primary: oklch(0.97 0.008 264);
+      --color-text-secondary: oklch(0.7 0.008 264);
+      --color-text-muted: oklch(0.5 0.008 264);
+      
+      /* Accent - blue/violet CTA */
+      --color-accent: oklch(0.6 0.2 270);
+      --color-accent-hover: oklch(0.7 0.2 270);
+      
+      /* Borders */
+      --color-border: oklch(0.3 264);
+      --color-border-subtle: oklch(0.25 264);
+      
+      /* Typography */
+      --font-display: "Cal Sans", "Inter", system-ui, sans-serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      
+      /* Sizing */
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-3xl: 1.875rem;
+      --text-4xl: 2.25rem;
+      --text-5xl: 3rem;
+      
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-24: 6rem;
+      
+      /* Effects */
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+      
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+      --transition-slow: 350ms ease;
+    }
+    
+    /* Fallback colors for older browsers */
+    @supports not (color: oklch(0 0 0)) {
+      :root {
+        --color-bg: #1a1a1a;
+        --color-bg-elevated: #252525;
+        --color-surface: #f5f5f5;
+        --color-surface-muted: #d4d4d4;
+        --color-text-primary: #f5f5f5;
+        --color-text-secondary: #b3b3b3;
+        --color-text-muted: #808080;
+        --color-accent: #6366f1;
+        --color-accent-hover: #818cf8;
+        --color-border: #4d4d4d;
+        --color-border-subtle: #333333;
+      }
+    }
+    
+    /* Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.5;
+      color: var(--color-text-primary);
+      background-color: var(--color-bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Utility */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+    
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    
+    a:hover {
+      color: var(--color-accent-hover);
+    }
+    
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(30, 30, 30, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    
+    .logo {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+    
+    .logo:hover {
+      color: var(--color-text-primary);
+    }
+    
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    
+    .nav-link {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      transition: color var(--transition-fast);
+    }
+    
+    .nav-link:hover {
+      color: var(--color-text-primary);
+    }
+    
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+    
+    .github-link:hover {
+      color: var(--color-text-primary);
+    }
+    
+    /* Hero Section */
+    .hero {
+      padding: var(--space-24) 0;
+      text-align: center;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: var(--text-5xl);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: var(--space-6);
+      background: linear-gradient(135deg, var(--color-text-primary), var(--color-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .hero-subtitle {
+      font-size: var(--text-xl);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-8);
+      line-height: 1.6;
+    }
+    
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-6);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
+    }
+    
+    .btn-primary {
+      background: var(--color-accent);
+      color: var(--color-bg);
+    }
+    
+    .btn-primary:hover {
+      background: var(--color-accent-hover);
+      color: var(--color-bg);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+    }
+    
+    .btn-secondary:hover {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-secondary);
+      transform: translateY(-1px);
+    }
+    
+    /* Section Styles */
+    section {
+      padding: var(--space-16) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: var(--space-12);
+    }
+    
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      margin-bottom: var(--space-3);
+    }
+    
+    .section-subtitle {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* Card Grid */
+    .card-grid {
+      display: grid;
+      gap: var(--space-6);
+    }
+    
+    .card-grid-4 {
+      grid-template-columns: 1fr;
+    }
+    
+    .card-grid-3 {
+      grid-template-columns: 1fr;
+    }
+    
+    .card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      transition: all var(--transition-normal);
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--color-border);
+    }
+    
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-accent);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      font-size: var(--text-xl);
+    }
+    
+    .card-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    
+    .card-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+    
+    .card-role {
+      font-size: var(--text-xs);
+      color: var(--color-accent);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-2);
+    }
+    
+    .card-best-for {
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    .card-best-for strong {
+      color: var(--color-text-secondary);
+    }
+    
+    /* Tools Section */
+    .tools-grid {
+      display: grid;
+      gap: var(--space-6);
+      grid-template-columns: 1fr;
+    }
+    
+    /* Night Shift Section */
+    .night-shift {
+      text-align: center;
+      padding: var(--space-24) 0;
+      background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
+    }
+    
+    .night-shift-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+    }
+    
+    .night-shift-text {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: 600px;
+      margin: 0 auto var(--space-8);
+      line-height: 1.7;
+    }
+    
+    /* Footer */
+    .footer {
+      padding: var(--space-12) 0;
+      text-align: center;
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+    }
+    
+    .footer-link {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    .footer-link:hover {
+      color: var(--color-text-secondary);
+    }
+    
+    .footer-copy {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .fade-in-delay-1 { transition-delay: 100ms; }
+    .fade-in-delay-2 { transition-delay: 200ms; }
+    .fade-in-delay-3 { transition-delay: 300ms; }
+    .fade-in-delay-4 { transition-delay: 400ms; }
+    
+    /* Responsive - Tablet */
+    @media (min-width: 640px) {
+      .card-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .card-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Responsive - Desktop */
+    @media (min-width: 1024px) {
+      .hero {
+        text-align: left;
+      }
+      
+      .hero-content {
+        margin: 0;
+      }
+      
+      .hero-actions {
+        justify-content: flex-start;
+      }
+      
+      .card-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .card-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Mobile Navigation */
+    @media (max-width: 640px) {
+      .nav {
+        display: none;
+      }
+      
+      .hero-title {
+        font-size: var(--text-4xl);
+      }
+      
+      .hero-subtitle {
+        font-size: var(--text-lg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Subagents</a>
+      <nav class="nav">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#tools" class="nav-link">Tools</a>
+        <a href="#docs" class="nav-link">Docs</a>
+        <a href="#night-shift" class="nav-link">Night Shift</a>
+        <a href="https://github.com/asabya/subagents" class="github-link" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title fade-in">Four specialized Pi subagents for intelligent delegation.</h1>
+          <p class="hero-subtitle fade-in fade-in-delay-1">
+            Subagents transforms Pi into a multi-specialist team: Finder for codebase search, Oracle for debugging, Worker for implementation, and Manager for orchestration. Install once, delegate intelligently.
+          </p>
+          <div class="hero-actions fade-in fade-in-delay-2">
+            <a href="https://github.com/asabya/subagents" class="btn btn-primary">Get Started</a>
+            <a href="https://github.com/asabya/subagents" class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Features</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Everything you need for intelligent coding delegation</p>
+        </div>
+        <div class="card-grid card-grid-4">
+          <div class="card fade-in fade-in-delay-1">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">Finder</div>
+            <p class="card-description">Codebase search and exploration. Locate features, trace module connections, and map codebase flows.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-2">
+            <div class="card-icon">🔮</div>
+            <div class="card-title">Oracle</div>
+            <p class="card-description">Reasoning and debugging. Root-cause analysis, trade-off planning, and deciding the best next probe.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-3">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">Worker</div>
+            <p class="card-description">Implementation with minimal diffs. Focused edits, smallest viable fix, and verified changes.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-4">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">Manager</div>
+            <p class="card-description">Orchestration across specialists. Coordinates finder, oracle, and worker workflows.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Tools</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Each tool has a focused role and best-use case</p>
+        </div>
+        <div class="tools-grid">
+          <div class="card fade-in fade-in-delay-1">
+            <div class="card-role">finder</div>
+            <div class="card-title">Codebase Search</div>
+            <p class="card-description">Locate where features are implemented, trace how modules connect, and explore codebase structure.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use finder to find where authentication is handled"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-2">
+            <div class="card-role">oracle</div>
+            <div class="card-title">Reasoning & Debugging</div>
+            <p class="card-description">Debug ambiguous failures, root-cause analysis, and trade-off-aware architectural planning.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use oracle to debug why auth fails intermittently"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-3">
+            <div class="card-role">worker</div>
+            <div class="card-title">Implementation</div>
+            <p class="card-description">Smallest viable changes with focused execution. Minimal diffs with concrete verification.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use worker to make the smallest possible fix"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-4">
+            <div class="card-role">manager</div>
+            <div class="card-title">Orchestration</div>
+            <p class="card-description">Coordinate multi-phase workflows across specialists. Smart delegation with handoff artifacts.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use manager to investigate, choose safest fix, implement, verify"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Night Shift Section -->
+    <section id="night-shift" class="night-shift">
+      <div class="container">
+        <h2 class="night-shift-title fade-in">Night Shift Workflow</h2>
+        <p class="night-shift-text fade-in fade-in-delay-1">
+          Autonomous TODO implementation with Manager. Delegate complex tasks and let subagents work while you sleep. Manager orchestrates finder → oracle → worker with full auditability through handoff artifacts.
+        </p>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="btn btn-primary fade-in fade-in-delay-2" target="_blank" rel="noopener">
+          Learn More
+        </a>
+      </div>
+    </section>
+
+    <!-- Docs Section -->
+    <section id="docs">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Documentation</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Full guides and API reference</p>
+        </div>
+        <div class="card-grid card-grid-3">
+          <a href="https://github.com/asabya/subagents/blob/main/docs/index.md" class="card fade-in fade-in-delay-1" target="_blank" rel="noopener">
+            <div class="card-title">Getting Started</div>
+            <p class="card-description">Installation, quick start, and tool overview.</p>
+          </a>
+          <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="card fade-in fade-in-delay-2" target="_blank" rel="noopener">
+            <div class="card-title">Night Shift</div>
+            <p class="card-description">Autonomous workflow with Manager.</p>
+          </a>
+          <a href="https://github.com/asabya/subagents/tree/main/Specs" class="card fade-in fade-in-delay-3" target="_blank" rel="noopener">
+            <div class="card-title">Specifications</div>
+            <p class="card-description">Design specs and implementation details.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/asabya/subagents" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/index.md" class="footer-link" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="footer-link" target="_blank" rel="noopener">Night Shift</a>
+        <a href="https://github.com/asabya/subagents/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
+      </div>
+      <p class="footer-copy">MIT License — Subagents for Pi</p>
+    </div>
+  </footer>
+
+  <script>
+    // Intersection Observer for fade-in animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      // Observe all fade-in elements
+      document.querySelectorAll('.fade-in').forEach(el => {
+        observer.observe(el);
+      });
+    });
+  </script>
+</body>
+</html>
