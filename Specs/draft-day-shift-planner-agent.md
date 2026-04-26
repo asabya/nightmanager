@@ -1,0 +1,149 @@
+# Spec: Day Shift Planner / Brainstorming Agent
+
+Status: draft
+Owner: human
+Created: 2026-04-26
+
+## Problem
+
+Night Shift works best when TODOs and specs are detailed, scoped, and reviewable before autonomous implementation starts. Today the human can write specs manually, but there is no dedicated Day Shift helper that pressure-tests requirements, identifies edge cases, and converts rough ideas into Night Shift-ready specs/TODOs.
+
+A planning assistant could improve spec quality without violating the Night Shift principle: the human remains in control during Day Shift, while agents help brainstorm and organize thinking.
+
+## Goals
+
+- Add or document a Day Shift planning workflow that helps convert rough ideas into well-scoped specs and TODOs.
+- Help humans identify missing requirements, edge cases, risks, validation commands, docs impacts, and acceptance criteria.
+- Produce file-based planning artifacts under `Specs/` and updates to `TODOs.md`.
+- Keep incomplete planning artifacts clearly marked as `draft-*` and not eligible for Night Shift.
+- Encourage human review/approval before a TODO becomes `[ready]`.
+- Make the planner useful for brainstorming and critique, not autonomous implementation.
+
+## Non-Goals
+
+- Do not let the planner mark work `[ready]` without explicit human approval.
+- Do not let the planner implement code.
+- Do not replace human product/design/architecture thinking.
+- Do not make Night Shift depend on chat-only context.
+- Do not create a broad product-management system or external database.
+
+## Current Behavior
+
+The repository already has a Night Shift workflow:
+
+- `AGENT_LOOP.md` defines Day Shift planning and Night Shift execution.
+- `TODOs.md` is the implementation queue.
+- `Specs/` contains implementation specs; files prefixed with `draft-` are ignored by Night Shift.
+- `Specs/TEMPLATE.md` provides a spec template.
+- `REVIEW_PERSONAS.md` defines review lenses.
+- `AGENTS.md` routes autonomous work through `manager`.
+
+The current Day Shift process is mostly manual. The user can ask the main Pi session to help write specs, but there is no explicit planner persona/tool/workflow with rules that preserve human control.
+
+## Desired Behavior
+
+A Day Shift planner workflow should support commands or prompts such as:
+
+```text
+Help me brainstorm a spec for file-based handoffs.
+```
+
+or:
+
+```text
+Turn this rough idea into a draft Night Shift spec and TODO candidate, but do not mark it ready.
+```
+
+The planner should:
+
+1. Ask clarifying questions when the idea is underspecified.
+2. Identify likely implementation areas, tests, docs, and risks.
+3. Suggest scope cuts to keep the Night Shift task small.
+4. Produce or update a `Specs/draft-*.md` file using `Specs/TEMPLATE.md` structure.
+5. Optionally add a `[draft]` TODO entry linked to the draft spec.
+6. Include an explicit “Readiness Checklist” showing what the human must confirm before changing the TODO to `[ready]`.
+7. Avoid implementation and avoid changing production code.
+
+## Acceptance Criteria
+
+- [ ] A documented Day Shift planner workflow exists in repo docs.
+- [ ] The workflow clearly states that planner output is advisory and human-approved.
+- [ ] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [ ] Planner-created TODOs are `[draft]` by default.
+- [ ] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
+- [ ] The workflow tells Night Shift to ignore planner drafts until the human promotes them.
+- [ ] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
+- [ ] At least one example prompt or prompt template is added for using the planner.
+
+## Edge Cases
+
+- The planner may over-scope a feature; it should recommend splitting into smaller Night Shift TODOs.
+- The planner may infer requirements incorrectly; specs must include open questions rather than guesses.
+- Some work may need discovery before planning; planner may use `finder` for codebase mapping, but should not implement changes.
+- Some ideas may be too vague; planner should leave the spec as draft and list blocking questions.
+- Existing TODOs/specs should not be overwritten without explicit human instruction.
+
+## Suggested Approach
+
+Option A: Documentation-first workflow
+
+- Add a Day Shift planner section to `AGENT_LOOP.md` or `docs/nightshift.md`.
+- Add `.pi/prompts/day-planner.md` as a reusable prompt template.
+- Update `TODOs.md` conventions to mention planner-created `[draft]` entries.
+
+Option B: Dedicated planner subagent/tool
+
+- Add a fifth subagent, `planner`, focused on brainstorming, scoping, and spec generation.
+- Give it strict constraints:
+  - may read docs/code,
+  - may write `Specs/draft-*.md` and draft TODO entries only,
+  - may not edit implementation files,
+  - may not mark work `[ready]`.
+- This is more powerful but adds extension/tooling complexity.
+
+Recommended first step: implement Option A before adding a new subagent. If the documented workflow proves valuable but repetitive, promote it to a real `planner` subagent later.
+
+## Testing Plan
+
+Minimum validation for documentation/prompt-only implementation:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Manual validation:
+
+1. Use the planner prompt on a rough feature idea.
+2. Confirm it creates a `Specs/draft-*.md` file.
+3. Confirm any TODO entry is `[draft]`, not `[ready]`.
+4. Confirm the draft includes acceptance criteria, edge cases, testing plan, docs updates, and open questions.
+5. Confirm Night Shift would ignore the draft until human promotion.
+
+## Documentation Updates
+
+- `AGENT_LOOP.md`: add Day Shift planner guidance.
+- `docs/nightshift.md`: explain planner-vs-manager responsibilities.
+- `.pi/prompts/day-planner.md`: add reusable prompt.
+- `Specs/README.md`: mention planner-created drafts and promotion process.
+
+## Readiness Checklist Before Marking Ready
+
+Human must confirm:
+
+- [ ] Problem and desired behavior are clear.
+- [ ] Scope is small enough for one Night Shift TODO.
+- [ ] Acceptance criteria are testable.
+- [ ] Edge cases and non-goals are documented.
+- [ ] Validation commands are listed.
+- [ ] Relevant docs/code areas are named or discoverable.
+- [ ] Open questions are resolved or explicitly deferred.
+- [ ] TODO status is manually changed from `[draft]` to `[ready]`.
+
+## Risks / Open Questions
+
+- Should this be only a prompt/documented workflow, or a real fifth subagent?
+- If implemented as a real subagent, should it be allowed to use `finder` directly?
+- How should planner output be reviewed before promotion to ready?
+- Should planner drafts include estimated scope/complexity labels?

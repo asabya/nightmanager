@@ -12,6 +12,8 @@
 | `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
 
 > **Quick intro**: See [docs/index.md](docs/index.md) for the full docs.
+>
+> **Night Shift workflow**: See [docs/nightshift.md](docs/nightshift.md) for autonomous TODO implementation with `manager`.
 
 ---
 
