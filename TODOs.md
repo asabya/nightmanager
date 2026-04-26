@@ -99,14 +99,14 @@ Notes:
 - Implementation complete: AGENT_LOOP.md, docs/nightshift.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
 
-### [bug][P1][ui] Fix landing page dark theme not rendering correctly
+### [done][bug][P1][ui] Fix landing page dark theme not rendering correctly
 
 Spec: `Specs/x-styled-landing.md`
 
 Acceptance criteria:
 
-- [ ] Dark theme CSS variables render correctly in all browsers
-- [ ] Background uses dark color (#1a1a1a or similar), not white
+- [done: 49df72ab] Dark theme CSS variables render correctly in all browsers
+- [done: 49df72ab] Background uses dark color (#1a1a1a or similar), not white
 - [ ] Text is visible (near-white on dark background)
 - [ ] OKLCH colors have proper fallback for browsers that don't support them
 - [ ] No white flash on page load
