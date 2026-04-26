@@ -15,20 +15,20 @@ Night Shift implementation queue.
 
 Add one item per feature/bug. Prefer small, independently reviewable work.
 
-### [ready][P1][workflow] Persist Worker handoffs to file artifacts
+### [done][P1][workflow] Persist Worker handoffs to file artifacts (763cefa)
 
 Spec: `Specs/file-based-handoffs.md`
 
 Acceptance criteria:
 
-- [ ] Invoking Worker with a non-empty handoff writes a JSON handoff artifact to a local file.
-- [ ] The artifact includes objective, findings, target files, decisions, constraints, risks, verification guidance, evidence, raw context when provided, creation time, version, and source metadata.
-- [ ] The Worker task text references the handoff artifact path and instructs Worker to read/use it.
-- [ ] Existing direct Worker calls without handoff continue to work.
-- [ ] Manager's `handoff_to_worker` path produces a handoff artifact before Worker execution.
-- [ ] Handoff artifact directory is ignored by git.
-- [ ] Tests cover artifact creation, task/path inclusion, and backwards compatibility for no-handoff Worker execution.
-- [ ] Documentation explains where handoff files are written and how humans can inspect them to verify handoffs are working.
+- [x] Invoking Worker with a non-empty handoff writes a JSON handoff artifact to a local file.
+- [x] The artifact includes objective, findings, target files, decisions, constraints, risks, verification guidance, evidence, raw context when provided, creation time, version, and source metadata.
+- [x] The Worker task text references the handoff artifact path and instructs Worker to read/use it.
+- [x] Existing direct Worker calls without handoff continue to work.
+- [x] Manager's `handoff_to_worker` path produces a handoff artifact before Worker execution.
+- [x] Handoff artifact directory is ignored by git.
+- [x] Tests cover artifact creation, task/path inclusion, and backwards compatibility for no-handoff Worker execution.
+- [x] Documentation explains where handoff files are written and how humans can inspect them to verify handoffs are working.
 
 Validation:
 
@@ -40,7 +40,9 @@ npm run build
 
 Notes:
 
-- Day Shift discovery found current handoffs are in-memory JSON flattened into Worker task text. File artifacts should make Night Shift handoffs auditable.
+- File-based handoffs were already implemented in prior work. This commit adds missing documentation to README.md.
+- Handoff artifacts stored at `~/.pi/handoffs/<timestamp>-worker-handoff.json`
+- See `docs/nightshift.md#inspecting-handoffs` for operational guidance.
 
 ### [draft][P2][workflow] Add a Day Shift planner workflow for better specs
 
