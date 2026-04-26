@@ -73,9 +73,9 @@ Notes:
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
 - See `Specs/worktree-nightshift.md` for full design.
 
-### [draft][P2][workflow] Add a Day Shift planner workflow for better specs
+### [ready][P2][workflow] Add a Day Shift planner workflow for better specs
 
-Spec: `Specs/draft-day-shift-planner-agent.md`
+Spec: `Specs/day-shift-planner-agent.md`
 
 Acceptance criteria:
 
@@ -96,4 +96,5 @@ npm run build
 
 Notes:
 
-- Keep this draft until the human decides whether to start with documentation/prompt workflow or a dedicated fifth `planner` subagent.
+- Implement the documentation/prompt workflow first.
+- Do not add a dedicated fifth `planner` subagent in this TODO.

@@ -34,9 +34,11 @@ ${LEAN_RESPONSE_INSTRUCTIONS}
 
 ## Final Response Format
 Summary: one sentence answering the task.
+Target files: primary files a later worker should inspect/edit, or None.
 Evidence:
 - /absolute/path/file:line — decisive detail.
 Relationships: one short sentence, or None.
+Implementation handoff: concise context, related files, and caveats for a later worker, or None.
 Next: one concrete next step.`;
 function resolveFinderModel(ctx) {
     const configured = loadToolConfig(FINDER_CONFIG_PATH)?.model;

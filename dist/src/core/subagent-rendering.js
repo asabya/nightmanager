@@ -129,6 +129,8 @@ export function formatTranscriptEntry(entry) {
                     return `${titleCase(entry.toolName)} ${textArg(entry.args.query)}`.trim();
                 case "worker":
                     return `Worker ${textArg(entry.args.task)}`.trim();
+                case "handoff_to_worker":
+                    return `Handoff to Worker ${textArg(entry.args.task)}`.trim();
                 default: {
                     const task = entry.args.task ?? entry.args.query ?? entry.args.path ?? "";
                     return `${titleCase(entry.toolName)} ${textArg(task)}`.trim();

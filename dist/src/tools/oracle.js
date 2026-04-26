@@ -65,6 +65,7 @@ Evidence:
 - /absolute/path/file:line, full URL, or command — decisive detail.
 Hypotheses: ranked short list with confidence.
 Recommendation: concrete action.
+Implementation handoff: root cause, recommended fix/approach, risks, constraints, and verification guidance for a later worker, or None.
 Next probe: single highest-value probe, or None.`;
 function resolveOracleModel(ctx) {
     const configured = loadToolConfig(ORACLE_CONFIG_PATH)?.model;

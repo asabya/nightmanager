@@ -13,6 +13,7 @@ vi.mock("../../src/core/subagent.js", () => ({
         },
     })),
 }));
+import { runIsolatedSubagent } from "../../src/core/subagent.js";
 import { finderTool } from "../../src/tools/finder.js";
 import { oracleTool } from "../../src/tools/oracle.js";
 import { workerTool } from "../../src/tools/worker.js";
@@ -35,6 +36,24 @@ describe("subagent tools", () => {
         expect(result.content[0]).toMatchObject({ type: "text", text: "## Summary\nDone" });
         expect(result.details).toMatchObject({ query: "inspect README" });
         expect(result.details.transcript).toMatchObject({ tool: "finder" });
+    });
+    it("worker passes structured handoff context into the isolated subagent task", async () => {
+        const mockedRun = vi.mocked(runIsolatedSubagent);
+        mockedRun.mockClear();
+        const result = await workerTool.execute("tool-2", {
+            task: "Fix expired token handling",
+            handoff: {
+                objective: "Return TOKEN_EXPIRED for expired tokens.",
+                targetFiles: ["src/auth/middleware.ts"],
+                decisions: ["Oracle recommends preserving ExpiredTokenError."],
+                verification: { suggestedCommands: ["npm test -- tests/auth/middleware.test.ts"] },
+            },
+        }, undefined, undefined, ctx);
+        const task = mockedRun.mock.calls[0]?.[0]?.task;
+        expect(task).toContain("Handoff context:");
+        expect(task).toContain("src/auth/middleware.ts");
+        expect(task).toContain("Oracle recommends preserving ExpiredTokenError.");
+        expect(result.details).toMatchObject({ task: "Fix expired token handling", hasHandoff: true });
     });
     it("all public tools expose custom renderers", () => {
         expect(typeof finderTool.renderCall).toBe("function");

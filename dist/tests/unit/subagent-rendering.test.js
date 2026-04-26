@@ -13,6 +13,15 @@ describe("subagent rendering helpers", () => {
     it("builds a professional subagent task header", () => {
         expect(formatSubagentCall("finder", "Inspect README")).toBe("Finder Task - Inspect README");
     });
+    it("formats manager handoff-to-worker calls", () => {
+        const line = formatTranscriptEntry({
+            type: "tool_call",
+            toolName: "handoff_to_worker",
+            args: { task: "Implement the selected fix" },
+            timestamp: 1,
+        });
+        expect(line).toBe("Handoff to Worker Implement the selected fix");
+    });
     it("builds a collapsed preview with latest tool calls first and a more hint", () => {
         const text = buildCollapsedPreview({
             tool: "finder",

@@ -1,5 +1,5 @@
 export type SubagentName = "finder" | "oracle" | "worker" | "manager";
-export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "finder";
+export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "finder" | "handoff_to_worker";
 export type ToolName = SubagentName | InnerToolName;
 export type TranscriptStatus = "starting" | "running" | "completed" | "error" | "aborted" | "timed_out";
 export type TranscriptEntry = {

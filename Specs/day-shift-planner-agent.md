@@ -1,8 +1,9 @@
 # Spec: Day Shift Planner / Brainstorming Agent
 
-Status: draft
+Status: ready
 Owner: human
 Created: 2026-04-26
+Ready for Night Shift: 2026-04-26
 
 ## Problem
 
@@ -42,7 +43,7 @@ The current Day Shift process is mostly manual. The user can ask the main Pi ses
 
 ## Desired Behavior
 
-A Day Shift planner workflow should support commands or prompts such as:
+Implement the documentation-first planner workflow. A Day Shift planner workflow should support commands or prompts such as:
 
 ```text
 Help me brainstorm a spec for file-based handoffs.
@@ -85,23 +86,24 @@ The planner should:
 
 ## Suggested Approach
 
-Option A: Documentation-first workflow
+Implement the documentation-first workflow only.
 
-- Add a Day Shift planner section to `AGENT_LOOP.md` or `docs/nightshift.md`.
-- Add `.pi/prompts/day-planner.md` as a reusable prompt template.
-- Update `TODOs.md` conventions to mention planner-created `[draft]` entries.
+Required changes:
 
-Option B: Dedicated planner subagent/tool
+- Add a Day Shift planner section to `AGENT_LOOP.md` that explains when to use the planner workflow before Night Shift.
+- Add or update `docs/nightshift.md` with a `Day Shift Planner` section that distinguishes planner responsibilities from Night Shift `manager` implementation responsibilities.
+- Add `.pi/prompts/day-planner.md` as a reusable prompt template. The prompt must instruct the assistant to:
+  - ask clarifying questions when requirements are underspecified,
+  - use `Specs/TEMPLATE.md` structure,
+  - write specs as `Specs/draft-*.md` by default,
+  - add TODOs as `[draft]` by default only when requested,
+  - include acceptance criteria, edge cases, testing plan, documentation updates, risks, and open questions,
+  - include a readiness checklist,
+  - avoid implementation and production code edits.
+- Update `TODOs.md` status tag guidance to mention planner-created `[draft]` TODOs.
+- Update `Specs/README.md` to mention planner-created draft specs and the promotion process.
 
-- Add a fifth subagent, `planner`, focused on brainstorming, scoping, and spec generation.
-- Give it strict constraints:
-  - may read docs/code,
-  - may write `Specs/draft-*.md` and draft TODO entries only,
-  - may not edit implementation files,
-  - may not mark work `[ready]`.
-- This is more powerful but adds extension/tooling complexity.
-
-Recommended first step: implement Option A before adding a new subagent. If the documented workflow proves valuable but repetitive, promote it to a real `planner` subagent later.
+Do not add a dedicated fifth `planner` subagent in this TODO. That remains future work if the prompt workflow proves useful.
 
 ## Testing Plan
 
@@ -143,7 +145,13 @@ Human must confirm:
 
 ## Risks / Open Questions
 
-- Should this be only a prompt/documented workflow, or a real fifth subagent?
-- If implemented as a real subagent, should it be allowed to use `finder` directly?
-- How should planner output be reviewed before promotion to ready?
-- Should planner drafts include estimated scope/complexity labels?
+Resolved for this TODO:
+
+- Use a documentation/prompt workflow, not a fifth subagent.
+- Planner may use normal Pi discovery tools such as `finder` for planning context, but must not implement code.
+- Human review is required before renaming a spec from `draft-*` or changing a TODO from `[draft]` to `[ready]`.
+
+Deferred follow-ups:
+
+- Consider a dedicated `planner` subagent only after the prompt workflow is used repeatedly.
+- Consider optional scope/complexity labels for planner drafts if humans find them useful.
