@@ -1,9 +1,8 @@
-// TEST-MARKER-123
 # Subagents for Pi
 
 **Four specialized Pi subagents for intelligent delegation.**
 
-> **Public site**: [subagents.deno.dev](https://subagents.deno.dev) — or see [landing/index.html](landing/index.html) for the source.
+> **Public site**: [asabya.github.io/subagents](https://asabya.github.io/subagents) — or see [landing/index.html](landing/index.html) for the source.
 
 | Tool | Role | Best For |
 |------|------|----------|
