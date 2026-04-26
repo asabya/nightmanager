@@ -140,3 +140,42 @@ cat ~/.pi/handoffs/<timestamp>-worker-handoff.json
 ```
 
 Handoff artifacts are gitignored (`.pi/handoffs/`). They are retained indefinitely for auditability. Delete manually if cleanup is needed.
+
+## Worktree Mode
+
+An alternative workflow creates a git worktree per TODO, commits to a feature branch, and creates a PR:
+
+```bash
+NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightshift.sh
+```
+
+### How It Works
+
+1. Select eligible TODO
+2. Create worktree: `git worktree add -b feature/todo-<slug> ../.worktrees/<slug> main`
+3. Run implementation in worktree
+4. Commit to feature branch (not main)
+5. Push branch to origin
+6. Create PR: `gh pr create`
+7. Request Codex review if available
+8. Update TODOs.md with PR link
+
+### Files
+
+- `Specs/worktree-nightshift.md` — workflow specification
+- `.pi/prompts/worktree-nightshift.md` — prompt template
+- `scripts/worktree-nightshift.sh` — entrypoint
+
+### Branch Naming
+
+- `feature/todo-<slug>` — for `[ready]` items
+- `bugfix/todo-<slug>` — for `[bug]` items
+
+### Codex Review
+
+If Codex is installed in the repository, the workflow detects it and requests review via:
+- PR review request (if supported)
+- Label: `codex-review`
+- Comment: `/codex review`
+
+See `Specs/worktree-nightshift.md` for full design.

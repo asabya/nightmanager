@@ -44,6 +44,35 @@ Notes:
 - Handoff artifacts stored at `~/.pi/handoffs/<timestamp>-worker-handoff.json`
 - See `docs/nightshift.md#inspecting-handoffs` for operational guidance.
 
+### [ready][P1][workflow] Add worktree Night Shift mode with PR creation
+
+Spec: `Specs/worktree-nightshift.md`
+
+Acceptance criteria:
+
+- [ ] A worktree Night Shift spec exists at `Specs/worktree-nightshift.md`.
+- [ ] A worktree prompt template exists at `.pi/prompts/worktree-nightshift.md`.
+- [ ] A shell script exists at `scripts/worktree-nightshift.sh`.
+- [ ] The workflow creates a git worktree per TODO.
+- [ ] Each TODO commits to a feature branch (not main).
+- [ ] PR is created via `gh pr create` after implementation.
+- [ ] Codex is detected and review requested if available.
+- [ ] TODOs.md is updated with PR link.
+- [ ] Documentation in `docs/nightshift.md` covers worktree mode.
+- [ ] Validations pass:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Notes:
+
+- This is a new workflow option, not replacing the standard one.
+- Enable via `NIGHTSHIFT_MODE=worktree` env var.
+- See `Specs/worktree-nightshift.md` for full design.
+
 ### [draft][P2][workflow] Add a Day Shift planner workflow for better specs
 
 Spec: `Specs/draft-day-shift-planner-agent.md`
