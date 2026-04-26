@@ -44,7 +44,7 @@ Notes:
 - Handoff artifacts stored at `~/.pi/handoffs/<timestamp>-worker-handoff.json`
 - See `docs/nightshift.md#inspecting-handoffs` for operational guidance.
 
-### [ready][P1][workflow] Add worktree Night Shift mode with PR creation
+### [done][P1][workflow] Add worktree Night Shift mode with PR creation
 
 Spec: `Specs/worktree-nightshift.md`
 
