@@ -99,7 +99,31 @@ Notes:
 - Implementation complete: AGENT_LOOP.md, docs/nightshift.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
 
-### [ready][P2][ui] Style landing page with X aesthetics
+### [bug][P1][ui] Fix landing page dark theme not rendering correctly
+
+Spec: `Specs/x-styled-landing.md`
+
+Acceptance criteria:
+
+- [ ] Dark theme CSS variables render correctly in all browsers
+- [ ] Background uses dark color (#1a1a1a or similar), not white
+- [ ] Text is visible (near-white on dark background)
+- [ ] OKLCH colors have proper fallback for browsers that don't support them
+- [ ] No white flash on page load
+
+Validation:
+
+```bash
+# Verify page renders with dark background in browser
+# No white background visible
+```
+
+Notes:
+
+- Bug: landing page shows white background making text invisible
+- Likely cause: OKLCH CSS custom properties not falling back correctly, or `:root` variables not applying
+
+### [done][P2][ui] Style landing page with X aesthetics (9aa986a)
 
 Spec: `Specs/x-styled-landing.md`
 
