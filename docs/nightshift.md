@@ -117,3 +117,26 @@ launchctl unload ~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist
 - The runner has write and bash access. Run it only in repositories where autonomous commits are acceptable.
 - The runner uses a lock directory to prevent overlapping runs.
 - Logs and sessions are written under `.pi/nightshift/` and ignored by git.
+
+## Inspecting Handoffs
+
+When Worker is called with handoff context (via Manager's `handoff_to_worker` or direct worker call with handoff data), a JSON handoff artifact is written to `.pi/handoffs/`. Each artifact includes:
+
+- `version` — schema version
+- `createdAt` — ISO timestamp
+- `source` — "manager" or "direct-worker"
+- `objective` — implementation goal
+- `taskPreview` — truncated task description
+- `handoff` — full structured handoff (findings, target files, decisions, constraints, risks, verification, evidence, raw context)
+
+To inspect a handoff:
+
+```bash
+# List recent handoffs
+ls -la ~/.pi/handoffs/
+
+# View a specific handoff
+cat ~/.pi/handoffs/<timestamp>-worker-handoff.json
+```
+
+Handoff artifacts are gitignored (`.pi/handoffs/`). They are retained indefinitely for auditability. Delete manually if cleanup is needed.

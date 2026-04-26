@@ -13,7 +13,7 @@ import { loadToolConfig, parseModelReference } from "../core/models.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { WORKER_SYSTEM_PROMPT } from "../core/prompts.js";
-import { formatWorkerTask, handoffSchema } from "../core/handoff.js";
+import { formatWorkerTask, handoffSchema, writeHandoffArtifact } from "../core/handoff.js";
 import { finderTool } from "./finder.js";
 
 const workerSchema = Type.Object({
@@ -23,6 +23,10 @@ const workerSchema = Type.Object({
   targetFiles: Type.Optional(Type.Array(Type.String(), { description: "Known files to inspect or edit first" })),
   constraints: Type.Optional(Type.Array(Type.String(), { description: "Constraints to preserve while implementing" })),
   verification: Type.Optional(Type.Array(Type.String(), { description: "Suggested verification commands" })),
+  _source: Type.Optional(Type.Union([
+    Type.Literal("manager"),
+    Type.Literal("direct-worker"),
+  ], { description: "Internal: source of the handoff for artifact creation" })),
 });
 
 type WorkerInput = Static<typeof workerSchema>;
@@ -67,7 +71,36 @@ export const workerTool = defineTool({
       };
     }
 
-    const formattedTask = formatWorkerTask(params);
+    // Determine if there's handoff context that requires an artifact
+    // _source is an internal parameter set by manager when calling through handoff_to_worker
+    const source = (params as any)._source || "direct-worker";
+    const hasHandoffContext = Boolean(
+      params.handoff?.objective?.trim() ||
+      params.handoff?.findings?.length ||
+      params.handoff?.targetFiles?.length ||
+      params.handoff?.decisions?.length ||
+      params.context?.trim() ||
+      params.targetFiles?.length ||
+      params.constraints?.length ||
+      params.verification?.length
+    );
+
+    // Write handoff artifact file if there's handoff context
+    let artifactPath: string | undefined;
+    if (hasHandoffContext) {
+      try {
+        artifactPath = await writeHandoffArtifact(params, source);
+      } catch (error) {
+        // Fail clearly if we can't create the artifact
+        return {
+          content: [{ type: "text", text: `Error: Failed to create handoff artifact: ${error instanceof Error ? error.message : "Unknown error"}` }],
+          details: { error: "artifact_creation_failed", cause: error },
+          isError: true,
+        };
+      }
+    }
+
+    const formattedTask = formatWorkerTask(params, artifactPath);
     const hasHandoff = formattedTask !== params.task;
 
     let finderUses = 0;
@@ -120,6 +153,7 @@ export const workerTool = defineTool({
         task: params.task,
         hasHandoff,
         handoff: params.handoff,
+        artifactPath,
         finderFallbackUsed: finderUses > 0,
         transcript: result.details,
       },

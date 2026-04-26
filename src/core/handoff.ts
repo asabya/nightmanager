@@ -1,4 +1,7 @@
 import { Type, type Static } from "@sinclair/typebox";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
 export const handoffSourceSchema = Type.Union([
   Type.Literal("user"),
@@ -53,8 +56,112 @@ export interface WorkerHandoffInput {
   verification?: string[];
 }
 
+/**
+ * Handoff artifact written to file system for auditability
+ */
+export interface WorkerHandoffArtifact {
+  version: number;
+  createdAt: string;
+  subagent: "worker";
+  source: "manager" | "direct-worker";
+  objective: string;
+  taskPreview: string;
+  handoff: {
+    findings: string[];
+    targetFiles: string[];
+    relatedFiles: string[];
+    decisions: string[];
+    constraints: string[];
+    risks: string[];
+    verification: {
+      suggestedCommands?: string[];
+      rationale?: string;
+    };
+    evidence: Array<{
+      source: HandoffSource;
+      file?: string;
+      line?: number;
+      command?: string;
+      url?: string;
+      note: string;
+    }>;
+    rawContext?: string;
+  };
+}
+
+const HANDOFFS_DIR = join(homedir(), ".pi", "handoffs");
+
 function hasItems(items: string[] | undefined): items is string[] {
   return Array.isArray(items) && items.length > 0;
+}
+
+/**
+ * Generate a unique filename to avoid collisions when multiple handoffs happen in the same second
+ */
+function generateArtifactFilename(): string {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, "-");
+  const random = Math.random().toString(36).slice(2, 6);
+  return `${timestamp}-${random}-worker-handoff.json`;
+}
+
+/**
+ * Create the handoffs directory if it doesn't exist
+ */
+async function ensureHandoffsDir(): Promise<void> {
+  try {
+    await mkdir(HANDOFFS_DIR, { recursive: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  }
+}
+
+/**
+ * Write a handoff artifact to a JSON file in the handoffs directory
+ * @returns The absolute path to the created artifact file
+ */
+export async function writeHandoffArtifact(
+  input: WorkerHandoffInput,
+  source: "manager" | "direct-worker"
+): Promise<string> {
+  await ensureHandoffsDir();
+
+  const artifact: WorkerHandoffArtifact = {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    subagent: "worker",
+    source,
+    objective: input.handoff?.objective ?? input.task,
+    taskPreview: input.task.slice(0, 200),
+    handoff: {
+      findings: input.handoff?.findings ?? [],
+      targetFiles: input.handoff?.targetFiles ?? input.targetFiles ?? [],
+      relatedFiles: input.handoff?.relatedFiles ?? [],
+      decisions: input.handoff?.decisions ?? [],
+      constraints: input.handoff?.constraints ?? input.constraints ?? [],
+      risks: input.handoff?.risks ?? [],
+      verification: {
+        suggestedCommands: input.handoff?.verification?.suggestedCommands ?? input.verification,
+        rationale: input.handoff?.verification?.rationale,
+      },
+      evidence: input.handoff?.evidence ?? [],
+      rawContext: input.handoff?.rawContext ?? input.context,
+    },
+  };
+
+  const filename = generateArtifactFilename();
+  const filepath = join(HANDOFFS_DIR, filename);
+  await writeFile(filepath, JSON.stringify(artifact, null, 2), "utf-8");
+
+  return filepath;
+}
+
+/**
+ * Read a handoff artifact from a JSON file
+ */
+export async function readHandoffArtifact(filepath: string): Promise<WorkerHandoffArtifact> {
+  const content = await readFile(filepath, "utf-8");
+  return JSON.parse(content) as WorkerHandoffArtifact;
 }
 
 function pushList(lines: string[], title: string, items: string[] | undefined): void {
@@ -75,7 +182,14 @@ function formatEvidence(evidence: HandoffEvidence): string {
   return `[${evidence.source}] ${location} — ${evidence.note}`;
 }
 
-export function formatWorkerTask(input: WorkerHandoffInput): string {
+/**
+ * Format a worker task for execution. When a handoff artifact path is provided,
+ * includes instructions for reading the artifact file.
+ */
+export function formatWorkerTask(
+  input: WorkerHandoffInput,
+  artifactPath?: string
+): string {
   const handoff = input.handoff;
   const lines: string[] = [
     "Implementation task:",
@@ -92,6 +206,16 @@ export function formatWorkerTask(input: WorkerHandoffInput): string {
   );
 
   if (!hasHandoff) return input.task;
+
+  // If artifact path provided, include instructions to read it
+  if (artifactPath) {
+    lines.push(
+      "Handoff file:",
+      `A structured handoff artifact has been written to: ${artifactPath}`,
+      "Please read this artifact file first to get the full handoff context.",
+      "",
+    );
+  }
 
   lines.push("Handoff context:");
   if (handoff?.objective?.trim()) {

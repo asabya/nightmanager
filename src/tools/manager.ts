@@ -100,7 +100,7 @@ const handoffToWorkerTool = defineTool({
       };
     }
 
-    return workerTool.execute(toolCallId, params, signal, onUpdate, ctx);
+    return workerTool.execute(toolCallId, { ...params, _source: "manager" }, signal, onUpdate, ctx);
   },
 });
 

@@ -1,3 +1,5 @@
 .worktrees/
 node_modules/
-.pi/nightshift/
+.pi/
+.pi/handoffs/
+nightshift/
