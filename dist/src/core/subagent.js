@@ -1,5 +1,6 @@
 import { Agent } from "@mariozechner/pi-agent-core";
 import { stream } from "@mariozechner/pi-ai";
+import { basename } from "node:path";
 import { extractFinalText } from "./result.js";
 import { createTranscriptState, appendAssistantText, appendToolCall, appendToolResult, finalizeTranscriptDetails, } from "./transcript.js";
 /**
@@ -13,6 +14,27 @@ export async function runIsolatedSubagent(options) {
 /**
  * Internal implementation
  */
+function buildTaskPrompt(task, cwd) {
+    if (!cwd?.trim())
+        return task;
+    return [
+        "Workspace context:",
+        `- Current working directory: ${cwd}`,
+        `- Project directory name: ${basename(cwd)}`,
+        '- Unless the user says otherwise, references like "this project", "current project", and "here" refer to this workspace.',
+        "",
+        "User task:",
+        task,
+    ].join("\n");
+}
+function bindToolContext(tool, ctx) {
+    if (typeof tool?.execute !== "function" || tool.execute.length < 5)
+        return tool;
+    return {
+        ...tool,
+        execute: (toolCallId, params, signal, onUpdate) => tool.execute(toolCallId, params, signal, onUpdate, ctx),
+    };
+}
 async function runIsolatedSubagentImpl(options) {
     const { ctx, model, systemPrompt, tools, task, signal, timeoutMs, subagentName, onUpdate, } = options;
     const timeoutAbort = new AbortController();
@@ -89,12 +111,13 @@ async function runIsolatedSubagentImpl(options) {
             const errorMsg = resolvedAuth.error || "Authentication failed";
             throw new Error(errorMsg);
         }
+        const boundTools = tools.map((tool) => bindToolContext(tool, ctx));
         // Create the agent
         const agent = new Agent({
             initialState: {
                 systemPrompt,
                 model,
-                tools,
+                tools: boundTools,
             },
             streamFn: (messages, context, streamOptions) => stream(messages, context, {
                 ...streamOptions,
@@ -166,7 +189,7 @@ async function runIsolatedSubagentImpl(options) {
                 }
                 case "tool_execution_start": {
                     // Record tool call start
-                    transcriptState = appendToolCall(transcriptState, event.toolName, event.args, timestamp);
+                    transcriptState = appendToolCall(transcriptState, event.toolName, event.args, timestamp, event.toolCallId);
                     emitUpdate({});
                     break;
                 }
@@ -174,7 +197,7 @@ async function runIsolatedSubagentImpl(options) {
                     // Record tool result
                     transcriptState = appendToolResult(transcriptState, event.toolName, event.result?.content?.[0]?.type === "text"
                         ? event.result.content[0].text
-                        : undefined, event.isError, timestamp);
+                        : undefined, event.isError, timestamp, event.toolCallId);
                     emitUpdate({});
                     break;
                 }
@@ -183,7 +206,7 @@ async function runIsolatedSubagentImpl(options) {
         // Execute the subagent
         await agent.prompt({
             role: "user",
-            content: [{ type: "text", text: task }],
+            content: [{ type: "text", text: buildTaskPrompt(task, ctx.cwd) }],
             timestamp: Date.now(),
         });
         await agent.waitForIdle();

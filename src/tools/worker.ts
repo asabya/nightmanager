@@ -10,13 +10,19 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
-import { renderSubagentResult } from "../core/subagent-rendering.js";
+import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { WORKER_SYSTEM_PROMPT } from "../core/prompts.js";
+import { formatWorkerTask, handoffSchema } from "../core/handoff.js";
 import { finderTool } from "./finder.js";
 
 const workerSchema = Type.Object({
   task: Type.String({ description: "Implementation task to execute" }),
+  handoff: Type.Optional(handoffSchema),
+  context: Type.Optional(Type.String({ description: "Concise caller-provided context or prior delegate findings" })),
+  targetFiles: Type.Optional(Type.Array(Type.String(), { description: "Known files to inspect or edit first" })),
+  constraints: Type.Optional(Type.Array(Type.String(), { description: "Constraints to preserve while implementing" })),
+  verification: Type.Optional(Type.Array(Type.String(), { description: "Suggested verification commands" })),
 });
 
 type WorkerInput = Static<typeof workerSchema>;
@@ -32,13 +38,12 @@ export const workerTool = defineTool({
     "Worker may use finder once when blocked by codebase uncertainty, but does not use oracle or recursively delegate.",
   ],
   parameters: workerSchema,
-  renderCall(args) {
-    const preview = args.task.length > 60 ? `${args.task.slice(0, 57)}...` : args.task;
-    return new Text(`worker ${preview}`, 0, 0);
+  renderCall(args, _theme, context) {
+    return renderSubagentCall("worker", args.task ?? "", context.isPartial, context.isError, context);
   },
-  renderResult(result, { expanded }, theme) {
+  renderResult(result, options, theme, context) {
     const transcript = (result.details as { transcript?: unknown } | undefined)?.transcript;
-    if (transcript) return renderSubagentResult(transcript as any, expanded, theme);
+    if (transcript) return renderSubagentResult(transcript as any, options, theme, context);
     const text = result.content[0];
     return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
   },
@@ -61,6 +66,9 @@ export const workerTool = defineTool({
         isError: true,
       };
     }
+
+    const formattedTask = formatWorkerTask(params);
+    const hasHandoff = formattedTask !== params.task;
 
     let finderUses = 0;
     const limitedFinderTool = defineTool({
@@ -85,6 +93,7 @@ export const workerTool = defineTool({
           content: partial.content,
           details: {
             task: params.task,
+            hasHandoff,
             finderFallbackUsed: finderUses > 0,
             transcript: partial.details,
           },
@@ -100,14 +109,20 @@ export const workerTool = defineTool({
         createBashTool(ctx.cwd),
         limitedFinderTool,
       ],
-      task: params.task,
+      task: formattedTask,
       signal,
       timeoutMs: 240_000,
     });
 
     return {
       content: [{ type: "text", text: result.finalText }],
-      details: { task: params.task, finderFallbackUsed: finderUses > 0, transcript: result.details },
+      details: {
+        task: params.task,
+        hasHandoff,
+        handoff: params.handoff,
+        finderFallbackUsed: finderUses > 0,
+        transcript: result.details,
+      },
     };
   },
 });

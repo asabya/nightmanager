@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
-import { renderSubagentResult } from "../core/subagent-rendering.js";
+import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { WORKER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { finderTool } from "./finder.js";
@@ -22,14 +22,13 @@ export const workerTool = defineTool({
         "Worker may use finder once when blocked by codebase uncertainty, but does not use oracle or recursively delegate.",
     ],
     parameters: workerSchema,
-    renderCall(args) {
-        const preview = args.task.length > 60 ? `${args.task.slice(0, 57)}...` : args.task;
-        return new Text(`worker ${preview}`, 0, 0);
+    renderCall(args, _theme, context) {
+        return renderSubagentCall("worker", args.task ?? "", context.isPartial, context.isError, context);
     },
-    renderResult(result, { expanded }, theme) {
+    renderResult(result, options, theme, context) {
         const transcript = result.details?.transcript;
         if (transcript)
-            return renderSubagentResult(transcript, expanded, theme);
+            return renderSubagentResult(transcript, options, theme, context);
         const text = result.content[0];
         return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
     },

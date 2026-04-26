@@ -22,6 +22,9 @@
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e"
   },
+  "dependencies": {
+    "pi-web-access": "^0.10.6"
+  },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-agent-core": "*",

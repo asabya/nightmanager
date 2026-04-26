@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { defineTool } from "@mariozechner/pi-coding-agent";
+import { Type } from "@sinclair/typebox";
 import { runIsolatedSubagent, } from "../../src/core/subagent.js";
 // Helper to create mock agent messages that satisfy TypeScript
 const makeAssistantMessage = (text, timestamp) => {
@@ -1033,6 +1035,96 @@ describe("runIsolatedSubagent", () => {
             });
             expect(result).toBeDefined();
             expect(result.details.model).toBeDefined();
+        });
+    });
+    describe("workspace context", () => {
+        it("includes cwd context in the prompt when available", async () => {
+            const onUpdate = vi.fn();
+            const ctx = {
+                ...createMockContext(),
+                cwd: "/tmp/project-alpha",
+            };
+            const model = createMockModel();
+            const events = [
+                {
+                    type: "message_end",
+                    message: {
+                        role: "assistant",
+                        content: [{ type: "text", text: "Done" }],
+                        timestamp: Date.now(),
+                    },
+                },
+                {
+                    type: "agent_end",
+                    messages: [{ role: "assistant", content: [{ type: "text", text: "Done" }], timestamp: Date.now() }],
+                },
+            ];
+            if (setPendingEventsFn) {
+                setPendingEventsFn(events);
+            }
+            await runIsolatedSubagent({
+                ctx,
+                model,
+                systemPrompt: "You are a helpful assistant",
+                tools: [],
+                task: "Create a landing page for this project",
+                timeoutMs: 30000,
+                subagentName: "manager",
+                onUpdate,
+            });
+            const promptCall = agentInstances[0]?.prompt?.mock?.calls?.[0]?.[0];
+            const promptText = promptCall?.content?.[0]?.text;
+            expect(promptText).toContain("Current working directory: /tmp/project-alpha");
+            expect(promptText).toContain("Project directory name: project-alpha");
+            expect(promptText).toContain("User task:\nCreate a landing page for this project");
+        });
+    });
+    describe("tool context propagation", () => {
+        it("wraps tool definitions so nested subagent tools receive extension context", async () => {
+            const ctx = createMockContext();
+            const model = createMockModel();
+            const toolExecute = vi.fn(async () => ({
+                content: [{ type: "text", text: "ok" }],
+                details: { ok: true },
+            }));
+            const nestedTool = defineTool({
+                name: "nested_tool",
+                label: "Nested Tool",
+                description: "Test nested tool",
+                parameters: Type.Object({ value: Type.String() }),
+                async execute(toolCallId, params, signal, onUpdate, toolCtx) {
+                    return toolExecute(toolCallId, params, signal, onUpdate, toolCtx);
+                },
+            });
+            const events = [
+                {
+                    type: "message_end",
+                    message: {
+                        role: "assistant",
+                        content: [{ type: "text", text: "Done" }],
+                        timestamp: Date.now(),
+                    },
+                },
+            ];
+            if (setPendingEventsFn) {
+                setPendingEventsFn(events);
+            }
+            await runIsolatedSubagent({
+                ctx,
+                model,
+                systemPrompt: "You are a helpful assistant",
+                tools: [nestedTool],
+                task: "Use the nested tool",
+                timeoutMs: 30000,
+                subagentName: "manager",
+            });
+            const agentConfig = mockAgentClass.mock.calls[0]?.[0];
+            const wrappedTool = agentConfig?.initialState?.tools?.[0];
+            expect(wrappedTool).toBeDefined();
+            if (!wrappedTool)
+                throw new Error("wrapped tool was not created");
+            await wrappedTool.execute("tool-1", { value: "x" }, undefined, undefined);
+            expect(toolExecute).toHaveBeenCalledWith("tool-1", { value: "x" }, undefined, undefined, ctx);
         });
     });
     describe("result shape", () => {

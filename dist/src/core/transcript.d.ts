@@ -1,5 +1,5 @@
 export type SubagentName = "finder" | "oracle" | "worker" | "manager";
-export type InnerToolName = "read" | "write" | "grep" | "find" | "bash" | "edit" | "finder";
+export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "finder";
 export type ToolName = SubagentName | InnerToolName;
 export type TranscriptStatus = "starting" | "running" | "completed" | "error" | "aborted" | "timed_out";
 export type TranscriptEntry = {
@@ -16,12 +16,14 @@ export type TranscriptEntry = {
     toolName: ToolName;
     args: Record<string, unknown>;
     timestamp: number;
+    toolCallId?: string;
 } | {
     type: "tool_result";
     toolName: ToolName;
     text?: string;
     isError?: boolean;
     timestamp: number;
+    toolCallId?: string;
 };
 export interface TranscriptUsage {
     input: number;
@@ -48,8 +50,8 @@ export interface TranscriptState {
 export declare function createTranscriptState(tool: SubagentName, task: string): TranscriptState;
 export declare function appendAssistantText(state: TranscriptState, text: string, timestamp: number, streaming: boolean): TranscriptState;
 export declare function appendStatus(state: TranscriptState, text: string, timestamp: number): TranscriptState;
-export declare function appendToolCall(state: TranscriptState, toolName: ToolName, args: Record<string, unknown>, timestamp: number): TranscriptState;
-export declare function appendToolResult(state: TranscriptState, toolName: ToolName, text: string | undefined, isError: boolean | undefined, timestamp: number): TranscriptState;
+export declare function appendToolCall(state: TranscriptState, toolName: ToolName, args: Record<string, unknown>, timestamp: number, toolCallId?: string): TranscriptState;
+export declare function appendToolResult(state: TranscriptState, toolName: ToolName, text: string | undefined, isError: boolean | undefined, timestamp: number, toolCallId?: string): TranscriptState;
 export interface FinalizeOptions {
     status: TranscriptStatus;
     finalText?: string;

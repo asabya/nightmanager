@@ -2,6 +2,7 @@ import type { Model } from "@mariozechner/pi-ai";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { Agent } from "@mariozechner/pi-agent-core";
 import { stream } from "@mariozechner/pi-ai";
+import { basename } from "node:path";
 import { extractFinalText } from "./result.js";
 import {
   type SubagentName,
@@ -72,6 +73,30 @@ export async function runIsolatedSubagent(
 /**
  * Internal implementation
  */
+function buildTaskPrompt(task: string, cwd?: string): string {
+  if (!cwd?.trim()) return task;
+
+  return [
+    "Workspace context:",
+    `- Current working directory: ${cwd}`,
+    `- Project directory name: ${basename(cwd)}`,
+    '- Unless the user says otherwise, references like "this project", "current project", and "here" refer to this workspace.',
+    "",
+    "User task:",
+    task,
+  ].join("\n");
+}
+
+function bindToolContext(tool: any, ctx: ExtensionContext): any {
+  if (typeof tool?.execute !== "function" || tool.execute.length < 5) return tool;
+
+  return {
+    ...tool,
+    execute: (toolCallId: string, params: unknown, signal?: AbortSignal, onUpdate?: (partial: any) => void) =>
+      tool.execute(toolCallId, params, signal, onUpdate, ctx),
+  };
+}
+
 async function runIsolatedSubagentImpl(
   options: RunIsolatedSubagentOptions
 ): Promise<SubagentResult> {
@@ -172,12 +197,14 @@ async function runIsolatedSubagentImpl(
       throw new Error(errorMsg);
     }
 
+    const boundTools = tools.map((tool) => bindToolContext(tool, ctx));
+
     // Create the agent
     const agent = new Agent({
       initialState: {
         systemPrompt,
         model,
-        tools,
+        tools: boundTools,
       },
       streamFn: (messages, context, streamOptions) =>
         stream(messages, context, {
@@ -263,7 +290,8 @@ async function runIsolatedSubagentImpl(
             transcriptState,
             event.toolName as ToolName,
             event.args,
-            timestamp
+            timestamp,
+            event.toolCallId
           );
           emitUpdate({});
           break;
@@ -278,7 +306,8 @@ async function runIsolatedSubagentImpl(
               ? (event.result.content[0] as { text?: string }).text
               : undefined,
             event.isError,
-            timestamp
+            timestamp,
+            event.toolCallId
           );
           emitUpdate({});
           break;
@@ -289,7 +318,7 @@ async function runIsolatedSubagentImpl(
     // Execute the subagent
     await agent.prompt({
       role: "user",
-      content: [{ type: "text", text: task }],
+      content: [{ type: "text", text: buildTaskPrompt(task, ctx.cwd) }],
       timestamp: Date.now(),
     });
     await agent.waitForIdle();

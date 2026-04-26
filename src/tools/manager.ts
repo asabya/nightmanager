@@ -4,37 +4,122 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
-import { renderSubagentResult } from "../core/subagent-rendering.js";
+import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
+import { handoffEvidenceSchema, handoffVerificationSchema, nonEmptyStringArraySchema } from "../core/handoff.js";
 import { finderTool } from "./finder.js";
 import { oracleTool } from "./oracle.js";
 import { workerTool } from "./worker.js";
 
 const managerSchema = Type.Object({
-  query: Type.String({ description: "Task to classify and route" }),
+  query: Type.String({ description: "Task to plan and orchestrate" }),
+});
+
+const requiredWorkerHandoffSchema = Type.Object({
+  objective: Type.String({ description: "Concrete implementation objective distilled from user/finder/oracle context" }),
+  findings: nonEmptyStringArraySchema("Key findings from finder, oracle, manager, or user context"),
+  targetFiles: nonEmptyStringArraySchema("Primary files worker must inspect or edit first"),
+  relatedFiles: Type.Optional(Type.Array(Type.String(), { description: "Additional files useful for context or tests" })),
+  decisions: nonEmptyStringArraySchema("Implementation decisions or reasoning conclusions worker should follow"),
+  constraints: Type.Optional(Type.Array(Type.String(), { description: "Constraints worker must preserve" })),
+  risks: Type.Optional(Type.Array(Type.String(), { description: "Known risks or edge cases" })),
+  verification: Type.Optional(handoffVerificationSchema),
+  evidence: Type.Optional(Type.Array(handoffEvidenceSchema)),
+  rawContext: Type.Optional(Type.String({ description: "Additional concise handoff context" })),
+});
+
+const handoffToWorkerSchema = Type.Object({
+  task: Type.String({ description: "Implementation task for worker" }),
+  handoff: requiredWorkerHandoffSchema,
+  context: Type.Optional(Type.String({ description: "Extra concise context for worker" })),
+  constraints: Type.Optional(Type.Array(Type.String(), { description: "Additional constraints for worker" })),
+  verification: Type.Optional(Type.Array(Type.String(), { description: "Additional verification commands for worker" })),
 });
 
 type ManagerInput = Static<typeof managerSchema>;
+type HandoffToWorkerInput = Static<typeof handoffToWorkerSchema>;
 const MANAGER_CONFIG_PATH = join(homedir(), ".pi", "agent", "manager.json");
+
+type DelegateCallRecord = {
+  tool: string;
+  params: unknown;
+  status: "running" | "completed" | "failed";
+  timestamp: number;
+  isError?: boolean;
+  summary?: string;
+};
+
+function extractTextExcerpt(result: unknown, maxLength = 2_000): string | undefined {
+  const content = (result as { content?: Array<{ type?: string; text?: string }> } | undefined)?.content;
+  const text = content
+    ?.filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+  if (!text) return undefined;
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}
+
+function hasNonBlank(items: string[] | undefined): boolean {
+  return Array.isArray(items) && items.some((item) => item.trim().length > 0);
+}
+
+function validateHandoffToWorkerInput(params: HandoffToWorkerInput): string[] {
+  const missing: string[] = [];
+  const handoff = params.handoff;
+  if (!params.task?.trim()) missing.push("task");
+  if (!handoff) return [...missing, "handoff"];
+  if (!handoff.objective?.trim()) missing.push("handoff.objective");
+  if (!hasNonBlank(handoff.findings)) missing.push("handoff.findings");
+  if (!hasNonBlank(handoff.targetFiles)) missing.push("handoff.targetFiles");
+  if (!hasNonBlank(handoff.decisions)) missing.push("handoff.decisions");
+  return missing;
+}
+
+const handoffToWorkerTool = defineTool({
+  name: "handoff_to_worker",
+  label: "Handoff to Worker",
+  description: "Invoke worker with a required structured handoff. This is Manager's only implementation path.",
+  promptSnippet: "Use handoff_to_worker to call worker only after providing objective, findings, target files, and decisions.",
+  promptGuidelines: [
+    "Use this instead of worker for every implementation step inside manager.",
+    "Populate handoff from finder/oracle/user context so worker does not rediscover prior work.",
+  ],
+  parameters: handoffToWorkerSchema,
+  async execute(toolCallId: string, params: HandoffToWorkerInput, signal, onUpdate, ctx) {
+    const missing = validateHandoffToWorkerInput(params);
+    if (missing.length > 0) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error: handoff_to_worker requires non-empty ${missing.join(", ")}. Call finder/oracle first if you do not have enough context.`,
+        }],
+        details: { error: "invalid_worker_handoff", missing },
+        isError: true,
+      };
+    }
+
+    return workerTool.execute(toolCallId, params, signal, onUpdate, ctx);
+  },
+});
 
 export const managerTool = defineTool({
   name: "manager",
   label: "Manager",
-  description: "Launch a lightweight routing subagent that chooses the best next specialized tool.",
-  promptSnippet: "Use manager when you want a lightweight read-only router to choose the best next specialized subagent.",
+  description: "Launch an orchestration subagent that plans and coordinates finder, oracle, and worker workflows.",
+  promptSnippet: "Use manager for multi-step tasks that may need coordinated finder -> oracle -> worker workflows.",
   promptGuidelines: [
-    "Use manager when the task may need routing to finder, oracle, or worker.",
-    "Manager is read-only and delegates to exactly one best-fit subagent by default.",
+    "Use manager when a task spans discovery, reasoning, and implementation phases.",
+    "Manager orchestrates finder/oracle/worker as needed, but does not inspect or edit files directly.",
   ],
   parameters: managerSchema,
-  renderCall(args) {
-    const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
-    return new Text(`manager ${preview}`, 0, 0);
+  renderCall(args, _theme, context) {
+    return renderSubagentCall("manager", args.query ?? "", context.isPartial, context.isError, context);
   },
-  renderResult(result, { expanded }, theme) {
+  renderResult(result, options, theme, context) {
     const transcript = (result.details as { transcript?: unknown } | undefined)?.transcript;
-    if (transcript) return renderSubagentResult(transcript as any, expanded, theme);
+    if (transcript) return renderSubagentResult(transcript as any, options, theme, context);
     const text = result.content[0];
     return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
   },
@@ -58,19 +143,29 @@ export const managerTool = defineTool({
       };
     }
 
-    let delegated = false;
-    const oneShot = (tool: any) => defineTool({
+    const delegateCalls: DelegateCallRecord[] = [];
+    const trackDelegation = (tool: any) => defineTool({
       ...tool,
       async execute(toolCallId: string, toolParams: unknown, toolSignal: AbortSignal | undefined, toolOnUpdate: ((partial: any) => void) | undefined, toolCtx: typeof ctx) {
-        if (delegated) {
-          return {
-            content: [{ type: "text", text: "Error: manager already delegated once for this task." }],
-            details: { error: "delegation_budget_exhausted" },
-            isError: true,
-          };
+        const record: DelegateCallRecord = {
+          tool: String(tool.name ?? "unknown"),
+          params: toolParams,
+          status: "running",
+          timestamp: Date.now(),
+        };
+        delegateCalls.push(record);
+
+        try {
+          const result = await tool.execute(toolCallId, toolParams, toolSignal, toolOnUpdate, toolCtx);
+          record.status = result?.isError ? "failed" : "completed";
+          record.isError = Boolean(result?.isError);
+          record.summary = extractTextExcerpt(result);
+          return result;
+        } catch (error) {
+          record.status = "failed";
+          record.isError = true;
+          throw error;
         }
-        delegated = true;
-        return tool.execute(toolCallId, toolParams, toolSignal, toolOnUpdate, toolCtx);
       },
     });
 
@@ -79,21 +174,31 @@ export const managerTool = defineTool({
       onUpdate: (partial) => {
         _onUpdate?.({
           content: partial.content,
-          details: { query: params.query, delegated, transcript: partial.details },
+          details: {
+            query: params.query,
+            delegated: delegateCalls.length > 0,
+            delegateCalls: [...delegateCalls],
+            transcript: partial.details,
+          },
         });
       },
       ctx,
       model,
       systemPrompt: MANAGER_SYSTEM_PROMPT,
-      tools: [oneShot(finderTool), oneShot(oracleTool), oneShot(workerTool)],
+      tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(handoffToWorkerTool)],
       task: params.query,
       signal,
-      timeoutMs: 120_000,
+      timeoutMs: 600_000,
     });
 
     return {
       content: [{ type: "text", text: result.finalText }],
-      details: { query: params.query, delegated, transcript: result.details },
+      details: {
+        query: params.query,
+        delegated: delegateCalls.length > 0,
+        delegateCalls: [...delegateCalls],
+        transcript: result.details,
+      },
     };
   },
 });

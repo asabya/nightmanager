@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
-import { renderSubagentResult } from "../core/subagent-rendering.js";
+import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { finderTool } from "./finder.js";
@@ -21,17 +21,16 @@ export const managerTool = defineTool({
     promptSnippet: "Use manager when you want a lightweight read-only router to choose the best next specialized subagent.",
     promptGuidelines: [
         "Use manager when the task may need routing to finder, oracle, or worker.",
-        "Manager is read-only and delegates to exactly one best-fit subagent by default.",
+        "Manager is read-only and can delegate to specialized subagents when useful.",
     ],
     parameters: managerSchema,
-    renderCall(args) {
-        const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
-        return new Text(`manager ${preview}`, 0, 0);
+    renderCall(args, _theme, context) {
+        return renderSubagentCall("manager", args.query ?? "", context.isPartial, context.isError, context);
     },
-    renderResult(result, { expanded }, theme) {
+    renderResult(result, options, theme, context) {
         const transcript = result.details?.transcript;
         if (transcript)
-            return renderSubagentResult(transcript, expanded, theme);
+            return renderSubagentResult(transcript, options, theme, context);
         const text = result.content[0];
         return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
     },
@@ -54,16 +53,9 @@ export const managerTool = defineTool({
             };
         }
         let delegated = false;
-        const oneShot = (tool) => defineTool({
+        const trackDelegation = (tool) => defineTool({
             ...tool,
             async execute(toolCallId, toolParams, toolSignal, toolOnUpdate, toolCtx) {
-                if (delegated) {
-                    return {
-                        content: [{ type: "text", text: "Error: manager already delegated once for this task." }],
-                        details: { error: "delegation_budget_exhausted" },
-                        isError: true,
-                    };
-                }
                 delegated = true;
                 return tool.execute(toolCallId, toolParams, toolSignal, toolOnUpdate, toolCtx);
             },
@@ -79,7 +71,7 @@ export const managerTool = defineTool({
             ctx,
             model,
             systemPrompt: MANAGER_SYSTEM_PROMPT,
-            tools: [oneShot(finderTool), oneShot(oracleTool), oneShot(workerTool)],
+            tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(workerTool)],
             task: params.query,
             signal,
             timeoutMs: 120_000,

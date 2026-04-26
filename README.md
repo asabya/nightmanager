@@ -1,13 +1,18 @@
+// TEST-MARKER-123
 # Subagents for Pi
 
-A TypeScript + Pi package that bundles four specialized subagent tools:
+**Four specialized Pi subagents for intelligent delegation.**
 
-- `finder` — codebase search specialist
-- `oracle` — reasoning and debugging specialist
-- `worker` — focused implementation specialist
-- `manager` — lightweight read-only router
+| Tool | Role | Best For |
+|------|------|----------|
+| `finder` | Codebase search | Locating features, tracing module connections |
+| `oracle` | Reasoning & debugging | Root-cause analysis, trade-off planning |
+| `worker` | Implementation | Smallest viable fix, verified changes |
+| `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
 
-The package is designed for a strong token-cost to performance ratio: lightweight prompts, isolated subagent context, and clear role boundaries.
+> **Quick intro**: See [docs/index.md](docs/index.md) for the full docs.
+
+---
 
 ## Install
 
@@ -82,8 +87,13 @@ Use `worker` for implementation work that needs:
 - smallest viable diff
 - concrete verification
 
-`worker` may use `finder` once if blocked by codebase uncertainty.
-It does not call `oracle` and does not recursively delegate.
+`worker` accepts optional handoff context from `manager`, `finder`, or `oracle`:
+- target files and related files
+- findings and decisions
+- constraints, risks, and suggested verification
+
+When handoff context is provided, `worker` uses it as the starting map and avoids repeating broad discovery unless the context is missing or contradictory.
+It may still use `finder` once if blocked by codebase uncertainty. It does not call `oracle` and does not recursively delegate.
 
 Model selection order:
 1. `~/.pi/agent/worker.json`
@@ -97,15 +107,18 @@ Use worker to make the smallest possible fix and verify it
 
 ### `manager`
 
-Use `manager` when you want a lightweight router that picks the best next specialized tool.
+Use `manager` when a task may need multiple specialist phases, such as discovery -> diagnosis -> implementation.
 
-Default routing policy:
-- search -> `finder`
-- reasoning -> `oracle`
-- implementation -> `worker`
-- ambiguous -> clarifying question or recommendation
+Default orchestration policy:
+- simple search -> `finder`
+- simple reasoning/debugging -> `oracle`
+- clear implementation -> `worker`
+- implementation in unfamiliar code -> `finder` -> `worker`
+- ambiguous failure plus requested fix -> `oracle` -> `worker`
+- broad feature/change -> `finder` -> optional `oracle` -> `worker`
+- ambiguous intent -> clarifying question
 
-`manager` is read-only and delegates to one best-fit tool by default.
+`manager` does not inspect or edit files directly. It delegates to specialized tools, passes structured handoff context between phases, and synthesizes the final result. Implementation is hard-gated through an internal `handoff_to_worker` tool, which requires non-empty objective, findings, target files, and decisions before Worker can run.
 
 Model selection order:
 1. `~/.pi/agent/manager.json`
@@ -114,7 +127,7 @@ Model selection order:
 Example prompt:
 
 ```text
-Use manager to route this implementation task
+Use manager to investigate the failing auth flow, choose the safest fix, implement it, and verify the result
 ```
 
 ## Development

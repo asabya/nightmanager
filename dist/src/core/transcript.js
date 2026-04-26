@@ -83,22 +83,24 @@ export function appendStatus(state, text, timestamp) {
     });
 }
 // Append a tool call entry to the transcript
-export function appendToolCall(state, toolName, args, timestamp) {
+export function appendToolCall(state, toolName, args, timestamp, toolCallId) {
     return appendEntry(state, {
         type: "tool_call",
         toolName,
         args,
         timestamp,
+        ...(toolCallId ? { toolCallId } : {}),
     });
 }
 // Append a tool result entry to the transcript
-export function appendToolResult(state, toolName, text, isError, timestamp) {
+export function appendToolResult(state, toolName, text, isError, timestamp, toolCallId) {
     return appendEntry(state, {
         type: "tool_result",
         toolName,
         text,
         isError,
         timestamp,
+        ...(toolCallId ? { toolCallId } : {}),
     });
 }
 // Finalize transcript details from state

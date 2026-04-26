@@ -5,7 +5,7 @@ export type SubagentName = "finder" | "oracle" | "worker" | "manager";
 
 // Inner tool names are actual tools that can be called within a subagent
 // These include file operations, shell commands, and other utilities
-export type InnerToolName = "read" | "write" | "grep" | "find" | "bash" | "edit" | "finder";
+export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "finder" | "handoff_to_worker";
 
 // Tool name can be either a subagent name or an inner tool name
 export type ToolName = SubagentName | InnerToolName;
@@ -15,8 +15,8 @@ export type TranscriptStatus = "starting" | "running" | "completed" | "error" | 
 export type TranscriptEntry =
   | { type: "status"; text: string; timestamp: number }
   | { type: "assistant_text"; text: string; timestamp: number; streaming?: boolean }
-  | { type: "tool_call"; toolName: ToolName; args: Record<string, unknown>; timestamp: number }
-  | { type: "tool_result"; toolName: ToolName; text?: string; isError?: boolean; timestamp: number };
+  | { type: "tool_call"; toolName: ToolName; args: Record<string, unknown>; timestamp: number; toolCallId?: string }
+  | { type: "tool_result"; toolName: ToolName; text?: string; isError?: boolean; timestamp: number; toolCallId?: string };
 
 export interface TranscriptUsage {
   input: number;
@@ -165,13 +165,15 @@ export function appendToolCall(
   state: TranscriptState,
   toolName: ToolName,
   args: Record<string, unknown>,
-  timestamp: number
+  timestamp: number,
+  toolCallId?: string
 ): TranscriptState {
   return appendEntry(state, {
     type: "tool_call",
     toolName,
     args,
     timestamp,
+    ...(toolCallId ? { toolCallId } : {}),
   });
 }
 
@@ -181,7 +183,8 @@ export function appendToolResult(
   toolName: ToolName,
   text: string | undefined,
   isError: boolean | undefined,
-  timestamp: number
+  timestamp: number,
+  toolCallId?: string
 ): TranscriptState {
   return appendEntry(state, {
     type: "tool_result",
@@ -189,6 +192,7 @@ export function appendToolResult(
     text,
     isError,
     timestamp,
+    ...(toolCallId ? { toolCallId } : {}),
   });
 }
 

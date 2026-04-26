@@ -4,51 +4,40 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
 import { loadToolConfig, parseModelReference } from "../core/models.js";
-import { renderSubagentResult } from "../core/subagent-rendering.js";
+import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 const finderSchema = Type.Object({
     query: Type.String({ description: "Natural language search request" }),
 });
 const FINDER_CONFIG_PATH = join(homedir(), ".pi", "agent", "finder.json");
-const FINDER_SYSTEM_PROMPT = `You are Finder, a codebase search specialist. Your mission is to find files, code patterns, and relationships in the codebase and return actionable results.
-You answer "where is X?", "which files contain Y?", and "how does Z connect to W?" questions.
-You are NOT responsible for modifying code or implementing features.
+const FINDER_SYSTEM_PROMPT = `You are Finder, a codebase search specialist.
+Find files, code patterns, and relationships; do not modify files.
+Answer “where is X?”, “which files contain Y?”, and “how does Z connect to W?” questions.
 
 Read-only: you cannot create, modify, or delete files.
-Never use relative paths. Always use absolute paths.
+Never use relative paths in final answers. Always use absolute paths.
 Never store results in files; return them as message text.
 
 ## Investigation Protocol
-1. Analyze intent: What did they literally ask? What do they actually need?
-2. Launch parallel searches on your first action and refine from broad to narrow.
-3. Cross-validate findings across multiple tools.
-4. Stop when the caller has enough information to proceed.
+1. Search broadly first, then narrow.
+2. Cross-check important findings with a second signal.
+3. Read only the file ranges needed to answer.
+4. Stop once the caller has enough evidence to proceed.
 
 ## Context Budget
 - Prefer grep/find over full-file reads.
 - For files over 200 lines, use targeted reads with offset/limit.
 - Avoid full reads of files over 500 lines unless explicitly requested.
 
-## Output Format
-Structure your response EXACTLY as follows.
+${LEAN_RESPONSE_INSTRUCTIONS}
 
-## Findings
-- **Files**: [/absolute/path/file1.ts — why relevant], [/absolute/path/file2.ts — why relevant]
-- **Root cause**: [One sentence identifying the core answers]
-- **Evidence**: [Key code snippet, pattern, or data point that supports the finding]
-
-## Impact
-- **Scope**: single-file | multi-file | cross-module
-- **Affected areas**: [List of modules/features that depend on findings]
-
-## Relationships
-[How the found files/patterns connect]
-
-## Recommendation
-- [Concrete next action]
-
-## Next Steps
-- [What agent or action should follow]`;
+## Final Response Format
+Summary: one sentence answering the task.
+Evidence:
+- /absolute/path/file:line — decisive detail.
+Relationships: one short sentence, or None.
+Next: one concrete next step.`;
 function resolveFinderModel(ctx) {
     const configured = loadToolConfig(FINDER_CONFIG_PATH)?.model;
     const parsed = configured ? parseModelReference(configured) : null;
@@ -64,14 +53,13 @@ export const finderTool = defineTool({
         "The finder subagent excels at tracing relationships between files, understanding data flows, and finding all usages of a pattern.",
     ],
     parameters: finderSchema,
-    renderCall(args) {
-        const preview = args.query.length > 60 ? `${args.query.slice(0, 57)}...` : args.query;
-        return new Text(`finder ${preview}`, 0, 0);
+    renderCall(args, _theme, context) {
+        return renderSubagentCall("finder", args.query ?? "", context.isPartial, context.isError, context);
     },
-    renderResult(result, { expanded }, theme) {
+    renderResult(result, options, theme, context) {
         const transcript = result.details?.transcript;
         if (transcript)
-            return renderSubagentResult(transcript, expanded, theme);
+            return renderSubagentResult(transcript, options, theme, context);
         const text = result.content[0];
         return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
     },
