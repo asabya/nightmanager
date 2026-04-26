@@ -90,6 +90,8 @@ Use `worker` for implementation work that needs:
 - smallest viable diff
 - concrete verification
 
+When invoked with handoff context, `worker` persists a JSON handoff artifact to `.pi/handoffs/` for auditability before execution. The artifact includes objective, findings, target files, decisions, constraints, risks, verification guidance, and evidence.
+
 `worker` accepts optional handoff context from `manager`, `finder`, or `oracle`:
 - target files and related files
 - findings and decisions
@@ -122,6 +124,8 @@ Default orchestration policy:
 - ambiguous intent -> clarifying question
 
 `manager` does not inspect or edit files directly. It delegates to specialized tools, passes structured handoff context between phases, and synthesizes the final result. Implementation is hard-gated through an internal `handoff_to_worker` tool, which requires non-empty objective, findings, target files, and decisions before Worker can run.
+
+> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightshift.md`](docs/nightshift.md#inspecting-handoffs) for how to inspect them.
 
 Model selection order:
 1. `~/.pi/agent/manager.json`
