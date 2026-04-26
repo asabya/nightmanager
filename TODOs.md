@@ -73,18 +73,20 @@ Notes:
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
 - See `Specs/worktree-nightshift.md` for full design.
 
-### [ready][P2][workflow] Add a Day Shift planner workflow for better specs
+### [done][P2][workflow] Add a Day Shift planner workflow for better specs (8db81fd)
+
+PR: https://github.com/asabya/subagents/pull/2
 
 Spec: `Specs/day-shift-planner-agent.md`
 
 Acceptance criteria:
 
-- [ ] A documented Day Shift planner workflow exists in repo docs.
-- [ ] Planner-created specs are written as `Specs/draft-*.md` by default.
-- [ ] Planner-created TODOs are `[draft]` by default.
-- [ ] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
-- [ ] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
-- [ ] At least one example prompt or prompt template is added for using the planner.
+- [x] A documented Day Shift planner workflow exists in repo docs.
+- [x] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [x] Planner-created TODOs are `[draft]` by default.
+- [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
+- [x] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
+- [x] At least one example prompt or prompt template is added for the planner.
 
 Validation:
 
