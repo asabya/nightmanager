@@ -1,629 +1,669 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subagents — Specialized AI agents for coding workflows</title>
-  <meta name="description" content="Subagents is a Pi extension for orchestrating specialized AI coding agents: Finder, Oracle, Manager, and Worker." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700&family=Literata:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subagents for Pi</title>
+  <meta name="description" content="Four specialized Pi subagents for intelligent delegation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* CSS Custom Properties - X Dark Theme */
     :root {
-      --bg: #08080c;
-      --bg-subtle: #0c0c12;
-      --font-display: 'Outfit', sans-serif;
-      --font-serif: 'Literata', serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --bg-card: rgba(255,255,255,0.04);
-      --bg-card-border: rgba(255,255,255,0.10);
-      --surface: var(--bg-card);
-      --surface-2: rgba(255,255,255,0.055);
-      --border: var(--bg-card-border);
-      --border-strong: rgba(255,255,255,0.16);
-      --text: #f0f0f2;
-      --text-2: rgba(255,255,255,0.76);
-      --text-3: rgba(255,255,255,0.46);
-      --cyan: #22d3ee;
-      --violet: #a78bfa;
-      --amber: #f0a050;
-      --emerald: #34d399;
-      --radius: 14px;
-      --radius-sm: 10px;
-      --pill: 999px;
+      /* Background - dark charcoal (hex defaults) */
+      --color-bg: #1a1a1a;
+      --color-bg-elevated: #252525;
+      
+      /* Surface */
+      --color-surface: oklch(0.97 0.008 264);
+      --color-surface-muted: oklch(0.85 0.008 264);
+      
+      /* Text */
+      --color-text-primary: oklch(0.97 0.008 264);
+      --color-text-secondary: oklch(0.7 0.008 264);
+      --color-text-muted: oklch(0.5 0.008 264);
+      
+      /* Accent - blue/violet CTA */
+      --color-accent: oklch(0.6 0.2 270);
+      --color-accent-hover: oklch(0.7 0.2 270);
+      
+      /* Borders (hex defaults) */
+      --color-border: #4d4d4d;
+      --color-border-subtle: #333333;
+      
+      /* Typography */
+      --font-display: "Cal Sans", "Inter", system-ui, sans-serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      
+      /* Sizing */
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-3xl: 1.875rem;
+      --text-4xl: 2.25rem;
+      --text-5xl: 3rem;
+      
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-24: 6rem;
+      
+      /* Effects */
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+      
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+      --transition-slow: 350ms ease;
     }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-
-    body {
+    
+    /* OKLCH overrides for modern browsers */
+    @supports (color: oklch(0 0 0)) {
+      :root {
+        --color-bg: oklch(0.19 0.008 264);
+        --color-bg-elevated: oklch(0.22 0.008 264);
+        --color-border: oklch(0.3 0.008 264);
+        --color-border-subtle: oklch(0.25 0.008 264);
+      }
+    }
+    
+    /* Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
-      min-height: 100vh;
-      font-family: var(--font-display);
-      color: var(--text);
-      background:
-        radial-gradient(circle at 50% -8%, rgba(34, 211, 238, 0.16), transparent 30rem),
-        radial-gradient(circle at 12% 28%, rgba(167, 139, 250, 0.08), transparent 24rem),
-        radial-gradient(circle at 88% 42%, rgba(52, 211, 153, 0.055), transparent 26rem),
-        radial-gradient(circle at 66% 86%, rgba(240, 160, 80, 0.05), transparent 24rem),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-subtle) 48%, var(--bg) 100%);
-      overflow-x: hidden;
-      font-weight: 300;
+      padding: 0;
     }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.035), transparent 24%),
-        radial-gradient(circle at 50% 0, rgba(255,255,255,0.045), transparent 34rem);
-      opacity: 0.7;
-      mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+    
+    html {
+      scroll-behavior: smooth;
     }
-
-    a { color: inherit; text-decoration: none; }
-
+    
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.5;
+      color: var(--color-text-primary);
+      background-color: var(--color-bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Utility */
     .container {
-      width: min(1120px, calc(100% - 40px));
+      max-width: 1200px;
       margin: 0 auto;
-      position: relative;
-      z-index: 1;
+      padding: 0 var(--space-4);
     }
-
-    header { padding: 24px 0 0; }
-
-    nav {
+    
+    a {
+      color: var(--color-accent);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    
+    a:hover {
+      color: var(--color-accent-hover);
+    }
+    
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(30, 30, 30, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    
+    .header-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
-      padding: 10px 0;
-      color: var(--text-3);
+      height: 64px;
+    }
+    
+    .logo {
       font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
     }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 300;
-      letter-spacing: 0.08em;
+    
+    .logo:hover {
+      color: var(--color-text-primary);
     }
-
-    .mark {
-      width: 26px;
-      height: 26px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--border-strong);
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 35% 25%, rgba(34,211,238,0.42), transparent 32%),
-        rgba(255,255,255,0.04);
-      color: var(--cyan);
-      font-size: 12px;
-    }
-
-    .nav-links {
+    
+    .nav {
       display: flex;
       align-items: center;
-      gap: 24px;
-      font-size: 13px;
-      font-weight: 300;
+      gap: var(--space-6);
     }
-
-    .nav-links a:hover, .copy:hover { color: var(--text); }
-
-    .button {
+    
+    .nav-link {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      transition: color var(--transition-fast);
+    }
+    
+    .nav-link:hover {
+      color: var(--color-text-primary);
+    }
+    
+    .github-link {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 12px 30px;
-      border: 1px solid rgba(34,211,238,0.28);
-      border-radius: var(--pill);
-      background: rgba(255,255,255,0.05);
-      color: var(--text);
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 300;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
     }
-
-    .button:hover { transform: translateY(-1px); }
-
-    .button.secondary {
-      background: rgba(255,255,255,0.025);
-      color: var(--text-2);
-      border-color: var(--border);
+    
+    .github-link:hover {
+      color: var(--color-text-primary);
     }
-
-    .button.secondary:hover {
-      color: var(--text);
-      border-color: var(--border-strong);
-      background: var(--surface-2);
-    }
-
+    
+    /* Hero Section */
     .hero {
-      max-width: 940px;
-      padding: 128px 0 116px;
+      padding: var(--space-24) 0;
       text-align: center;
+      border-bottom: 1px solid var(--color-border-subtle);
     }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      margin-bottom: 22px;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--pill);
-      background: rgba(255,255,255,0.025);
-      color: var(--text-3);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-    }
-
-    .eyebrow::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--emerald);
-      box-shadow: 0 0 18px rgba(52,211,153,0.5);
-    }
-
-    h1, h2, h3 {
-      font-family: var(--font-display);
-      text-wrap: balance;
-    }
-
-    h1 {
-      max-width: 900px;
+    
+    .hero-content {
+      max-width: 800px;
       margin: 0 auto;
-      font-size: clamp(32px, 5.5vw, 60px);
-      line-height: 1.25;
-      letter-spacing: 0;
-      font-weight: 200;
     }
-
-    .gradient-text {
-      background: linear-gradient(90deg, #f7f7fb, rgba(34,211,238,0.86), rgba(167,139,250,0.86));
+    
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: var(--text-5xl);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: var(--space-6);
+      background: linear-gradient(135deg, var(--color-text-primary), var(--color-accent));
       -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       background-clip: text;
-      color: transparent;
-      font-weight: 300;
-      text-shadow: 0 0 34px rgba(167,139,250,0.18);
     }
-
-    .hero p {
-      max-width: 460px;
-      margin: 28px auto 0;
-      color: var(--text-2);
-      font-size: 17px;
-      font-weight: 300;
-      line-height: 1.7;
+    
+    .hero-subtitle {
+      font-size: var(--text-xl);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-8);
+      line-height: 1.6;
     }
-
-    .utility-line {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px 18px;
-      margin: 24px auto 0;
-      color: var(--text-3);
-      font-family: var(--font-mono);
-      font-size: 12px;
-    }
-
-    .utility-line span::before {
-      content: "//";
-      margin-right: 7px;
-      color: rgba(34,211,238,0.62);
-    }
-
+    
     .hero-actions {
       display: flex;
+      align-items: center;
       justify-content: center;
+      gap: var(--space-4);
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 34px;
     }
-
-    .hero-card {
-      margin: 64px auto 0;
-      max-width: 840px;
-      padding: 1px;
-      border-radius: calc(var(--radius) + 1px);
-      background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.045) 38%, rgba(167,139,250,0.14) 72%, rgba(240,160,80,0.12));
-      box-shadow: 0 28px 90px rgba(0,0,0,0.34);
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-6);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
     }
-
-    .terminal {
-      text-align: left;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
-      overflow: hidden;
+    
+    .btn-primary {
+      background: var(--color-accent);
+      color: var(--color-bg);
     }
-
-    .hero-card .terminal { border: 0; background: rgba(8,8,12,0.82); }
-
-    .terminal-bar, .copy-row {
+    
+    .btn-primary:hover {
+      background: var(--color-accent-hover);
+      color: var(--color-bg);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+    }
+    
+    .btn-secondary:hover {
+      color: var(--color-text-primary);
+      border-color: var(--color-text-secondary);
+      transform: translateY(-1px);
+    }
+    
+    /* Section Styles */
+    section {
+      padding: var(--space-16) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: var(--space-12);
+    }
+    
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      margin-bottom: var(--space-3);
+    }
+    
+    .section-subtitle {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* Card Grid */
+    .card-grid {
+      display: grid;
+      gap: var(--space-6);
+    }
+    
+    .card-grid-4 {
+      grid-template-columns: 1fr;
+    }
+    
+    .card-grid-3 {
+      grid-template-columns: 1fr;
+    }
+    
+    .card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      transition: all var(--transition-normal);
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--color-border);
+    }
+    
+    .card-icon {
+      width: 48px;
+      height: 48px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 13px 15px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-3);
-      font-family: var(--font-mono);
-      font-size: 12px;
+      justify-content: center;
+      background: var(--color-accent);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      font-size: var(--text-xl);
     }
-
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
-    .dot:nth-child(1) { background: var(--amber); }
-    .dot:nth-child(2) { background: var(--violet); }
-    .dot:nth-child(3) { background: var(--emerald); }
-
-    pre {
-      margin: 0;
-      padding: 24px;
-      overflow-x: auto;
-      color: var(--text-2);
-      font-size: 13px;
-      line-height: 1.85;
+    
+    .card-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
     }
-
-    code { font-family: var(--font-mono); }
-    .token { color: var(--cyan); }
-    .comment { color: var(--text-3); }
-    .string { color: #b8f7d7; }
-    .violet { color: var(--violet); }
-    .amber { color: var(--amber); }
-
-    section { padding: 112px 0; }
-
-    .section-heading {
-      max-width: 680px;
-      margin-bottom: 34px;
+    
+    .card-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
     }
-
-    .section-heading.center { margin-inline: auto; text-align: center; }
-
-    h2 {
-      margin: 0;
-      font-size: clamp(26px, 4vw, 40px);
-      line-height: 1.4;
-      letter-spacing: 0;
-      font-weight: 200;
-    }
-
-    .section-heading p {
-      margin: 18px 0 0;
-      color: var(--text-2);
-      line-height: 1.85;
-      font-size: 16px;
-      font-weight: 300;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-
-    .feature, .panel {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, var(--surface-2), var(--surface));
-    }
-
-    .feature {
-      min-height: 246px;
-      padding: 22px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feature::after {
-      content: "";
-      position: absolute;
-      inset: auto 18px 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent, rgba(255,255,255,0.18)), transparent);
-      opacity: 0.7;
-    }
-
-    .feature:nth-child(1) { --accent: rgba(34,211,238,0.52); }
-    .feature:nth-child(2) { --accent: rgba(167,139,250,0.50); }
-    .feature:nth-child(3) { --accent: rgba(240,160,80,0.42); }
-    .feature:nth-child(4) { --accent: rgba(52,211,153,0.48); }
-
-    .icon {
-      width: 34px;
-      height: 34px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 28px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: rgba(255,255,255,0.035);
-      color: var(--text-2);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 300;
-    }
-
-    .feature h3 {
-      margin: 0 0 10px;
-      font-size: 19px;
-      letter-spacing: 0.01em;
-      font-weight: 300;
-    }
-
-    .feature p {
-      margin: 0;
-      color: var(--text-3);
-      line-height: 1.68;
-      font-size: 14px;
-    }
-
-    .section-num {
-      margin-bottom: 16px;
-      color: var(--text-3);
-      font-size: 11px;
-      font-weight: 300;
-      letter-spacing: 6px;
+    
+    .card-role {
+      font-size: var(--text-xs);
+      color: var(--color-accent);
+      font-weight: 500;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-2);
     }
-
-    .install-section { max-width: 840px; }
-
-    .install-modes {
+    
+    .card-best-for {
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    .card-best-for strong {
+      color: var(--color-text-secondary);
+    }
+    
+    /* Tools Section */
+    .tools-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 34px;
+      gap: var(--space-6);
+      grid-template-columns: 1fr;
     }
-
-    .install-mode {
-      border: 1px solid var(--bg-card-border);
-      border-radius: var(--radius);
-      background: var(--bg-card);
-      padding: 22px;
+    
+    /* Night Shift Section */
+    .night-shift {
+      text-align: center;
+      padding: var(--space-24) 0;
+      background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
     }
-
-    .install-mode h3 {
-      margin: 0 0 10px;
-      font-size: 18px;
-      font-weight: 300;
-      letter-spacing: 0.02em;
+    
+    .night-shift-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      margin-bottom: var(--space-4);
     }
-
-    .install-mode p {
-      margin: 0 0 18px;
-      color: var(--text-3);
-      font-size: 14px;
-      line-height: 1.75;
+    
+    .night-shift-text {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: 600px;
+      margin: 0 auto var(--space-8);
+      line-height: 1.7;
     }
-
-    .install-mode pre {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(8,8,12,0.62);
-      font-size: 12px;
-      line-height: 1.8;
-    }
-
-    .install-mode.wide { grid-column: 1 / -1; }
-
-    .install-note {
-      max-width: 720px;
-      margin: 22px auto 0;
-      color: var(--text-3);
-      font-family: var(--font-serif);
-      font-size: 15px;
-      font-style: italic;
-      line-height: 1.8;
+    
+    /* Footer */
+    .footer {
+      padding: var(--space-12) 0;
       text-align: center;
     }
-
-    .copy-row { justify-content: space-between; }
-
-    .copy {
-      cursor: pointer;
-      border: 1px solid var(--border);
-      border-radius: var(--pill);
-      background: rgba(255,255,255,0.025);
-      color: var(--text-3);
-      padding: 7px 10px;
-      font: inherit;
-    }
-
-    footer {
-      padding: 22px 0 48px;
-      color: var(--text-3);
-    }
-
-    .footer-inner {
+    
+    .footer-links {
       display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding-top: 22px;
-      border-top: 1px solid var(--border);
-      font-size: 13px;
+      justify-content: center;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
     }
-
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-      .install-modes { grid-template-columns: 1fr; }
-      .install-mode.wide { grid-column: auto; }
-      .nav-links { display: none; }
-      .hero { padding-top: 88px; }
-      section { padding: 86px 0; }
+    
+    .footer-link {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
     }
-
-    @media (max-width: 620px) {
-      .container { width: min(100% - 28px, 1120px); }
-      nav .button { display: none; }
-      .grid { grid-template-columns: 1fr; }
-      .hero { padding: 78px 0 80px; }
-      .hero-actions { flex-direction: column; }
-      .hero-actions .button { width: 100%; }
-      h1 { font-size: clamp(32px, 12vw, 48px); }
-      pre { padding: 18px; font-size: 12px; }
-      .footer-inner { flex-direction: column; }
+    
+    .footer-link:hover {
+      color: var(--color-text-secondary);
+    }
+    
+    .footer-copy {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .fade-in-delay-1 { transition-delay: 100ms; }
+    .fade-in-delay-2 { transition-delay: 200ms; }
+    .fade-in-delay-3 { transition-delay: 300ms; }
+    .fade-in-delay-4 { transition-delay: 400ms; }
+    
+    /* Responsive - Tablet */
+    @media (min-width: 640px) {
+      .card-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .card-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Responsive - Desktop */
+    @media (min-width: 1024px) {
+      .hero {
+        text-align: left;
+      }
+      
+      .hero-content {
+        margin: 0;
+      }
+      
+      .hero-actions {
+        justify-content: flex-start;
+      }
+      
+      .card-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .card-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Mobile Navigation */
+    @media (max-width: 640px) {
+      .nav {
+        display: none;
+      }
+      
+      .hero-title {
+        font-size: var(--text-4xl);
+      }
+      
+      .hero-subtitle {
+        font-size: var(--text-lg);
+      }
     }
   </style>
 </head>
 <body>
-  <header class="container">
-    <nav aria-label="Main navigation">
-      <a class="brand" href="#" aria-label="Subagents home">
-        <span class="mark">✦</span>
-        <span>subagents</span>
-      </a>
-      <div class="nav-links">
-        <a href="#features">Agents</a>
-        <a href="#quick-start">Install</a>
-        <a href="https://github.com/asabya/subagents">GitHub</a>
-      </div>
-      <a class="button secondary" href="#quick-start">Install Now</a>
-    </nav>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Subagents</a>
+      <nav class="nav">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#tools" class="nav-link">Tools</a>
+        <a href="#docs" class="nav-link">Docs</a>
+        <a href="#night-shift" class="nav-link">Night Shift</a>
+        <a href="https://github.com/asabya/subagents" class="github-link" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
   </header>
 
   <main>
-    <section class="hero container">
-      <div class="eyebrow">Role-native coding agents</div>
-      <h1>Small expert teams for <span class="gradient-text">software changes</span>.</h1>
-      <p>
-        A restrained TypeScript orchestration layer for Finder, Oracle, Manager, and Worker agents—built to keep codebase discovery, judgment, planning, and implementation deliberately separate.
-      </p>
-      <div class="utility-line" aria-label="Workflow principles">
-        <span>map first</span>
-        <span>reason when risky</span>
-        <span>change with evidence</span>
-      </div>
-      <div class="hero-actions">
-        <a class="button" href="#quick-start">Install Now</a>
-        <a class="button secondary" href="#features">See the agents</a>
-      </div>
-
-      <div class="hero-card" aria-label="Subagents workflow example">
-        <div class="terminal">
-          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>subagents / coordinated handoff</span></div>
-          <pre><code><span class="comment">// Context, judgment, planning, implementation — each in its lane.</span>
-<span class="token">Finder</span>.map(codebase) → <span class="violet">Oracle</span>.advise(task)
-  → <span class="amber">Manager</span>.coordinate(plan)
-  → <span class="token">Worker</span>.change(files)</code></pre>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title fade-in">Four specialized Pi subagents for intelligent delegation.</h1>
+          <p class="hero-subtitle fade-in fade-in-delay-1">
+            Subagents transforms Pi into a multi-specialist team: Finder for codebase search, Oracle for debugging, Worker for implementation, and Manager for orchestration. Install once, delegate intelligently.
+          </p>
+          <div class="hero-actions fade-in fade-in-delay-2">
+            <a href="https://github.com/asabya/subagents" class="btn btn-primary">Get Started</a>
+            <a href="https://github.com/asabya/subagents" class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="features" class="container">
-      <div class="section-heading center">
-        <h2>Orchestration without the noise.</h2>
-        <p>Subagents keeps complex implementation work legible by assigning each phase to a focused role instead of one overloaded assistant.</p>
-      </div>
-      <div class="grid">
-        <article class="feature">
-          <div class="icon">F</div>
-          <h3>Finder</h3>
-          <p>Searches the codebase, identifies ownership boundaries, and returns the smallest useful map before changes begin.</p>
-        </article>
-        <article class="feature">
-          <div class="icon">O</div>
-          <h3>Oracle</h3>
-          <p>Provides deeper architectural judgment for risky choices, ambiguous requirements, and trade-off heavy tasks.</p>
-        </article>
-        <article class="feature">
-          <div class="icon">M</div>
-          <h3>Manager</h3>
-          <p>Turns context into a concrete plan, preserves constraints, and keeps implementation focused on the objective.</p>
-        </article>
-        <article class="feature">
-          <div class="icon">W</div>
-          <h3>Worker</h3>
-          <p>Makes the smallest viable code change, verifies it, and reports concise evidence for review.</p>
-        </article>
+    <!-- Features Section -->
+    <section id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Features</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Everything you need for intelligent coding delegation</p>
+        </div>
+        <div class="card-grid card-grid-4">
+          <div class="card fade-in fade-in-delay-1">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">Finder</div>
+            <p class="card-description">Codebase search and exploration. Locate features, trace module connections, and map codebase flows.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-2">
+            <div class="card-icon">🔮</div>
+            <div class="card-title">Oracle</div>
+            <p class="card-description">Reasoning and debugging. Root-cause analysis, trade-off planning, and deciding the best next probe.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-3">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">Worker</div>
+            <p class="card-description">Implementation with minimal diffs. Focused edits, smallest viable fix, and verified changes.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-4">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">Manager</div>
+            <p class="card-description">Orchestration across specialists. Coordinates finder, oracle, and worker workflows.</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section id="quick-start" class="install-section container">
-      <div class="section-heading center">
-        <div class="section-num">Install</div>
-        <h2>Install as a Pi extension.</h2>
-        <p>Use subagents from this repo while developing, or install the local package into Pi once it is ready.</p>
+    <!-- Tools Section -->
+    <section id="tools">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Tools</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Each tool has a focused role and best-use case</p>
+        </div>
+        <div class="tools-grid">
+          <div class="card fade-in fade-in-delay-1">
+            <div class="card-role">finder</div>
+            <div class="card-title">Codebase Search</div>
+            <p class="card-description">Locate where features are implemented, trace how modules connect, and explore codebase structure.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use finder to find where authentication is handled"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-2">
+            <div class="card-role">oracle</div>
+            <div class="card-title">Reasoning & Debugging</div>
+            <p class="card-description">Debug ambiguous failures, root-cause analysis, and trade-off-aware architectural planning.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use oracle to debug why auth fails intermittently"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-3">
+            <div class="card-role">worker</div>
+            <div class="card-title">Implementation</div>
+            <p class="card-description">Smallest viable changes with focused execution. Minimal diffs with concrete verification.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use worker to make the smallest possible fix"</div>
+          </div>
+          <div class="card fade-in fade-in-delay-4">
+            <div class="card-role">manager</div>
+            <div class="card-title">Orchestration</div>
+            <p class="card-description">Coordinate multi-phase workflows across specialists. Smart delegation with handoff artifacts.</p>
+            <div class="card-best-for"><strong>Best for:</strong> "Use manager to investigate, choose safest fix, implement, verify"</div>
+          </div>
+        </div>
       </div>
-      <div class="install-modes">
-        <article class="install-mode">
-          <h3>Install locally</h3>
-          <p>Register the local subagents project with Pi from an absolute path.</p>
-          <div class="terminal">
-            <div class="copy-row">
-              <span>local extension</span>
-              <button class="copy" type="button" data-copy="pi install /absolute/path/to/subagents">Copy</button>
-            </div>
-            <pre><code><span class="token">pi</span> install <span class="string">/absolute/path/to/subagents</span></code></pre>
-          </div>
-        </article>
-        <article class="install-mode">
-          <h3>Run from repo</h3>
-          <p>During development, execute the TypeScript entrypoint directly from the repository.</p>
-          <div class="terminal">
-            <div class="copy-row">
-              <span>development</span>
-              <button class="copy" type="button" data-copy="pi -e ./index.ts">Copy</button>
-            </div>
-            <pre><code><span class="token">pi</span> -e <span class="string">./index.ts</span></code></pre>
-          </div>
-        </article>
-        <article class="install-mode wide">
-          <h3>Built usage</h3>
-          <p>Build once, then point Pi at the compiled JavaScript output.</p>
-          <div class="terminal">
-            <div class="copy-row">
-              <span>compiled</span>
-              <button class="copy" type="button" data-copy="npm run build&#10;pi -e ./dist/index.js">Copy</button>
-            </div>
-            <pre><code><span class="token">npm</span> run build
-<span class="token">pi</span> -e <span class="string">./dist/index.js</span></code></pre>
-          </div>
-        </article>
+    </section>
+
+    <!-- Night Shift Section -->
+    <section id="night-shift" class="night-shift">
+      <div class="container">
+        <h2 class="night-shift-title fade-in">Night Shift Workflow</h2>
+        <p class="night-shift-text fade-in fade-in-delay-1">
+          Autonomous TODO implementation with Manager. Delegate complex tasks and let subagents work while you sleep. Manager orchestrates finder → oracle → worker with full auditability through handoff artifacts.
+        </p>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="btn btn-primary fade-in fade-in-delay-2" target="_blank" rel="noopener">
+          Learn More
+        </a>
       </div>
-      <p class="install-note">Finder, Oracle, Manager, and Worker become available as Pi tools after install.</p>
+    </section>
+
+    <!-- Docs Section -->
+    <section id="docs">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title fade-in">Documentation</h2>
+          <p class="section-subtitle fade-in fade-in-delay-1">Full guides and API reference</p>
+        </div>
+        <div class="card-grid card-grid-3">
+          <a href="https://github.com/asabya/subagents/blob/main/docs/index.md" class="card fade-in fade-in-delay-1" target="_blank" rel="noopener">
+            <div class="card-title">Getting Started</div>
+            <p class="card-description">Installation, quick start, and tool overview.</p>
+          </a>
+          <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="card fade-in fade-in-delay-2" target="_blank" rel="noopener">
+            <div class="card-title">Night Shift</div>
+            <p class="card-description">Autonomous workflow with Manager.</p>
+          </a>
+          <a href="https://github.com/asabya/subagents/tree/main/Specs" class="card fade-in fade-in-delay-3" target="_blank" rel="noopener">
+            <div class="card-title">Specifications</div>
+            <p class="card-description">Design specs and implementation details.</p>
+          </a>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="container">
-    <div class="footer-inner">
-      <span>© <span id="year"></span> subagents. Built for focused AI coding workflows.</span>
-      <span>Near-black by default. Color only where it helps.</span>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/asabya/subagents" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/index.md" class="footer-link" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/asabya/subagents/blob/main/docs/nightshift.md" class="footer-link" target="_blank" rel="noopener">Night Shift</a>
+        <a href="https://github.com/asabya/subagents/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
+      </div>
+      <p class="footer-copy">MIT License — Subagents for Pi</p>
     </div>
   </footer>
 
   <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+    // Intersection Observer for fade-in animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -50px 0px',
+        threshold: 0.1
+      };
 
-    document.querySelectorAll('[data-copy]').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const label = button.textContent;
-        try {
-          await navigator.clipboard.writeText(button.dataset.copy);
-          button.textContent = 'Copied';
-          setTimeout(() => { button.textContent = label; }, 1400);
-        } catch {
-          button.textContent = 'Copy failed';
-          setTimeout(() => { button.textContent = label; }, 1400);
-        }
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      // Observe all fade-in elements
+      document.querySelectorAll('.fade-in').forEach(el => {
+        observer.observe(el);
       });
     });
   </script>

@@ -6,7 +6,7 @@ Night Shift implementation queue.
 
 - `[bug]` — eligible; highest priority defect.
 - `[ready]` — eligible for autonomous implementation.
-- `[draft]` — not eligible; still being planned.
+- `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote to `[ready]` before Night Shift can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.
 - `[done]` — complete; include commit hash when available.
@@ -14,6 +14,34 @@ Night Shift implementation queue.
 ## Queue
 
 Add one item per feature/bug. Prefer small, independently reviewable work.
+
+### [ready][P1][config] Streamline subagent model and thinking configuration
+
+Spec: `Specs/subagent-config-streamlining.md`
+
+Acceptance criteria:
+
+- [ ] Unified `~/.pi/agent/subagents.json` config supports per-agent `model` and `thinking`.
+- [ ] Legacy per-agent config files are no longer used or documented.
+- [ ] Manager and Finder can be configured with cheaper/smaller models.
+- [ ] Worker and especially Oracle can be configured with higher-tier models.
+- [ ] No docs or examples set `thinking` to `low`; use at least `medium`.
+- [ ] An agent-friendly Markdown setup guide explains how to create/update the config after installation.
+- [ ] README documents the new config format and recommended model split.
+- [ ] Tests cover unified config parsing, fallback behavior, malformed config, invalid models, and per-agent resolution.
+- [ ] Validations pass:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Notes:
+
+- Pi's `pi-agent-core` `Agent` type has `thinkingLevel`; apply per-agent `thinking` through that API.
+- Preferred setup path is documentation-driven, not an installer script.
+
 
 ### [done][P1][workflow] Persist Worker handoffs to file artifacts (763cefa)
 
@@ -75,7 +103,6 @@ Notes:
 
 ### [done][P2][workflow] Add a Day Shift planner workflow for better specs (8db81fd)
 
-PR: https://github.com/asabya/subagents/pull/2
 
 Spec: `Specs/day-shift-planner-agent.md`
 
@@ -86,7 +113,7 @@ Acceptance criteria:
 - [x] Planner-created TODOs are `[draft]` by default.
 - [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
 - [x] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
-- [x] At least one example prompt or prompt template is added for the planner.
+- [x] At least one example prompt or prompt template is added for using the planner.
 
 Validation:
 
@@ -98,5 +125,60 @@ npm run build
 
 Notes:
 
-- Implement the documentation/prompt workflow first.
+- Implementation complete: AGENT_LOOP.md, docs/nightshift.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
+
+### [done][bug][P1][ui] Fix landing page dark theme not rendering correctly
+
+Spec: `Specs/x-styled-landing.md`
+
+Acceptance criteria:
+
+- [done: 49df72ab] Dark theme CSS variables render correctly in all browsers
+- [done: 49df72ab] Background uses dark color (#1a1a1a or similar), not white
+- [ ] Text is visible (near-white on dark background)
+- [ ] OKLCH colors have proper fallback for browsers that don't support them
+- [ ] No white flash on page load
+
+Validation:
+
+```bash
+# Verify page renders with dark background in browser
+# No white background visible
+```
+
+Notes:
+
+- Bug: landing page shows white background making text invisible
+- Likely cause: OKLCH CSS custom properties not falling back correctly, or `:root` variables not applying
+
+### [done][P2][ui] Style landing page with X aesthetics (9aa986a)
+
+Spec: `Specs/x-styled-landing.md`
+
+Acceptance criteria:
+
+- [ ] A static HTML landing page exists at `landing/index.html`
+- [ ] Design follows X dark theme aesthetic
+- [ ] CSS variables use OKLCH color system with dark background (#1a1a1a equivalent)
+- [ ] Typography uses Inter font family
+- [ ] Landing page includes: header, hero, features section, tool cards, CTA, footer
+- [ ] Smooth scroll and subtle fade-in animations
+- [ ] Responsive design for mobile/desktop
+- [ ] Links back to existing documentation work
+
+Validation:
+
+```bash
+# Verify HTML is well-formed
+# No validation errors in browser console
+```
+
+Notes:
+
+
+- Design inspired by X landing page
+- Color scheme: dark charcoal background with near-white text
+- Font: Inter (body), Cal Sans or similar for display headings
+- Create static HTML, not dynamic Pi-generated
+- Keep existing Pi subagent tools unchanged

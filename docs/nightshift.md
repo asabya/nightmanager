@@ -2,8 +2,6 @@
 
 This project includes a Pi/subagents Night Shift workflow.
 
-## Files
-
 - `AGENTS.md` — project router for agents.
 - `AGENT_LOOP.md` — Day Shift and Night Shift operating procedure.
 - `TODOs.md` — queue of eligible work.
@@ -11,6 +9,43 @@ This project includes a Pi/subagents Night Shift workflow.
 - `REVIEW_PERSONAS.md` — review lenses for manager/subagents.
 - `.pi/prompts/nightshift.md` — non-interactive prompt used by the runner.
 - `scripts/nightshift.sh` — cron/launchd entrypoint.
+
+## Day Shift Planner
+
+The Day Shift planner is an optional workflow for brainstorming and organizing rough ideas into Night Shift-ready specs.
+
+### Purpose
+
+- Help humans clarify underspecified ideas
+- Identify missing requirements, edge cases, risks
+- Produce draft specs (`Specs/draft-*.md`) for human review
+- Keep draft TODOs as `[draft]` until the human approves
+
+### Prompt Template
+
+Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
+
+- Planner output is **advisory** — human must approve before work becomes `[ready]`
+- Create specs as `Specs/draft-*.md` by default (Night Shift ignores them)
+- Add TODOs as `[draft]` only when requested
+- Include a readiness checklist in the draft spec
+- Do not implement code — leave that to Night Shift
+
+### Workflow
+
+1. Human uses the planner prompt (directly or via Pi) to brainstorm an idea
+2. Planner produces `Specs/draft-*.md` with acceptance criteria, edge cases, etc.
+3. Human reviews the draft spec and confirms all checklist items
+4. Human renames the spec (removes `draft-`) and/or changes TODO to `[ready]`
+5. Night Shift can now pick up the spec/TODO for implementation
+
+### Night Shift Ignoring Drafts
+
+Night Shift deliberately ignores `draft-*` specs and `[draft]` TODOs:
+
+- Specs with filename starting with `draft-` are skipped
+- TODOs tagged `[draft]` are skipped
+- This ensures human approval is required before autonomous work begins
 
 ## Manual Run
 
