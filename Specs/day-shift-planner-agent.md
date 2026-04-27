@@ -67,14 +67,14 @@ The planner should:
 
 ## Acceptance Criteria
 
-- [ ] A documented Day Shift planner workflow exists in repo docs.
-- [ ] The workflow clearly states that planner output is advisory and human-approved.
-- [ ] Planner-created specs are written as `Specs/draft-*.md` by default.
-- [ ] Planner-created TODOs are `[draft]` by default.
-- [ ] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
-- [ ] The workflow tells Night Shift to ignore planner drafts until the human promotes them.
-- [ ] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
-- [ ] At least one example prompt or prompt template is added for using the planner.
+- [x] A documented Day Shift planner workflow exists in repo docs.
+- [x] The workflow clearly states that planner output is advisory and human-approved.
+- [x] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [x] Planner-created TODOs are `[draft]` by default.
+- [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
+- [x] The workflow tells Night Shift to ignore planner drafts until the human promotes them.
+- [x] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
+- [x] At least one example prompt or prompt template is added for using the planner.
 
 ## Edge Cases
 

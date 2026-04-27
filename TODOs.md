@@ -101,7 +101,8 @@ Notes:
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
 - See `Specs/worktree-nightshift.md` for full design.
 
-### [done][P2][workflow] Add a Day Shift planner workflow for better specs
+### [done][P2][workflow] Add a Day Shift planner workflow for better specs (8db81fd)
+
 
 Spec: `Specs/day-shift-planner-agent.md`
 
