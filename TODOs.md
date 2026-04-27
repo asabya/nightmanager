@@ -15,6 +15,34 @@ Night Shift implementation queue.
 
 Add one item per feature/bug. Prefer small, independently reviewable work.
 
+### [ready][P1][config] Streamline subagent model and thinking configuration
+
+Spec: `Specs/subagent-config-streamlining.md`
+
+Acceptance criteria:
+
+- [ ] Unified `~/.pi/agent/subagents.json` config supports per-agent `model` and `thinking`.
+- [ ] Legacy per-agent config files are no longer used or documented.
+- [ ] Manager and Finder can be configured with cheaper/smaller models.
+- [ ] Worker and especially Oracle can be configured with higher-tier models.
+- [ ] No docs or examples set `thinking` to `low`; use at least `medium`.
+- [ ] An agent-friendly Markdown setup guide explains how to create/update the config after installation.
+- [ ] README documents the new config format and recommended model split.
+- [ ] Tests cover unified config parsing, fallback behavior, malformed config, invalid models, and per-agent resolution.
+- [ ] Validations pass:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Notes:
+
+- Pi's `pi-agent-core` `Agent` type has `thinkingLevel`; apply per-agent `thinking` through that API.
+- Preferred setup path is documentation-driven, not an installer script.
+
+
 ### [done][P1][workflow] Persist Worker handoffs to file artifacts (763cefa)
 
 Spec: `Specs/file-based-handoffs.md`
