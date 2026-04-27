@@ -1,9 +1,7 @@
 import { defineTool } from "@mariozechner/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
-import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { resolveSubagentConfig } from "../core/models.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
@@ -39,7 +37,6 @@ const handoffToWorkerSchema = Type.Object({
 
 type ManagerInput = Static<typeof managerSchema>;
 type HandoffToWorkerInput = Static<typeof handoffToWorkerSchema>;
-const MANAGER_CONFIG_PATH = join(homedir(), ".pi", "agent", "manager.json");
 
 type DelegateCallRecord = {
   tool: string;
@@ -132,13 +129,12 @@ export const managerTool = defineTool({
       };
     }
 
-    const configured = loadToolConfig(MANAGER_CONFIG_PATH)?.model;
-    const parsed = configured ? parseModelReference(configured) : null;
-    const model = parsed ? ctx.modelRegistry.find(parsed.provider, parsed.modelId) ?? ctx.model : ctx.model;
+    const subagentConfig = resolveSubagentConfig(ctx, "manager");
+    const model = subagentConfig.model;
     if (!model) {
       return {
         content: [{ type: "text", text: "Error: No model available for manager subagent." }],
-        details: { error: "no_model", configPath: MANAGER_CONFIG_PATH },
+        details: { error: "no_model", configPath: subagentConfig.configPath },
         isError: true,
       };
     }
@@ -184,6 +180,7 @@ export const managerTool = defineTool({
       },
       ctx,
       model,
+      thinkingLevel: subagentConfig.thinkingLevel,
       systemPrompt: MANAGER_SYSTEM_PROMPT,
       tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(handoffToWorkerTool)],
       task: params.query,

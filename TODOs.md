@@ -15,7 +15,7 @@ Night Shift implementation queue.
 
 Add one item per feature/bug. Prefer small, independently reviewable work.
 
-### [ready][P1][config] Streamline subagent model and thinking configuration
+### [done][P1][config] Streamline subagent model and thinking configuration (c0d)
 
 Spec: `Specs/subagent-config-streamlining.md`
 

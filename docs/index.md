@@ -19,14 +19,14 @@ Install once, delegate intelligently.
 
 ## Tools Overview
 
-| Tool | Role | Best For | Model Config |
-|------|------|---------|--------------|
-| **finder** | Codebase search | Finding where features live, tracing module connections | `~/.pi/agent/finder.json` |
-| **oracle** | Reasoning & debugging | Ambiguous failures, root-cause analysis, trade-off planning | `~/.pi/agent/oracle.json` |
-| **worker** | Implementation | Smallest viable fix, verified changes | `~/.pi/agent/worker.json` |
-| **manager** | Orchestration | Coordinating finder/oracle/worker workflows | `~/.pi/agent/manager.json` |
+| Tool | Role | Best For | Config |
+|------|------|---------|--------|
+| **finder** | Codebase search | Finding where features live, tracing module connections | `~/.pi/agent/subagents.json` |
+| **oracle** | Reasoning & debugging | Ambiguous failures, root-cause analysis, trade-off planning | `~/.pi/agent/subagents.json` |
+| **worker** | Implementation | Smallest viable fix, verified changes | `~/.pi/agent/subagents.json` |
+| **manager** | Orchestration | Coordinating finder/oracle/worker workflows | `~/.pi/agent/subagents.json` |
 
-Model selection follows a fallback chain: tool-specific config → current Pi session model.
+Model selection follows a fallback chain: unified subagent config → current Pi session model.
 
 ---
 
@@ -100,16 +100,20 @@ Use manager to investigate the failing auth flow, choose the safest fix, impleme
 
 ## Configuration
 
-Each tool supports a model config file in your Pi agent directory:
+All four tools support a unified optional config file at `~/.pi/agent/subagents.json`:
 
-```bash
-# Example: ~/.pi/agent/finder.json
+```json
 {
-  "model": "ollama/glm-5:cloud"
+  "agents": {
+    "manager": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
+    "finder": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
+    "worker": { "model": "provider/strong-model", "thinking": "medium" },
+    "oracle": { "model": "provider/best-reasoning-model", "thinking": "high" }
+  }
 }
 ```
 
-Config precedence: tool config → Pi session model.
+Config precedence: unified subagent config → Pi session model. Missing or malformed config falls back safely; `thinking` defaults to `medium`. Keep `manager` and `finder` cheaper than `worker` and `oracle` when possible. See [subagent-config-setup.md](subagent-config-setup.md) for a safe setup procedure.
 
 ### Package Scripts
 

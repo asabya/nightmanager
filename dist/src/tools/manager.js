@@ -1,9 +1,7 @@
 import { defineTool } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
-import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { resolveSubagentConfig } from "../core/models.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
@@ -33,7 +31,6 @@ const handoffToWorkerSchema = Type.Object({
     constraints: Type.Optional(Type.Array(Type.String(), { description: "Additional constraints for worker" })),
     verification: Type.Optional(Type.Array(Type.String(), { description: "Additional verification commands for worker" })),
 });
-const MANAGER_CONFIG_PATH = join(homedir(), ".pi", "agent", "manager.json");
 function extractTextExcerpt(result, maxLength = 2_000) {
     const content = result?.content;
     const text = content
@@ -118,13 +115,12 @@ export const managerTool = defineTool({
                 isError: true,
             };
         }
-        const configured = loadToolConfig(MANAGER_CONFIG_PATH)?.model;
-        const parsed = configured ? parseModelReference(configured) : null;
-        const model = parsed ? ctx.modelRegistry.find(parsed.provider, parsed.modelId) ?? ctx.model : ctx.model;
+        const subagentConfig = resolveSubagentConfig(ctx, "manager");
+        const model = subagentConfig.model;
         if (!model) {
             return {
                 content: [{ type: "text", text: "Error: No model available for manager subagent." }],
-                details: { error: "no_model", configPath: MANAGER_CONFIG_PATH },
+                details: { error: "no_model", configPath: subagentConfig.configPath },
                 isError: true,
             };
         }
@@ -168,6 +164,7 @@ export const managerTool = defineTool({
             },
             ctx,
             model,
+            thinkingLevel: subagentConfig.thinkingLevel,
             systemPrompt: MANAGER_SYSTEM_PROMPT,
             tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(handoffToWorkerTool)],
             task: params.query,

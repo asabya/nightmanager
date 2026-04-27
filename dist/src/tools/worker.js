@@ -1,9 +1,7 @@
 import { defineTool, createReadTool, createEditTool, createWriteTool, createBashTool, } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
-import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { resolveSubagentConfig } from "../core/models.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { WORKER_SYSTEM_PROMPT } from "../core/prompts.js";
@@ -21,7 +19,6 @@ const workerSchema = Type.Object({
         Type.Literal("direct-worker"),
     ], { description: "Internal: source of the handoff for artifact creation" })),
 });
-const WORKER_CONFIG_PATH = join(homedir(), ".pi", "agent", "worker.json");
 export const workerTool = defineTool({
     name: "worker",
     label: "Worker",
@@ -50,13 +47,12 @@ export const workerTool = defineTool({
                 isError: true,
             };
         }
-        const configured = loadToolConfig(WORKER_CONFIG_PATH)?.model;
-        const parsed = configured ? parseModelReference(configured) : null;
-        const model = parsed ? ctx.modelRegistry.find(parsed.provider, parsed.modelId) ?? ctx.model : ctx.model;
+        const subagentConfig = resolveSubagentConfig(ctx, "worker");
+        const model = subagentConfig.model;
         if (!model) {
             return {
                 content: [{ type: "text", text: "Error: No model available for worker subagent." }],
-                details: { error: "no_model", configPath: WORKER_CONFIG_PATH },
+                details: { error: "no_model", configPath: subagentConfig.configPath },
                 isError: true,
             };
         }
@@ -118,6 +114,7 @@ export const workerTool = defineTool({
             },
             ctx,
             model,
+            thinkingLevel: subagentConfig.thinkingLevel,
             systemPrompt: WORKER_SYSTEM_PROMPT,
             tools: [
                 createReadTool(ctx.cwd),

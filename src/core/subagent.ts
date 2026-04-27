@@ -1,6 +1,6 @@
 import type { Model } from "@mariozechner/pi-ai";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Agent } from "@mariozechner/pi-agent-core";
+import { Agent, type ThinkingLevel } from "@mariozechner/pi-agent-core";
 import { stream } from "@mariozechner/pi-ai";
 import { basename } from "node:path";
 import { extractFinalText } from "./result.js";
@@ -55,6 +55,7 @@ export interface RunIsolatedSubagentOptions {
   systemPrompt: string;
   tools: any[];
   task: string;
+  thinkingLevel?: ThinkingLevel;
   signal?: AbortSignal;
   timeoutMs: number;
 }
@@ -110,6 +111,7 @@ async function runIsolatedSubagentImpl(
     timeoutMs,
     subagentName,
     onUpdate,
+    thinkingLevel = "medium",
   } = options;
 
   const timeoutAbort = new AbortController();
@@ -205,6 +207,7 @@ async function runIsolatedSubagentImpl(
         systemPrompt,
         model,
         tools: boundTools,
+        thinkingLevel,
       },
       streamFn: (messages, context, streamOptions) =>
         stream(messages, context, {
