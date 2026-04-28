@@ -1,22 +1,28 @@
 {
   "name": "nightmanager",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Finder, Oracle, Manager, and Worker tools for Pi's Nightmanager workflow",
-  "keywords": ["pi-package", "pi", "pi-coding-agent", "extension", "nightmanager"],
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "extension",
+    "nightmanager"
+  ],
   "license": "MIT",
   "exports": {
-    ".": "./dist/src/index.js"
+    ".": "./src/index.ts"
   },
   "files": [
-    "dist",
-    "index.ts",
+    "src",
     "README.md",
-    "skills"
+    "skills",
+    "prompts"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run typecheck",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
@@ -39,7 +45,14 @@
     "vitest": "^4.1.4"
   },
   "pi": {
-    "extensions": ["./index.ts"],
-    "skills": ["./skills"]
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
   }
 }

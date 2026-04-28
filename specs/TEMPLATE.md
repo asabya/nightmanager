@@ -45,7 +45,7 @@ Minimum expected validation:
 ```bash
 npm run typecheck
 npm test
-npm run build
+npm run build  # alias for typecheck; no dist output
 ```
 
 Add narrower tests or manual checks here.

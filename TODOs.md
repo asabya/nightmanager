@@ -12,17 +12,3 @@ Nightmanager implementation queue.
 - `[done]` — complete; include commit hash when available.
 
 ## Queue
-
-- [done] Add `/nightconfig` extension command to manage `~/.pi/agent/nightmanager.json`
-  - Spec: `specs/nightconfig-command.md`
-  - Scope: add the new Pi slash command in the extension, prompt for one or all subagents, validate model IDs via Pi’s model list, reject `thinking: "low"`, and update/create only `agents.*.model` and `agents.*.thinking`.
-  - Acceptance:
-    - `/nightconfig` prompts for all four agents.
-    - `/nightconfig worker` updates only worker and preserves the other agents.
-    - Unknown model IDs are rejected.
-    - `thinking: "low"` is rejected.
-    - Missing config file is created.
-  - Validation:
-    - `npm run typecheck`
-    - `npm test`
-    - `npm run build`

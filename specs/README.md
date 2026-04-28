@@ -11,7 +11,7 @@ Rules:
 
 ## Draft specs
 
-Draft specs are created by the Day Shift planner workflow (see `.pi/prompts/day-planner.md`):
+Draft specs are created by Day Shift planning skills or human planning sessions:
 
 - Filename format: `draft-<title>.md`
 - Nightmanager ignores specs with `draft-` prefix

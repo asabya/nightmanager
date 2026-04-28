@@ -23,20 +23,12 @@ The goal is not to make agents guess better. The goal is to make the project eas
 
 ### Day Shift Planner (Optional)
 
-Optionally, use the Day Shift planner workflow to help brainstorm and organize rough ideas:
+Optionally, use planning skills such as `to-prd`, `to-issues`, or `grill-me` to help brainstorm and organize rough ideas.
 
-- Use `.pi/prompts/day-planner.md` as a reusable prompt template.
-- The planner asks clarifying questions when requirements are underspecified.
-- It produces draft specs as `specs/draft-*.md` (ignored by Nightmanager).
+- Ask clarifying questions when requirements are underspecified.
+- Produce draft specs as `specs/draft-*.md` (ignored by Nightmanager).
 - Planner-created TODOs are `[draft]` by default.
 - **Output is advisory**: the human must review and approve before changing `[draft]` to `[ready]`.
-- See the readiness checklist in `.pi/prompts/day-planner.md` for what to confirm.
-
-Example prompts:
-
-> Help me brainstorm a spec for file-based handoffs.
-
-> Turn this rough idea into a draft Nightmanager spec and TODO candidate, but do not mark it ready.
 
 The planner is not autonomous execution — it helps the human think, but does not implement code.
 
@@ -89,11 +81,11 @@ The manager/nightmanager should:
 ```bash
 npm run typecheck
 npm test
-npm run build
+npm run build  # alias for typecheck; no dist output
 ```
 
 7. Update docs when behavior or workflow changes.
-8. Re-check the diff against `REVIEW_PERSONAS.md`.
+8. Re-check the diff against `prompts/review-personas.md`.
 9. Update `TODOs.md` status:
    - `[done]` with commit hash when complete, or
    - `[blocked]` with reason when not safely implementable.
@@ -101,7 +93,7 @@ npm run build
 
 ### 4. Review Expectations
 
-Before committing, apply these review lenses from `REVIEW_PERSONAS.md`:
+Before committing, apply these review lenses from `prompts/review-personas.md`:
 
 - Designer / API ergonomics
 - Architect / maintainability

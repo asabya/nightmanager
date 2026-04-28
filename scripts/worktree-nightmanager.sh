@@ -37,16 +37,12 @@ fi
 
 SUBAGENTS_EXTENSION="${SUBAGENTS_EXTENSION:-}"
 if [[ -z "$SUBAGENTS_EXTENSION" ]]; then
-  if [[ -f "$ROOT/dist/index.js" ]]; then
-    SUBAGENTS_EXTENSION="$ROOT/dist/index.js"
-  else
-    SUBAGENTS_EXTENSION="$ROOT/index.ts"
-  fi
+  SUBAGENTS_EXTENSION="$ROOT/src/index.ts"
 fi
 
 if [[ ! -f "$SUBAGENTS_EXTENSION" ]]; then
   echo "The Nightmanager extension not found: $SUBAGENTS_EXTENSION" >&2
-  echo "Run npm run build or set SUBAGENTS_EXTENSION=/path/to/nightmanager/dist/index.js" >&2
+  echo "Set SUBAGENTS_EXTENSION=/path/to/nightmanager/src/index.ts" >&2
   exit 1
 fi
 
@@ -78,10 +74,10 @@ add_context_file() {
   fi
 }
 
-add_context_file "AGENTS.md"
-add_context_file "AGENT_LOOP.md"
+add_context_file "prompts/agents.md"
+add_context_file "prompts/agent-loop.md"
 add_context_file "TODOs.md"
-add_context_file "REVIEW_PERSONAS.md"
+add_context_file "prompts/review-personas.md"
 add_context_file "specs/worktree-nightmanager.md"
 add_context_file "README.md"
 add_context_file "package.json"
@@ -96,8 +92,6 @@ if [[ -d "$ROOT/specs" ]]; then
     context_args+=("@$spec_rel")
   done < <(find "$ROOT/specs" -type f -name '*.md' -print0)
 fi
-
-add_context_file ".pi/prompts/worktree-nightmanager.md"
 
 {
   echo "Worktree Nightmanager started at $stamp"
