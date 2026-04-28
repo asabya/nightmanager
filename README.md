@@ -2,7 +2,7 @@
 
 **Four specialized Pi tools for intelligent delegation.**
 
-> **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [landing/index.html](landing/index.html) for the source.
+> **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [docs/index.html](docs/index.html) for the source.
 
 | Tool | Role | Best For |
 |------|------|----------|
@@ -11,31 +11,55 @@
 | `worker` | Implementation | Smallest viable fix, verified changes |
 | `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
 
-> **Quick intro**: See [docs/index.md](docs/index.md) for the full docs.
->
-> **Nightmanager workflow**: See [docs/nightmanager.md](docs/nightmanager.md) for autonomous TODO implementation with `manager`.
-
 ---
+
+## Quick Intro
+
+Nightmanager transforms Pi into a multi-specialist team:
+
+- **Finder** — codebase search and exploration
+- **Oracle** — reasoning, debugging, and root-cause analysis
+- **Worker** — focused implementation with minimal diffs
+- **Manager** — orchestration across the right specialists
+
+Install once, delegate intelligently.
 
 ## Install
 
-Local package install:
+Install Nightmanager with Pi:
+
+### Global install
 
 ```bash
-pi install /absolute/path/to/nightmanager
+pi install npm:nightmanager
 ```
 
-Quick development usage from the repo:
+### Local install
+
+From your project:
 
 ```bash
-pi -e ./index.ts
+pi install -l ./path/to/nightmanager
 ```
 
-Built usage:
+### Run it
+
+Open Pi and run:
+
+```text
+/nightmanager
+```
+
+If you are developing from the repo instead:
 
 ```bash
-npm run build
-pi -e ./dist/index.js
+pi -e ./src/index.ts
+```
+
+Source package usage:
+
+```bash
+pi -e ./src/index.ts
 ```
 
 ## Tools
@@ -111,7 +135,7 @@ Default orchestration policy:
 
 `manager` does not inspect or edit files directly. It delegates to specialized tools, passes structured handoff context between phases, and synthesizes the final result. Implementation is hard-gated through an internal `handoff_to_worker` tool, which requires non-empty objective, findings, target files, and decisions before Worker can run.
 
-> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightmanager.md`](docs/nightmanager.md#inspecting-handoffs) for how to inspect them.
+> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [Notes](#notes).
 
 Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
 
@@ -159,7 +183,22 @@ Recommended split:
 - `worker`: stronger code-editing model.
 - `oracle`: strongest reasoning model.
 
-For an agent-friendly setup procedure, see [docs/subagent-config-setup.md](docs/subagent-config-setup.md).
+## Setup
+
+Use the optional config file at `~/.pi/agent/nightmanager.json` to set models per tool. Missing or malformed config falls back to the current Pi session model.
+
+```json
+{
+  "agents": {
+    "manager": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
+    "finder": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
+    "worker": { "model": "provider/strong-model", "thinking": "medium" },
+    "oracle": { "model": "provider/best-reasoning-model", "thinking": "high" }
+  }
+}
+```
+
+Keep `manager` and `finder` cheaper than `worker` and `oracle` when possible.
 
 ## Development
 
@@ -189,7 +228,7 @@ Typecheck:
 npm run typecheck
 ```
 
-Build:
+Build/typecheck (no dist output):
 
 ```bash
 npm run build
@@ -198,13 +237,13 @@ npm run build
 Run from source:
 
 ```bash
-pi -e ./index.ts
+pi -e ./src/index.ts
 ```
 
-Run built output:
+Run the package entrypoint:
 
 ```bash
-pi -e ./dist/index.js
+pi -e ./src/index.ts
 ```
 
 ## Package Shape
@@ -212,7 +251,6 @@ pi -e ./dist/index.js
 ```text
 nightmanager/
   package.json
-  index.ts
   src/
     index.ts
     tools/
