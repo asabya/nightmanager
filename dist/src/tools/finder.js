@@ -1,16 +1,13 @@
 import { defineTool, createReadTool, createGrepTool, createFindTool, createLsTool, createBashTool, } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
-import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { resolveSubagentConfig } from "../core/models.js";
 import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 const finderSchema = Type.Object({
     query: Type.String({ description: "Natural language search request" }),
 });
-const FINDER_CONFIG_PATH = join(homedir(), ".pi", "agent", "finder.json");
 const FINDER_SYSTEM_PROMPT = `You are Finder, a codebase search specialist.
 Find files, code patterns, and relationships; do not modify files.
 Answer “where is X?”, “which files contain Y?”, and “how does Z connect to W?” questions.
@@ -40,11 +37,6 @@ Evidence:
 Relationships: one short sentence, or None.
 Implementation handoff: concise context, related files, and caveats for a later worker, or None.
 Next: one concrete next step.`;
-function resolveFinderModel(ctx) {
-    const configured = loadToolConfig(FINDER_CONFIG_PATH)?.model;
-    const parsed = configured ? parseModelReference(configured) : null;
-    return parsed ? ctx.modelRegistry.find(parsed.provider, parsed.modelId) ?? ctx.model : ctx.model;
-}
 export const finderTool = defineTool({
     name: "finder",
     label: "Finder",
@@ -73,11 +65,12 @@ export const finderTool = defineTool({
                 isError: true,
             };
         }
-        const model = resolveFinderModel(ctx);
+        const subagentConfig = resolveSubagentConfig(ctx, "finder");
+        const model = subagentConfig.model;
         if (!model) {
             return {
                 content: [{ type: "text", text: "Error: No model available for finder subagent." }],
-                details: { error: "no_model", configPath: FINDER_CONFIG_PATH },
+                details: { error: "no_model", configPath: subagentConfig.configPath },
                 isError: true,
             };
         }
@@ -91,6 +84,7 @@ export const finderTool = defineTool({
             },
             ctx,
             model,
+            thinkingLevel: subagentConfig.thinkingLevel,
             systemPrompt: FINDER_SYSTEM_PROMPT,
             tools: [
                 createReadTool(ctx.cwd),

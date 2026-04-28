@@ -12,7 +12,8 @@
   "files": [
     "dist",
     "index.ts",
-    "README.md"
+    "README.md",
+    "skills"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -38,6 +39,7 @@
     "vitest": "^4.1.4"
   },
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": ["./index.ts"],
+    "skills": ["./skills"]
   }
 }

@@ -1267,6 +1267,31 @@ describe("runIsolatedSubagent", () => {
     });
   });
 
+  describe("thinking level", () => {
+    it("passes thinkingLevel into Agent initial state", async () => {
+      const ctx = createMockContext();
+      const model = createMockModel();
+
+      if (setPendingEventsFn) setPendingEventsFn([]);
+
+      await runIsolatedSubagent({
+        ctx,
+        model,
+        systemPrompt: "You are a helpful assistant",
+        tools: [],
+        task: "Test task",
+        timeoutMs: 30000,
+        subagentName: "oracle",
+        thinkingLevel: "high",
+      });
+
+      const agentConfig = (mockAgentClass.mock.calls[0] as any[] | undefined)?.[0] as
+        | { initialState?: { thinkingLevel?: string } }
+        | undefined;
+      expect(agentConfig?.initialState?.thinkingLevel).toBe("high");
+    });
+  });
+
   describe("result shape", () => {
     it("returns SubagentResult with finalText and details properties", async () => {
       const onUpdate = vi.fn();

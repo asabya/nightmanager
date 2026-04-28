@@ -13,9 +13,61 @@ Night Shift implementation queue.
 
 ## Queue
 
-Add one item per feature/bug. Prefer small, independently reviewable work.
+### [done][P1][workflow] Package inbuilt planning skills for Pi discovery (5f7cf48)
 
-### [ready][P1][config] Streamline subagent model and thinking configuration
+Spec: `Specs/inbuilt-planning-skills.md`
+
+Acceptance criteria:
+
+- [ ] `grill-me`, `to-prd`, and `to-issues` are packaged with `subagents` as inbuilt Pi skills.
+- [ ] Pi discovers the skills automatically after install with no extra setup step.
+- [ ] `grill-me` remains a tiny prompt matching the approved wording.
+- [ ] `to-prd` creates draft specs in `Specs/` using the existing spec template and format.
+- [ ] `to-issues` creates local `TODOs.md` entries in the existing format by default.
+- [ ] `to-issues` breaks a spec into multiple vertically scalable TODOs when the work is large enough to justify slices.
+- [ ] GitHub issue creation is available only when explicitly requested and is not the default behavior.
+- [ ] Existing Night Shift docs and conventions remain compatible with the generated artifacts.
+
+Validation:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Notes:
+
+- Packaging approach confirmed: expose the skills through the extension entrypoint in a way Pi already scans.
+- Keep the skill content itself tiny; the repo workflow guidance should live in the planning skills and docs.
+
+### [ready][P1][meta] Rebrand "subagents" to "The Nightmanager"
+
+Spec: `Specs/nightmanager-rebrand.md`
+
+Acceptance criteria:
+
+- [ ] `package.json` name changed to `nightmanager`
+- [ ] "Night Shift" → "Nightmanager" workflow name updated throughout
+- [ ] Scripts renamed: `nightshift.sh` → `nightmanager.sh`, etc.
+- [ ] Prompts renamed: `nightshift.md` → `nightmanager.md`, etc.
+- [ ] Landing page title changed to "The Nightmanager"
+- [ ] Landing page hero copy positions nightmanager as Nightmanager orchestrator
+- [ ] "Nightmanager" workflow name used throughout (replaces "Night Shift")
+- [ ] Subagent tool names (manager, finder, oracle, worker) unchanged
+
+Validation:
+
+```bash
+npm run typecheck && npm test && npm run build
+```
+
+Notes:
+
+- Text substitution + file renames only, no logic changes
+- User must rename GitHub repo separately: `asabya/subagents` → `asabya/nightmanager`
+
+### [done][P1][config] Streamline subagent model and thinking configuration (c0d)
 
 Spec: `Specs/subagent-config-streamlining.md`
 

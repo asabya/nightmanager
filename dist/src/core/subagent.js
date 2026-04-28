@@ -36,7 +36,7 @@ function bindToolContext(tool, ctx) {
     };
 }
 async function runIsolatedSubagentImpl(options) {
-    const { ctx, model, systemPrompt, tools, task, signal, timeoutMs, subagentName, onUpdate, } = options;
+    const { ctx, model, systemPrompt, tools, task, signal, timeoutMs, subagentName, onUpdate, thinkingLevel = "medium", } = options;
     const timeoutAbort = new AbortController();
     const timeoutId = setTimeout(() => timeoutAbort.abort(), timeoutMs);
     const combinedSignal = signal
@@ -118,6 +118,7 @@ async function runIsolatedSubagentImpl(options) {
                 systemPrompt,
                 model,
                 tools: boundTools,
+                thinkingLevel,
             },
             streamFn: (messages, context, streamOptions) => stream(messages, context, {
                 ...streamOptions,

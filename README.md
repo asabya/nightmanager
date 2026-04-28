@@ -47,17 +47,7 @@ Use `finder` for codebase exploration tasks like:
 - which files participate in a flow
 - how modules connect
 
-Model selection order:
-1. `~/.pi/agent/finder.json`
-2. current Pi session model
-
-Example config:
-
-```json
-{
-  "model": "ollama/glm-5:cloud"
-}
-```
+Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -73,9 +63,7 @@ Use `oracle` for reasoning-heavy tasks like:
 - trade-off-aware planning
 - deciding the best next probe
 
-Model selection order:
-1. `~/.pi/agent/oracle.json`
-2. current Pi session model
+Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -100,9 +88,7 @@ When invoked with handoff context, `worker` persists a JSON handoff artifact to 
 When handoff context is provided, `worker` uses it as the starting map and avoids repeating broad discovery unless the context is missing or contradictory.
 It may still use `finder` once if blocked by codebase uncertainty. It does not call `oracle` and does not recursively delegate.
 
-Model selection order:
-1. `~/.pi/agent/worker.json`
-2. current Pi session model
+Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -127,15 +113,53 @@ Default orchestration policy:
 
 > **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightshift.md`](docs/nightshift.md#inspecting-handoffs) for how to inspect them.
 
-Model selection order:
-1. `~/.pi/agent/manager.json`
-2. current Pi session model
+Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
 ```text
 Use manager to investigate the failing auth flow, choose the safest fix, implement it, and verify the result
 ```
+
+## Configuration
+
+Subagents use one optional config file:
+
+```text
+~/.pi/agent/subagents.json
+```
+
+If the file is missing, malformed, or a configured model cannot be found, the subagent falls back to the current Pi session model. `thinking` defaults to `medium`; avoid `low` for subagents.
+
+```json
+{
+  "agents": {
+    "manager": {
+      "model": "provider/cheap-or-small-model",
+      "thinking": "medium"
+    },
+    "finder": {
+      "model": "provider/cheap-or-small-model",
+      "thinking": "medium"
+    },
+    "worker": {
+      "model": "provider/strong-model",
+      "thinking": "medium"
+    },
+    "oracle": {
+      "model": "provider/best-reasoning-model",
+      "thinking": "high"
+    }
+  }
+}
+```
+
+Recommended split:
+- `manager` and `finder`: cheaper/smaller models.
+- `worker`: stronger code-editing model.
+- `oracle`: strongest reasoning model.
+
+For an agent-friendly setup procedure, see [docs/subagent-config-setup.md](docs/subagent-config-setup.md).
 
 ## Development
 

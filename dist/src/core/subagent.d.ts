@@ -1,5 +1,6 @@
 import type { Model } from "@mariozechner/pi-ai";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { type ThinkingLevel } from "@mariozechner/pi-agent-core";
 import { type SubagentName, type SubagentTranscriptDetails } from "./transcript.js";
 /**
  * Rich result returned from runIsolatedSubagent
@@ -37,6 +38,7 @@ export interface RunIsolatedSubagentOptions {
     systemPrompt: string;
     tools: any[];
     task: string;
+    thinkingLevel?: ThinkingLevel;
     signal?: AbortSignal;
     timeoutMs: number;
 }

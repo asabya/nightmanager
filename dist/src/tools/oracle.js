@@ -1,9 +1,7 @@
 import { defineTool, createReadTool, createGrepTool, createFindTool, createLsTool, createBashTool, } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { Text } from "@mariozechner/pi-tui";
-import { loadToolConfig, parseModelReference } from "../core/models.js";
+import { resolveSubagentConfig } from "../core/models.js";
 import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
@@ -33,7 +31,6 @@ const oracleCodeSearchSchema = Type.Object({
     query: Type.String({ description: "Programming question, API, library, or debugging topic to search for" }),
     maxTokens: Type.Optional(Type.Integer({ minimum: 1000, maximum: 50000, description: "Maximum tokens of context to return (default: 5000)" })),
 });
-const ORACLE_CONFIG_PATH = join(homedir(), ".pi", "agent", "oracle.json");
 const PI_WEB_ACCESS_SEARCH_MODULE = "pi-web-access/gemini-search.ts";
 const PI_WEB_ACCESS_CODE_SEARCH_MODULE = "pi-web-access/code-search.ts";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
@@ -67,11 +64,6 @@ Hypotheses: ranked short list with confidence.
 Recommendation: concrete action.
 Implementation handoff: root cause, recommended fix/approach, risks, constraints, and verification guidance for a later worker, or None.
 Next probe: single highest-value probe, or None.`;
-function resolveOracleModel(ctx) {
-    const configured = loadToolConfig(ORACLE_CONFIG_PATH)?.model;
-    const parsed = configured ? parseModelReference(configured) : null;
-    return parsed ? ctx.modelRegistry.find(parsed.provider, parsed.modelId) ?? ctx.model : ctx.model;
-}
 async function loadWebSearchModule() {
     try {
         const moduleName = PI_WEB_ACCESS_SEARCH_MODULE;
@@ -449,11 +441,12 @@ export const oracleTool = defineTool({
                 isError: true,
             };
         }
-        const model = resolveOracleModel(ctx);
+        const subagentConfig = resolveSubagentConfig(ctx, "oracle");
+        const model = subagentConfig.model;
         if (!model) {
             return {
                 content: [{ type: "text", text: "Error: No model available for oracle subagent." }],
-                details: { error: "no_model", configPath: ORACLE_CONFIG_PATH },
+                details: { error: "no_model", configPath: subagentConfig.configPath },
                 isError: true,
             };
         }
@@ -467,6 +460,7 @@ export const oracleTool = defineTool({
             },
             ctx,
             model,
+            thinkingLevel: subagentConfig.thinkingLevel,
             systemPrompt: ORACLE_SYSTEM_PROMPT,
             tools: [
                 createReadTool(ctx.cwd),
