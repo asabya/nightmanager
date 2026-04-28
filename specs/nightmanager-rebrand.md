@@ -68,12 +68,12 @@ Landing page marketing copy should:
 - `AGENT_LOOP.md`
 - `TODOs.md`
 
-### Specs
-- `Specs/file-based-handoffs.md`
-- `Specs/worktree-nightmanager.md`
-- `Specs/subagent-config-streamlining.md`
-- `Specs/day-shift-planner-agent.md`
-- `Specs/x-styled-landing.md`
+### specs
+- `specs/file-based-handoffs.md`
+- `specs/worktree-nightmanager.md`
+- `specs/subagent-config-streamlining.md`
+- `specs/day-shift-planner-agent.md`
+- `specs/x-styled-landing.md`
 
 ### Prompts
 - `.pi/prompts/nightmanager.md`

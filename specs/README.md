@@ -1,4 +1,4 @@
-# Specs
+# specs
 
 This directory contains Day Shift planning documents for Nightmanager implementation.
 
@@ -9,7 +9,7 @@ Rules:
 - Only add a TODO as `[ready]` when the linked spec is complete enough to implement without live human steering.
 - Keep specs organized for human thinking first. Good specs reduce agent babysitting.
 
-## Draft Specs
+## Draft specs
 
 Draft specs are created by the Day Shift planner workflow (see `.pi/prompts/day-planner.md`):
 

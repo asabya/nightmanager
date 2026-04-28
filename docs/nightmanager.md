@@ -5,7 +5,7 @@ This project includes a Pi/nightmanager Nightmanager workflow.
 - `AGENTS.md` — project router for agents.
 - `AGENT_LOOP.md` — Day Shift and Nightmanager operating procedure.
 - `TODOs.md` — queue of eligible work.
-- `Specs/` — human-authored specs. `draft-*` specs are ignored.
+- `specs/` — human-authored specs. `draft-*` specs are ignored.
 - `REVIEW_PERSONAS.md` — review lenses for manager/nightmanager.
 - `.pi/prompts/nightmanager.md` — non-interactive prompt used by the runner.
 - `scripts/nightmanager.sh` — cron/launchd entrypoint.
@@ -18,7 +18,7 @@ The Day Shift planner is an optional workflow for brainstorming and organizing r
 
 - Help humans clarify underspecified ideas
 - Identify missing requirements, edge cases, risks
-- Produce draft specs (`Specs/draft-*.md`) for human review
+- Produce draft specs (`specs/draft-*.md`) for human review
 - Keep draft TODOs as `[draft]` until the human approves
 
 ### Prompt Template
@@ -26,7 +26,7 @@ The Day Shift planner is an optional workflow for brainstorming and organizing r
 Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
 
 - Planner output is **advisory** — human must approve before work becomes `[ready]`
-- Create specs as `Specs/draft-*.md` by default (Nightmanager ignores them)
+- Create specs as `specs/draft-*.md` by default (Nightmanager ignores them)
 - Add TODOs as `[draft]` only when requested
 - Include a readiness checklist in the draft spec
 - Do not implement code — leave that to Nightmanager
@@ -34,7 +34,7 @@ Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
 ### Workflow
 
 1. Human uses the planner prompt (directly or via Pi) to brainstorm an idea
-2. Planner produces `Specs/draft-*.md` with acceptance criteria, edge cases, etc.
+2. Planner produces `specs/draft-*.md` with acceptance criteria, edge cases, etc.
 3. Human reviews the draft spec and confirms all checklist items
 4. Human renames the spec (removes `draft-`) and/or changes TODO to `[ready]`
 5. Nightmanager can now pick up the spec/TODO for implementation
@@ -43,7 +43,7 @@ Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
 
 Nightmanager deliberately ignores `draft-*` specs and `[draft]` TODOs:
 
-- Specs with filename starting with `draft-` are skipped
+- specs with filename starting with `draft-` are skipped
 - TODOs tagged `[draft]` are skipped
 - This ensures human approval is required before autonomous work begins
 
@@ -197,7 +197,7 @@ NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightmanager.sh
 
 ### Files
 
-- `Specs/worktree-nightmanager.md` — workflow specification
+- `specs/worktree-nightmanager.md` — workflow specification
 - `.pi/prompts/worktree-nightmanager.md` — prompt template
 - `scripts/worktree-nightmanager.sh` — entrypoint
 
@@ -213,4 +213,4 @@ If Codex is installed in the repository, the workflow detects it and requests re
 - Label: `codex-review`
 - Comment: `/codex review`
 
-See `Specs/worktree-nightmanager.md` for full design.
+See `specs/worktree-nightmanager.md` for full design.

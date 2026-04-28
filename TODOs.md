@@ -15,18 +15,18 @@ Nightmanager implementation queue.
 
 ### [done][P1][workflow] Package inbuilt planning skills for Pi discovery (5f7cf48)
 
-Spec: `Specs/inbuilt-planning-skills.md`
+Spec: `specs/inbuilt-planning-skills.md`
 
 Acceptance criteria:
 
-- [ ] `grill-me`, `to-prd`, and `to-issues` are packaged with `nightmanager` as inbuilt Pi skills.
-- [ ] Pi discovers the skills automatically after install with no extra setup step.
-- [ ] `grill-me` remains a tiny prompt matching the approved wording.
-- [ ] `to-prd` creates draft specs in `Specs/` using the existing spec template and format.
-- [ ] `to-issues` creates local `TODOs.md` entries in the existing format by default.
-- [ ] `to-issues` breaks a spec into multiple vertically scalable TODOs when the work is large enough to justify slices.
-- [ ] GitHub issue creation is available only when explicitly requested and is not the default behavior.
-- [ ] Existing Nightmanager docs and conventions remain compatible with the generated artifacts.
+- [x] `grill-me`, `to-prd`, and `to-issues` are packaged with `nightmanager` as inbuilt Pi skills.
+- [x] Pi discovers the skills automatically after install with no extra setup step.
+- [x] `grill-me` remains a tiny prompt matching the approved wording.
+- [x] `to-prd` creates draft specs in `specs/` using the existing spec template and format.
+- [x] `to-issues` creates local `TODOs.md` entries in the existing format by default.
+- [x] `to-issues` breaks a spec into multiple vertically scalable TODOs when the work is large enough to justify slices.
+- [x] GitHub issue creation is available only when explicitly requested and is not the default behavior.
+- [x] Existing Nightmanager docs and conventions remain compatible with the generated artifacts.
 
 Validation:
 
@@ -43,16 +43,16 @@ Notes:
 
 ### [done][P1][meta] Rebrand "subagents" to "The Nightmanager" (16d6b2cc31a5854e39bb55c140023d34f8375df3)
 
-Spec: `Specs/nightmanager-rebrand.md`
+Spec: `specs/nightmanager-rebrand.md`
 
 Acceptance criteria:
 
-- [ ] `package.json` name changed to `nightmanager`
+- [x] `package.json` name changed to `nightmanager`
 - [ ] "Night Shift" → "Nightmanager" workflow name updated throughout
-- [ ] Scripts renamed: `nightshift.sh` → `nightmanager.sh`, etc.
-- [ ] Prompts renamed: `nightshift.md` → `nightmanager.md`, etc.
-- [ ] Landing page title changed to "The Nightmanager"
-- [ ] Landing page hero copy positions Nightmanager as the orchestrator
+- [x] Scripts renamed: `nightshift.sh` → `nightmanager.sh`, etc.
+- [x] Prompts renamed: `nightshift.md` → `nightmanager.md`, etc.
+- [x] Landing page title changed to "The Nightmanager"
+- [x] Landing page hero copy positions Nightmanager as the orchestrator
 - [ ] "Nightmanager" workflow name used throughout
 - [ ] Subagent tool names (manager, finder, oracle, worker) unchanged
 
@@ -69,7 +69,7 @@ Notes:
 
 ### [done][P1][config] Streamline subagent model and thinking configuration (c0d)
 
-Spec: `Specs/subagent-config-streamlining.md`
+Spec: `specs/subagent-config-streamlining.md`
 
 Acceptance criteria:
 
@@ -97,7 +97,7 @@ Notes:
 
 ### [done][P1][workflow] Persist Worker handoffs to file artifacts (763cefa)
 
-Spec: `Specs/file-based-handoffs.md`
+Spec: `specs/file-based-handoffs.md`
 
 Acceptance criteria:
 
@@ -126,19 +126,19 @@ Notes:
 
 ### [done][P1][workflow] Add worktree Nightmanager mode with PR creation
 
-Spec: `Specs/worktree-nightmanager.md`
+Spec: `specs/worktree-nightmanager.md`
 
 Acceptance criteria:
 
-- [ ] A worktree Nightmanager spec exists at `Specs/worktree-nightmanager.md`.
-- [ ] A worktree prompt template exists at `.pi/prompts/worktree-nightmanager.md`.
-- [ ] A shell script exists at `scripts/worktree-nightmanager.sh`.
+- [x] A worktree Nightmanager spec exists at `specs/worktree-nightmanager.md`.
+- [x] A worktree prompt template exists at `.pi/prompts/worktree-nightmanager.md`.
+- [x] A shell script exists at `scripts/worktree-nightmanager.sh`.
 - [ ] The workflow creates a git worktree per TODO.
 - [ ] Each TODO commits to a feature branch (not main).
 - [ ] PR is created via `gh pr create` after implementation.
 - [ ] Codex is detected and review requested if available.
 - [ ] TODOs.md is updated with PR link.
-- [ ] Documentation in `docs/nightmanager.md` covers worktree mode.
+- [x] Documentation in `docs/nightmanager.md` covers worktree mode.
 - [ ] Validations pass:
 
 ```bash
@@ -151,17 +151,17 @@ Notes:
 
 - This is a new workflow option, not replacing the standard one.
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
-- See `Specs/worktree-nightmanager.md` for full design.
+- See `specs/worktree-nightmanager.md` for full design.
 
 ### [done][P2][workflow] Add a Day Shift planner workflow for better specs (8db81fd)
 
 
-Spec: `Specs/day-shift-planner-agent.md`
+Spec: `specs/day-shift-planner-agent.md`
 
 Acceptance criteria:
 
 - [x] A documented Day Shift planner workflow exists in repo docs.
-- [x] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [x] Planner-created specs are written as `specs/draft-*.md` by default.
 - [x] Planner-created TODOs are `[draft]` by default.
 - [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
 - [x] Documentation distinguishes Day Shift planner work from Nightmanager manager implementation work.
@@ -177,20 +177,20 @@ npm run build
 
 Notes:
 
-- Implementation complete: AGENT_LOOP.md, docs/nightmanager.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
+- Implementation complete: AGENT_LOOP.md, docs/nightmanager.md, .pi/prompts/day-planner.md, TODOs.md, specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
 
 ### [done][bug][P1][ui] Fix landing page dark theme not rendering correctly
 
-Spec: `Specs/x-styled-landing.md`
+Spec: `specs/x-styled-landing.md`
 
 Acceptance criteria:
 
 - [done: 49df72ab] Dark theme CSS variables render correctly in all browsers
 - [done: 49df72ab] Background uses dark color (#1a1a1a or similar), not white
-- [ ] Text is visible (near-white on dark background)
-- [ ] OKLCH colors have proper fallback for browsers that don't support them
-- [ ] No white flash on page load
+- [x] Text is visible (near-white on dark background)
+- [x] OKLCH colors have proper fallback for browsers that don't support them
+- [x] No white flash on page load
 
 Validation:
 
@@ -206,18 +206,18 @@ Notes:
 
 ### [done][P2][ui] Style landing page with X aesthetics (9aa986a)
 
-Spec: `Specs/x-styled-landing.md`
+Spec: `specs/x-styled-landing.md`
 
 Acceptance criteria:
 
-- [ ] A static HTML landing page exists at `landing/index.html`
-- [ ] Design follows X dark theme aesthetic
-- [ ] CSS variables use OKLCH color system with dark background (#1a1a1a equivalent)
-- [ ] Typography uses Inter font family
-- [ ] Landing page includes: header, hero, features section, tool cards, CTA, footer
-- [ ] Smooth scroll and subtle fade-in animations
-- [ ] Responsive design for mobile/desktop
-- [ ] Links back to existing documentation work
+- [x] A static HTML landing page exists at `landing/index.html`
+- [x] Design follows X dark theme aesthetic
+- [x] CSS variables use OKLCH color system with dark background (#1a1a1a equivalent)
+- [x] Typography uses Inter font family
+- [x] Landing page includes: header, hero, features section, tool cards, CTA, footer
+- [x] Smooth scroll and subtle fade-in animations
+- [x] Responsive design for mobile/desktop
+- [x] Links back to existing documentation work
 
 Validation:
 

@@ -8,7 +8,7 @@ When asked to do autonomous work, read these files in order:
 
 1. `AGENT_LOOP.md` — operating procedure for Day Shift planning and Nightmanager execution.
 2. `TODOs.md` — the implementation queue. Only items marked `[ready]` or `[bug]` are eligible for autonomous implementation.
-3. `Specs/` — detailed feature/bug specs. Ignore files whose basename starts with `draft-`.
+3. `specs/` — detailed feature/bug specs. Ignore files whose basename starts with `draft-`.
 4. `REVIEW_PERSONAS.md` — review lenses to apply before and after implementation.
 5. `README.md`, `docs/index.md`, and `package.json` — repository overview, commands, and conventions.
 

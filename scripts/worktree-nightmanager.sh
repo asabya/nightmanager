@@ -82,11 +82,11 @@ add_context_file "AGENTS.md"
 add_context_file "AGENT_LOOP.md"
 add_context_file "TODOs.md"
 add_context_file "REVIEW_PERSONAS.md"
-add_context_file "Specs/worktree-nightmanager.md"
+add_context_file "specs/worktree-nightmanager.md"
 add_context_file "README.md"
 add_context_file "package.json"
 
-if [[ -d "$ROOT/Specs" ]]; then
+if [[ -d "$ROOT/specs" ]]; then
   while IFS= read -r -d '' spec_path; do
     spec_rel="${spec_path#"$ROOT"/}"
     spec_base="$(basename "$spec_rel")"
@@ -94,7 +94,7 @@ if [[ -d "$ROOT/Specs" ]]; then
       continue
     fi
     context_args+=("@$spec_rel")
-  done < <(find "$ROOT/Specs" -type f -name '*.md' -print0)
+  done < <(find "$ROOT/specs" -type f -name '*.md' -print0)
 fi
 
 add_context_file ".pi/prompts/worktree-nightmanager.md"

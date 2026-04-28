@@ -17,7 +17,7 @@ The standard Nightmanager workflow commits directly to `main`. This workflow pro
 
 ## Files
 
-- `Specs/worktree-nightmanager.md` — this spec
+- `specs/worktree-nightmanager.md` — this spec
 - `.pi/prompts/worktree-nightmanager.md` — prompt template for worktree mode
 - `scripts/worktree-nightmanager.sh` — shell entrypoint
 

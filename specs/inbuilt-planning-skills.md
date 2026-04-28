@@ -19,7 +19,7 @@ We want three lightweight, discoverable skills to ship with the extension so use
 - Make `grill-me`, `to-prd`, and `to-issues` available as inbuilt Pi skills after installing `nightmanager`.
 - Keep `grill-me` extremely small and prompt-only.
 - Preserve the existing repo conventions for specs and TODOs.
-- Ensure `to-prd` creates specs in `Specs/`.
+- Ensure `to-prd` creates specs in `specs/`.
 - Ensure `to-issues` creates local `TODOs.md` entries by default, with GitHub issue creation only when explicitly requested.
 - Ensure `to-issues` splits work into multiple vertically scalable TODOs when the spec warrants it.
 - Keep Nightmanager operating on local repo artifacts, not GitHub as the primary source of truth.
@@ -27,7 +27,7 @@ We want three lightweight, discoverable skills to ship with the extension so use
 ## Non-Goals
 
 - Reworking the Nightmanager execution model.
-- Changing the core `Specs/` template format.
+- Changing the core `specs/` template format.
 - Changing the core `TODOs.md` format.
 - Adding a dedicated planning subagent beyond these skills.
 - Making GitHub Issues the default source of truth for planning artifacts.
@@ -43,7 +43,7 @@ There is no first-class packaged set of planning skills for:
 - producing a draft spec (`to-prd`)
 - producing vertically sliced TODOs (`to-issues`)
 
-The Nightmanager workflow continues to depend on local `TODOs.md` and `Specs/` files.
+The Nightmanager workflow continues to depend on local `TODOs.md` and `specs/` files.
 
 ## Desired Behavior
 
@@ -60,7 +60,7 @@ After installing `nightmanager`, Pi should discover three planning skills automa
 ### `to-prd`
 
 - Uses the current conversation and available repository context to write a draft spec.
-- Produces a spec file in `Specs/` using the existing spec format.
+- Produces a spec file in `specs/` using the existing spec format.
 - Does not create TODOs as its primary output.
 - Asks clarifying questions when requirements are underspecified instead of guessing.
 - May inspect the codebase through Finder when that can resolve questions about current behavior.
@@ -78,7 +78,7 @@ After installing `nightmanager`, Pi should discover three planning skills automa
 - [ ] `grill-me`, `to-prd`, and `to-issues` are packaged with `nightmanager` as inbuilt Pi skills.
 - [ ] Pi discovers the skills automatically after install with no extra setup step.
 - [ ] `grill-me` remains a tiny prompt matching the approved wording.
-- [ ] `to-prd` creates draft specs in `Specs/` using the existing spec template and format.
+- [ ] `to-prd` creates draft specs in `specs/` using the existing spec template and format.
 - [ ] `to-issues` creates local `TODOs.md` entries in the existing format by default.
 - [ ] `to-issues` breaks a spec into multiple vertically scalable TODOs when the work is large enough to justify slices.
 - [ ] GitHub issue creation is available only when explicitly requested and is not the default behavior.

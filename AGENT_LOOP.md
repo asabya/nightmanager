@@ -11,8 +11,8 @@ The goal is not to make agents guess better. The goal is to make the project eas
 ## Day Shift — Human Planning
 
 1. Discuss the feature or bug deeply with humans/stakeholders.
-2. Write or update a spec in `Specs/`.
-   - Use `Specs/TEMPLATE.md` for new work.
+2. Write or update a spec in `specs/`.
+   - Use `specs/TEMPLATE.md` for new work.
    - Prefix unfinished specs with `draft-`; Nightmanager must ignore them.
 3. Add a corresponding item to `TODOs.md`.
    - Mark it `[ready]` only when the spec is complete enough for autonomous work.
@@ -27,7 +27,7 @@ Optionally, use the Day Shift planner workflow to help brainstorm and organize r
 
 - Use `.pi/prompts/day-planner.md` as a reusable prompt template.
 - The planner asks clarifying questions when requirements are underspecified.
-- It produces draft specs as `Specs/draft-*.md` (ignored by Nightmanager).
+- It produces draft specs as `specs/draft-*.md` (ignored by Nightmanager).
 - Planner-created TODOs are `[draft]` by default.
 - **Output is advisory**: the human must review and approve before changing `[draft]` to `[ready]`.
 - See the readiness checklist in `.pi/prompts/day-planner.md` for what to confirm.

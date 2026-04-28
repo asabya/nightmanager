@@ -15,7 +15,7 @@ A planning assistant could improve spec quality without violating the Nightmanag
 
 - Add or document a Day Shift planning workflow that helps convert rough ideas into well-scoped specs and TODOs.
 - Help humans identify missing requirements, edge cases, risks, validation commands, docs impacts, and acceptance criteria.
-- Produce file-based planning artifacts under `Specs/` and updates to `TODOs.md`.
+- Produce file-based planning artifacts under `specs/` and updates to `TODOs.md`.
 - Keep incomplete planning artifacts clearly marked as `draft-*` and not eligible for Nightmanager.
 - Encourage human review/approval before a TODO becomes `[ready]`.
 - Make the planner useful for brainstorming and critique, not autonomous implementation.
@@ -34,8 +34,8 @@ The repository already has a Nightmanager workflow:
 
 - `AGENT_LOOP.md` defines Day Shift planning and Nightmanager execution.
 - `TODOs.md` is the implementation queue.
-- `Specs/` contains implementation specs; files prefixed with `draft-` are ignored by Nightmanager.
-- `Specs/TEMPLATE.md` provides a spec template.
+- `specs/` contains implementation specs; files prefixed with `draft-` are ignored by Nightmanager.
+- `specs/TEMPLATE.md` provides a spec template.
 - `REVIEW_PERSONAS.md` defines review lenses.
 - `AGENTS.md` routes autonomous work through `manager`.
 
@@ -60,7 +60,7 @@ The planner should:
 1. Ask clarifying questions when the idea is underspecified.
 2. Identify likely implementation areas, tests, docs, and risks.
 3. Suggest scope cuts to keep the Nightmanager task small.
-4. Produce or update a `Specs/draft-*.md` file using `Specs/TEMPLATE.md` structure.
+4. Produce or update a `specs/draft-*.md` file using `specs/TEMPLATE.md` structure.
 5. Optionally add a `[draft]` TODO entry linked to the draft spec.
 6. Include an explicit “Readiness Checklist” showing what the human must confirm before changing the TODO to `[ready]`.
 7. Avoid implementation and avoid changing production code.
@@ -69,7 +69,7 @@ The planner should:
 
 - [x] A documented Day Shift planner workflow exists in repo docs.
 - [x] The workflow clearly states that planner output is advisory and human-approved.
-- [x] Planner-created specs are written as `Specs/draft-*.md` by default.
+- [x] Planner-created specs are written as `specs/draft-*.md` by default.
 - [x] Planner-created TODOs are `[draft]` by default.
 - [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
 - [x] The workflow tells Nightmanager to ignore planner drafts until the human promotes them.
@@ -94,14 +94,14 @@ Required changes:
 - Add or update `docs/nightmanager.md` with a `Day Shift Planner` section that distinguishes planner responsibilities from Nightmanager `manager` implementation responsibilities.
 - Add `.pi/prompts/day-planner.md` as a reusable prompt template. The prompt must instruct the assistant to:
   - ask clarifying questions when requirements are underspecified,
-  - use `Specs/TEMPLATE.md` structure,
-  - write specs as `Specs/draft-*.md` by default,
+  - use `specs/TEMPLATE.md` structure,
+  - write specs as `specs/draft-*.md` by default,
   - add TODOs as `[draft]` by default only when requested,
   - include acceptance criteria, edge cases, testing plan, documentation updates, risks, and open questions,
   - include a readiness checklist,
   - avoid implementation and production code edits.
 - Update `TODOs.md` status tag guidance to mention planner-created `[draft]` TODOs.
-- Update `Specs/README.md` to mention planner-created draft specs and the promotion process.
+- Update `specs/README.md` to mention planner-created draft specs and the promotion process.
 
 Do not add a dedicated fifth `planner` subagent in this TODO. That remains future work if the prompt workflow proves useful.
 
@@ -118,7 +118,7 @@ npm run build
 Manual validation:
 
 1. Use the planner prompt on a rough feature idea.
-2. Confirm it creates a `Specs/draft-*.md` file.
+2. Confirm it creates a `specs/draft-*.md` file.
 3. Confirm any TODO entry is `[draft]`, not `[ready]`.
 4. Confirm the draft includes acceptance criteria, edge cases, testing plan, docs updates, and open questions.
 5. Confirm Nightmanager would ignore the draft until human promotion.
@@ -128,7 +128,7 @@ Manual validation:
 - `AGENT_LOOP.md`: add Day Shift planner guidance.
 - `docs/nightmanager.md`: explain planner-vs-manager responsibilities.
 - `.pi/prompts/day-planner.md`: add reusable prompt.
-- `Specs/README.md`: mention planner-created drafts and promotion process.
+- `specs/README.md`: mention planner-created drafts and promotion process.
 
 ## Readiness Checklist Before Marking Ready
 
