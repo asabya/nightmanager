@@ -317,7 +317,7 @@ if (turnCount >= MAX_TURNS && !forceSummarySent) {
 
 - [ ] **Step 1: TypeScript compile check**
 
-Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents && npx tsc --noEmit finder.ts`
+Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager && npx tsc --noEmit finder.ts`
 
 Expected: No type errors
 

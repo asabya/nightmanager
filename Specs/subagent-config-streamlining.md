@@ -21,7 +21,7 @@ This project is new and does not need legacy config compatibility. We can replac
 
 - Add a unified config file at `~/.pi/agent/subagents.json`.
 - Support per-agent `model` and `thinking` settings.
-- Use `thinking: "medium"` as the minimum/default thinking level for all subagents.
+- Use `thinking: "medium"` as the minimum/default thinking level for all nightmanager.
 - Recommend cheaper/smaller models for `manager` and `finder`.
 - Recommend higher-tier models for `worker`, especially `oracle`.
 - Remove reliance on old per-agent config files.
@@ -100,7 +100,7 @@ The guide should be written so an agent can execute it safely. It should include
 - Each subagent should resolve its config from `~/.pi/agent/subagents.json` by subagent name.
 - If config is missing or malformed, fall back to the current Pi session model and default `thinking: "medium"` where supported.
 - If an agent-specific model is invalid or not found in the model registry, fall back to the current Pi session model and surface enough diagnostic detail for debugging.
-- Pi's `pi-agent-core` `Agent` type supports `thinkingLevel`; apply the resolved per-agent `thinking` value through that API when creating isolated subagents.
+- Pi's `pi-agent-core` `Agent` type supports `thinkingLevel`; apply the resolved per-agent `thinking` value through that API when creating isolated nightmanager.
 
 ## Acceptance Criteria
 

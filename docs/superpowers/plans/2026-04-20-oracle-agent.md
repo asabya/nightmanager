@@ -41,7 +41,7 @@ This repo does not currently include a local package manifest or test runner. Us
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts -p "Use oracle to debug why auth middleware fails intermittently"
 ```
 
@@ -51,7 +51,7 @@ Expected: Pi fails to load `./oracle.ts` because the file does not exist yet.
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 cp finder.ts oracle.ts
 ```
 
@@ -197,7 +197,7 @@ Replace the header comment at the top of `oracle.ts` with:
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts -p "List available tools and confirm oracle is registered"
 ```
 
@@ -207,7 +207,7 @@ Expected: Pi loads successfully and the tool list includes `oracle`.
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 git add oracle.ts
 git commit -m "feat: bootstrap oracle subagent from finder structure"
 ```
@@ -223,7 +223,7 @@ git commit -m "feat: bootstrap oracle subagent from finder structure"
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts -p "Use oracle to debug why auth middleware fails intermittently"
 ```
 
@@ -363,7 +363,7 @@ status: "error" as OracleStatus
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts -p "Use oracle to debug why the finder tool might stop too early"
 ```
 
@@ -373,7 +373,7 @@ Expected: The returned text includes `## Observation`, `## Hypothesis Table`, `#
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 git add oracle.ts
 git commit -m "feat: add oracle reasoning prompt and response contract"
 ```
@@ -389,7 +389,7 @@ git commit -m "feat: add oracle reasoning prompt and response contract"
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts
 ```
 
@@ -622,7 +622,7 @@ return new Text(theme.fg("toolOutput", textContent), 0, 0);
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts
 ```
 
@@ -637,7 +637,7 @@ Expected: The widget headline begins with `Oracle - analyzing ...`, tool rows us
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 git add oracle.ts
 git commit -m "feat: adapt oracle progress widget and rendering"
 ```
@@ -653,7 +653,7 @@ git commit -m "feat: adapt oracle progress widget and rendering"
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 rg -n "MAX_TURNS|180_000|consecutiveTurnsWithNoNewFiles >= 2|filesFound" oracle.ts
 ```
 
@@ -810,7 +810,7 @@ evidenceCount: evidenceSources.size,
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 rg -n "MAX_TURNS = 15|300_000|consecutiveTurnsWithNoNewEvidence >= 3|evidenceCount" oracle.ts
 ```
 
@@ -818,7 +818,7 @@ Expected: All four Oracle-specific values appear in the file.
 
 Then run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 pi -e ./oracle.ts -p "Use oracle to plan the safest way to refactor the finder tool without breaking its progress widget"
 ```
 
@@ -828,7 +828,7 @@ Expected: The subagent takes multiple reasoning turns and returns an Oracle-styl
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 git add oracle.ts
 git commit -m "feat: tune oracle execution limits and evidence synthesis"
 ```
@@ -845,7 +845,7 @@ git commit -m "feat: tune oracle execution limits and evidence synthesis"
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 rg -n "Oracle|oracle.json|Use oracle" README.md
 ```
 
@@ -944,7 +944,7 @@ Expected: All Oracle-specific identifiers are present.
 
 Run:
 ```bash
-cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents
+cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager
 git add README.md oracle.ts
 git commit -m "docs: add oracle usage and finalize oracle subagent"
 ```

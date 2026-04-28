@@ -8,7 +8,7 @@ Use this guide to create or update the unified Pi subagent config safely.
 ~/.pi/agent/subagents.json
 ```
 
-This is the only subagent config file used by this package. If it is missing or invalid, subagents fall back to the current Pi session model and `thinking: "medium"`.
+This is the only subagent config file used by this package. If it is missing or invalid, nightmanager fall back to the current Pi session model and `thinking: "medium"`.
 
 ## Steps
 

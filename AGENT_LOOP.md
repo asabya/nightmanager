@@ -1,10 +1,10 @@
-# Night Shift Agent Loop
+# Nightmanager Agent Loop
 
-This file defines the workflow for using Pi subagents to implement planned work autonomously.
+This file defines the workflow for using Pi nightmanager to implement planned work autonomously.
 
 ## Intent
 
-Day Shift is for human thinking: requirements, architecture, specs, and review. Night Shift is for autonomous execution: one ready TODO at a time, delegated to `manager`, with tests, docs, commits, and a concise report.
+Day Shift is for human thinking: requirements, architecture, specs, and review. Nightmanager is for autonomous execution: one ready TODO at a time, delegated to `manager`, with tests, docs, commits, and a concise report.
 
 The goal is not to make agents guess better. The goal is to make the project easier for agents to execute correctly by improving specs, docs, validations, and review loops.
 
@@ -13,7 +13,7 @@ The goal is not to make agents guess better. The goal is to make the project eas
 1. Discuss the feature or bug deeply with humans/stakeholders.
 2. Write or update a spec in `Specs/`.
    - Use `Specs/TEMPLATE.md` for new work.
-   - Prefix unfinished specs with `draft-`; Night Shift must ignore them.
+   - Prefix unfinished specs with `draft-`; Nightmanager must ignore them.
 3. Add a corresponding item to `TODOs.md`.
    - Mark it `[ready]` only when the spec is complete enough for autonomous work.
    - Mark urgent defects `[bug]`.
@@ -27,7 +27,7 @@ Optionally, use the Day Shift planner workflow to help brainstorm and organize r
 
 - Use `.pi/prompts/day-planner.md` as a reusable prompt template.
 - The planner asks clarifying questions when requirements are underspecified.
-- It produces draft specs as `Specs/draft-*.md` (ignored by Night Shift).
+- It produces draft specs as `Specs/draft-*.md` (ignored by Nightmanager).
 - Planner-created TODOs are `[draft]` by default.
 - **Output is advisory**: the human must review and approve before changing `[draft]` to `[ready]`.
 - See the readiness checklist in `.pi/prompts/day-planner.md` for what to confirm.
@@ -36,13 +36,13 @@ Example prompts:
 
 > Help me brainstorm a spec for file-based handoffs.
 
-> Turn this rough idea into a draft Night Shift spec and TODO candidate, but do not mark it ready.
+> Turn this rough idea into a draft Nightmanager spec and TODO candidate, but do not mark it ready.
 
 The planner is not autonomous execution — it helps the human think, but does not implement code.
 
-## Night Shift — Autonomous Execution
+## Nightmanager — Autonomous Execution
 
-A Night Shift run should perform at most one TODO unless explicitly instructed otherwise.
+A Nightmanager run should perform at most one TODO unless explicitly instructed otherwise.
 
 ### 0. Prep
 
@@ -77,7 +77,7 @@ The outer Pi session should call `manager` with a self-contained task containing
 
 ### 3. Required Implementation Loop
 
-The manager/subagents should:
+The manager/nightmanager should:
 
 1. Load the spec and relevant docs.
 2. Use `finder` for unfamiliar code paths.
@@ -128,7 +128,7 @@ Details belong in the commit message and code/docs, not a long chat transcript.
 
 The human reviews:
 
-1. Night Shift report.
+1. Nightmanager report.
 2. Changelog/TODO updates.
 3. Each commit message.
 4. Diff, tests, docs, and manual behavior.

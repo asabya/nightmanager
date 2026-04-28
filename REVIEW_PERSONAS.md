@@ -22,7 +22,7 @@ Use these personas as lightweight review lenses before and after implementation.
 - Does the implementation satisfy the spec and acceptance criteria?
 - Are edge cases covered?
 - Are ambiguous requirements surfaced instead of guessed?
-- For planning skills, do generated specs/TODOs preserve local-file-first Night Shift conventions and avoid GitHub issues unless explicitly requested?
+- For planning skills, do generated specs/TODOs preserve local-file-first Nightmanager conventions and avoid GitHub issues unless explicitly requested?
 
 ## 4. Code Expert / Tests and Reliability
 

@@ -1,8 +1,8 @@
-# Subagents for Pi
+# The Nightmanager for Pi
 
-**Four specialized Pi subagents for intelligent delegation.**
+**Four specialized Pi tools for intelligent delegation.**
 
-> **Public site**: [asabya.github.io/subagents](https://asabya.github.io/subagents) — or see [landing/index.html](landing/index.html) for the source.
+> **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [landing/index.html](landing/index.html) for the source.
 
 | Tool | Role | Best For |
 |------|------|----------|
@@ -13,7 +13,7 @@
 
 > **Quick intro**: See [docs/index.md](docs/index.md) for the full docs.
 >
-> **Night Shift workflow**: See [docs/nightshift.md](docs/nightshift.md) for autonomous TODO implementation with `manager`.
+> **Nightmanager workflow**: See [docs/nightmanager.md](docs/nightmanager.md) for autonomous TODO implementation with `manager`.
 
 ---
 
@@ -22,7 +22,7 @@
 Local package install:
 
 ```bash
-pi install /absolute/path/to/subagents
+pi install /absolute/path/to/nightmanager
 ```
 
 Quick development usage from the repo:
@@ -47,7 +47,7 @@ Use `finder` for codebase exploration tasks like:
 - which files participate in a flow
 - how modules connect
 
-Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -63,7 +63,7 @@ Use `oracle` for reasoning-heavy tasks like:
 - trade-off-aware planning
 - deciding the best next probe
 
-Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -88,7 +88,7 @@ When invoked with handoff context, `worker` persists a JSON handoff artifact to 
 When handoff context is provided, `worker` uses it as the starting map and avoids repeating broad discovery unless the context is missing or contradictory.
 It may still use `finder` once if blocked by codebase uncertainty. It does not call `oracle` and does not recursively delegate.
 
-Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -111,9 +111,9 @@ Default orchestration policy:
 
 `manager` does not inspect or edit files directly. It delegates to specialized tools, passes structured handoff context between phases, and synthesizes the final result. Implementation is hard-gated through an internal `handoff_to_worker` tool, which requires non-empty objective, findings, target files, and decisions before Worker can run.
 
-> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightshift.md`](docs/nightshift.md#inspecting-handoffs) for how to inspect them.
+> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightmanager.md`](docs/nightmanager.md#inspecting-handoffs) for how to inspect them.
 
-Configuration is shared across subagents in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -123,13 +123,13 @@ Use manager to investigate the failing auth flow, choose the safest fix, impleme
 
 ## Configuration
 
-Subagents use one optional config file:
+The Nightmanager use one optional config file:
 
 ```text
 ~/.pi/agent/subagents.json
 ```
 
-If the file is missing, malformed, or a configured model cannot be found, the subagent falls back to the current Pi session model. `thinking` defaults to `medium`; avoid `low` for subagents.
+If the file is missing, malformed, or a configured model cannot be found, the subagent falls back to the current Pi session model. `thinking` defaults to `medium`; avoid `low` for nightmanager.
 
 ```json
 {
@@ -210,7 +210,7 @@ pi -e ./dist/index.js
 ## Package Shape
 
 ```text
-subagents/
+nightmanager/
   package.json
   index.ts
   src/

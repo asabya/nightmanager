@@ -1,10 +1,10 @@
-# Night Shift Worktree Workflow
+# Nightmanager Worktree Workflow
 
-This spec defines an alternative Night Shift workflow that uses git worktrees, branch-per-TODO commits, and creates PRs with optional Codex review.
+This spec defines an alternative Nightmanager workflow that uses git worktrees, branch-per-TODO commits, and creates PRs with optional Codex review.
 
 ## Intent
 
-The standard Night Shift workflow commits directly to `main`. This workflow provides:
+The standard Nightmanager workflow commits directly to `main`. This workflow provides:
 - Isolation: each TODO gets its own worktree and branch
 - Review readiness: PRs are created automatically for human review
 - Codex integration: if available, requests code review from the Codex GitHub app
@@ -13,13 +13,13 @@ The standard Night Shift workflow commits directly to `main`. This workflow prov
 
 - Teams that require PR review before merging
 - Projects where direct main commits are not allowed
-- Night Shift runs that should produce reviewable diffs
+- Nightmanager runs that should produce reviewable diffs
 
 ## Files
 
-- `Specs/worktree-nightshift.md` — this spec
-- `.pi/prompts/worktree-nightshift.md` — prompt template for worktree mode
-- `scripts/worktree-nightshift.sh` — shell entrypoint
+- `Specs/worktree-nightmanager.md` — this spec
+- `.pi/prompts/worktree-nightmanager.md` — prompt template for worktree mode
+- `scripts/worktree-nightmanager.sh` — shell entrypoint
 
 ## Implementation
 
@@ -117,7 +117,7 @@ Update TODOs.md with PR link:
 ```
 ### [in-progress][P1][feature] Add OAuth login
 
-PR: https://github.com/asabya/subagents/pull/123
+PR: https://github.com/asabya/nightmanager/pull/123
 
 // ... rest of TODO
 ```
@@ -126,11 +126,11 @@ After merge, update to `[done]` with PR hash.
 
 ## Prompt Template
 
-See `.pi/prompts/worktree-nightshift.md`.
+See `.pi/prompts/worktree-nightmanager.md`.
 
 ## Validation Commands
 
-Same as standard Night Shift:
+Same as standard Nightmanager:
 
 ```bash
 npm run typecheck
@@ -161,7 +161,7 @@ npm run build
 11. Report: TODO, PR URL, files changed, validations
 ```
 
-## Comparison with Standard Night Shift
+## Comparison with Standard Nightmanager
 
 | Aspect | Standard | Worktree |
 |--------|----------|----------|
@@ -177,7 +177,7 @@ npm run build
 The worktree mode can be enabled via env var:
 
 ```bash
-NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightshift.sh
+NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightmanager.sh
 ```
 
 Default remains standard mode unless `NIGHTSHIFT_MODE=worktree` is set.

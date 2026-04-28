@@ -7,7 +7,7 @@ export interface SubagentConfig {
     model?: string;
     thinking?: SubagentThinkingLevel;
 }
-export interface SubagentsConfig {
+export interface NightmanagerConfig {
     agents?: Partial<Record<SubagentName, SubagentConfig>>;
 }
 export interface ParsedModelReference {
@@ -24,5 +24,5 @@ export interface ResolvedSubagentConfig {
 export declare const SUBAGENTS_CONFIG_PATH: string;
 export declare const DEFAULT_SUBAGENT_THINKING: SubagentThinkingLevel;
 export declare function parseModelReference(input: string): ParsedModelReference | null;
-export declare function loadSubagentsConfig(configPath?: string): SubagentsConfig | null;
-export declare function resolveSubagentConfig(ctx: ExtensionContext, name: SubagentName, config?: SubagentsConfig | null): ResolvedSubagentConfig;
+export declare function loadNightmanagerConfig(configPath?: string): NightmanagerConfig | null;
+export declare function resolveSubagentConfig(ctx: ExtensionContext, name: SubagentName, config?: NightmanagerConfig | null): ResolvedSubagentConfig;

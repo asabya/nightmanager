@@ -1,4 +1,4 @@
-# Pi Subagents
+# Pi The Nightmanager
 
 A high-performance TypeScript extension for the Pi coding agent that bundles four specialized subagent tools. Each subagent has a focused role, lightweight prompts, and isolated context—optimized for strong token-cost to performance ratio.
 
@@ -6,7 +6,7 @@ A high-performance TypeScript extension for the Pi coding agent that bundles fou
 
 ## Hero
 
-Pi Subagents transforms Pi into a multi-specialist team:
+Pi The Nightmanager transforms Pi into a multi-specialist team:
 
 - **Finder** — codebase search and exploration
 - **Oracle** — reasoning, debugging, and root-cause analysis  
@@ -36,7 +36,7 @@ Model selection follows a fallback chain: unified subagent config → current Pi
 
 ```bash
 # Local package install
-pi install /absolute/path/to/subagents
+pi install /absolute/path/to/nightmanager
 ```
 
 ### Run
@@ -129,7 +129,7 @@ npm run test:unit  # Unit tests only
 ## Architecture
 
 ```
-subagents/
+nightmanager/
 ├── index.ts          # Combined Pi extension entrypoint
 ├── src/
 │   ├── index.ts      # Internal exports

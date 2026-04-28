@@ -1,11 +1,11 @@
-# Manager + Worker Subagents Design
+# Manager + Worker The Nightmanager Design
 
 Date: 2026-04-21
 Status: Draft approved in conversation; written for review before implementation
 
 ## Summary
 
-Add two new Pi subagents alongside the existing `finder` and `oracle` tools:
+Add two new Pi nightmanager alongside the existing `finder` and `oracle` tools:
 
 - `manager` — a read-only routing/orchestration subagent
 - `worker` — a focused implementation subagent
@@ -26,7 +26,7 @@ This design explicitly keeps P2P and distributed orchestration out of scope for 
 - Add a `manager` tool that classifies requests and routes to one best-fit subagent by default
 - Add a `worker` tool that performs implementation work with verification discipline
 - Preserve lightweight prompts and compact tool contracts
-- Keep the new subagents user-facing while still usable internally by other tools
+- Keep the new nightmanager user-facing while still usable internally by other tools
 
 ## Non-Goals
 
@@ -40,7 +40,7 @@ This design explicitly keeps P2P and distributed orchestration out of scope for 
 
 ## Existing Context
 
-The repository currently contains two Pi extension-based subagents:
+The repository currently contains two Pi extension-based nightmanager:
 
 - `finder.ts` — read-heavy exploration/search specialist
 - `oracle.ts` — evidence-backed reasoning/diagnostic specialist

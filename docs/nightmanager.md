@@ -1,18 +1,18 @@
-# Night Shift Setup
+# Nightmanager Setup
 
-This project includes a Pi/subagents Night Shift workflow.
+This project includes a Pi/nightmanager Nightmanager workflow.
 
 - `AGENTS.md` — project router for agents.
-- `AGENT_LOOP.md` — Day Shift and Night Shift operating procedure.
+- `AGENT_LOOP.md` — Day Shift and Nightmanager operating procedure.
 - `TODOs.md` — queue of eligible work.
 - `Specs/` — human-authored specs. `draft-*` specs are ignored.
-- `REVIEW_PERSONAS.md` — review lenses for manager/subagents.
-- `.pi/prompts/nightshift.md` — non-interactive prompt used by the runner.
-- `scripts/nightshift.sh` — cron/launchd entrypoint.
+- `REVIEW_PERSONAS.md` — review lenses for manager/nightmanager.
+- `.pi/prompts/nightmanager.md` — non-interactive prompt used by the runner.
+- `scripts/nightmanager.sh` — cron/launchd entrypoint.
 
 ## Day Shift Planner
 
-The Day Shift planner is an optional workflow for brainstorming and organizing rough ideas into Night Shift-ready specs.
+The Day Shift planner is an optional workflow for brainstorming and organizing rough ideas into Nightmanager-ready specs.
 
 ### Purpose
 
@@ -26,10 +26,10 @@ The Day Shift planner is an optional workflow for brainstorming and organizing r
 Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
 
 - Planner output is **advisory** — human must approve before work becomes `[ready]`
-- Create specs as `Specs/draft-*.md` by default (Night Shift ignores them)
+- Create specs as `Specs/draft-*.md` by default (Nightmanager ignores them)
 - Add TODOs as `[draft]` only when requested
 - Include a readiness checklist in the draft spec
-- Do not implement code — leave that to Night Shift
+- Do not implement code — leave that to Nightmanager
 
 ### Workflow
 
@@ -37,11 +37,11 @@ Use `.pi/prompts/day-planner.md` as a reusable prompt template. Key rules:
 2. Planner produces `Specs/draft-*.md` with acceptance criteria, edge cases, etc.
 3. Human reviews the draft spec and confirms all checklist items
 4. Human renames the spec (removes `draft-`) and/or changes TODO to `[ready]`
-5. Night Shift can now pick up the spec/TODO for implementation
+5. Nightmanager can now pick up the spec/TODO for implementation
 
-### Night Shift Ignoring Drafts
+### Nightmanager Ignoring Drafts
 
-Night Shift deliberately ignores `draft-*` specs and `[draft]` TODOs:
+Nightmanager deliberately ignores `draft-*` specs and `[draft]` TODOs:
 
 - Specs with filename starting with `draft-` are skipped
 - TODOs tagged `[draft]` are skipped
@@ -52,7 +52,7 @@ Night Shift deliberately ignores `draft-*` specs and `[draft]` TODOs:
 From the repository root:
 
 ```bash
-./scripts/nightshift.sh
+./scripts/nightmanager.sh
 ```
 
 Optional environment variables:
@@ -60,19 +60,19 @@ Optional environment variables:
 ```bash
 NIGHTSHIFT_MODEL=anthropic/claude-sonnet-4-5 \
 NIGHTSHIFT_THINKING=high \
-./scripts/nightshift.sh
+./scripts/nightmanager.sh
 ```
 
 If cron/launchd cannot find `pi`, set an absolute path:
 
 ```bash
-PI_BIN=/Users/<you>/.nvm/versions/node/<version>/bin/pi ./scripts/nightshift.sh
+PI_BIN=/Users/<you>/.nvm/versions/node/<version>/bin/pi ./scripts/nightmanager.sh
 ```
 
-If running this workflow from another repository, point at the built subagents extension:
+If running this workflow from another repository, point at the built nightmanager extension:
 
 ```bash
-SUBAGENTS_EXTENSION=/path/to/subagents/dist/index.js ./scripts/nightshift.sh
+SUBAGENTS_EXTENSION=/path/to/nightmanager/dist/index.js ./scripts/nightmanager.sh
 ```
 
 ## Cron Example
@@ -86,20 +86,20 @@ crontab -e
 Run every weekday at 1:00 AM:
 
 ```cron
-0 1 * * 1-5 cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents && mkdir -p .pi/nightshift && PI_BIN=/Users/sabyasachipatra/.nvm/versions/node/v24.13.0/bin/pi ./scripts/nightshift.sh >> .pi/nightshift/cron.log 2>&1
+0 1 * * 1-5 cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager && mkdir -p .pi/nightmanager && PI_BIN=/Users/sabyasachipatra/.nvm/versions/node/v24.13.0/bin/pi ./scripts/nightmanager.sh >> .pi/nightmanager/cron.log 2>&1
 ```
 
-The `mkdir -p` is intentional: shell redirection opens `.pi/nightshift/cron.log` before `scripts/nightshift.sh` can create its own log directories.
+The `mkdir -p` is intentional: shell redirection opens `.pi/nightmanager/cron.log` before `scripts/nightmanager.sh` can create its own log directories.
 
 ## macOS launchd Example
 
 Create the log directory first because `launchd` will not create the parent directories for `StandardOutPath` or `StandardErrorPath`:
 
 ```bash
-mkdir -p /Users/sabyasachipatra/go/src/github.com/asabya/subagents/.pi/nightshift
+mkdir -p /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager/.pi/nightmanager
 ```
 
-Create `~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist`:
+Create `~/Library/LaunchAgents/dev.asabya.nightmanager-nightmanager.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -107,13 +107,13 @@ Create `~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist`:
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>dev.asabya.subagents-nightshift</string>
+  <string>dev.asabya.nightmanager-nightmanager</string>
 
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents && PI_BIN=/Users/sabyasachipatra/.nvm/versions/node/v24.13.0/bin/pi ./scripts/nightshift.sh</string>
+    <string>cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager && PI_BIN=/Users/sabyasachipatra/.nvm/versions/node/v24.13.0/bin/pi ./scripts/nightmanager.sh</string>
   </array>
 
   <key>StartCalendarInterval</key>
@@ -125,9 +125,9 @@ Create `~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist`:
   </dict>
 
   <key>StandardOutPath</key>
-  <string>/Users/sabyasachipatra/go/src/github.com/asabya/subagents/.pi/nightshift/launchd.out.log</string>
+  <string>/Users/sabyasachipatra/go/src/github.com/asabya/nightmanager/.pi/nightmanager/launchd.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/sabyasachipatra/go/src/github.com/asabya/subagents/.pi/nightshift/launchd.err.log</string>
+  <string>/Users/sabyasachipatra/go/src/github.com/asabya/nightmanager/.pi/nightmanager/launchd.err.log</string>
 </dict>
 </plist>
 ```
@@ -135,14 +135,14 @@ Create `~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist`:
 Load it:
 
 ```bash
-mkdir -p /Users/sabyasachipatra/go/src/github.com/asabya/subagents/.pi/nightshift
-launchctl load ~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist
+mkdir -p /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager/.pi/nightmanager
+launchctl load ~/Library/LaunchAgents/dev.asabya.nightmanager-nightmanager.plist
 ```
 
 Unload it:
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist
+launchctl unload ~/Library/LaunchAgents/dev.asabya.nightmanager-nightmanager.plist
 ```
 
 ## Safety Notes
@@ -151,7 +151,7 @@ launchctl unload ~/Library/LaunchAgents/dev.asabya.subagents-nightshift.plist
 - Use `[draft]` and `draft-*` liberally. Only mark work `[ready]` when the spec is good.
 - The runner has write and bash access. Run it only in repositories where autonomous commits are acceptable.
 - The runner uses a lock directory to prevent overlapping runs.
-- Logs and sessions are written under `.pi/nightshift/` and ignored by git.
+- Logs and sessions are written under `.pi/nightmanager/` and ignored by git.
 
 ## Inspecting Handoffs
 
@@ -181,7 +181,7 @@ Handoff artifacts are gitignored (`.pi/handoffs/`). They are retained indefinite
 An alternative workflow creates a git worktree per TODO, commits to a feature branch, and creates a PR:
 
 ```bash
-NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightshift.sh
+NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightmanager.sh
 ```
 
 ### How It Works
@@ -197,9 +197,9 @@ NIGHTSHIFT_MODE=worktree ./scripts/worktree-nightshift.sh
 
 ### Files
 
-- `Specs/worktree-nightshift.md` — workflow specification
-- `.pi/prompts/worktree-nightshift.md` — prompt template
-- `scripts/worktree-nightshift.sh` — entrypoint
+- `Specs/worktree-nightmanager.md` — workflow specification
+- `.pi/prompts/worktree-nightmanager.md` — prompt template
+- `scripts/worktree-nightmanager.sh` — entrypoint
 
 ### Branch Naming
 
@@ -213,4 +213,4 @@ If Codex is installed in the repository, the workflow detects it and requests re
 - Label: `codex-review`
 - Comment: `/codex review`
 
-See `Specs/worktree-nightshift.md` for full design.
+See `Specs/worktree-nightmanager.md` for full design.

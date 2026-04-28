@@ -3,9 +3,9 @@
 // Run with: npx vitest run tests/integration/real.test.ts -t "test name"
 import { describe, expect, it } from "vitest";
 import { spawn } from "node:child_process";
-const PROJECT_DIR = "/Users/sabyasachipatra/.pi/agent/extensions/subagents";
+const PROJECT_DIR = "/Users/sabyasachipatra/.pi/agent/extensions/nightmanager";
 /**
- * Run a Pi command with the subagents extension via spawn
+ * Run a Pi command with the nightmanager extension via spawn
  */
 function runPi(task, timeoutMs = 60000) {
     return new Promise((resolve) => {

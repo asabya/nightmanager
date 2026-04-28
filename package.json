@@ -1,10 +1,10 @@
 {
-  "name": "subagents",
+  "name": "nightmanager",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Finder, Oracle, Manager, and Worker subagents for Pi",
-  "keywords": ["pi-package", "pi", "pi-coding-agent", "extension", "subagents"],
+  "description": "Finder, Oracle, Manager, and Worker tools for Pi's Nightmanager workflow",
+  "keywords": ["pi-package", "pi", "pi-coding-agent", "extension", "nightmanager"],
   "license": "MIT",
   "exports": {
     ".": "./dist/src/index.js"

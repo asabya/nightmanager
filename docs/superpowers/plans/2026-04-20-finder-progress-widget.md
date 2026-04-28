@@ -73,7 +73,7 @@ export class FinderProgress implements Component {
 
 - [ ] **Step 2: Verify TypeScript compiles**
 
-Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents && npx tsc --noEmit finder-progress.ts 2>&1 || echo "Note: May need pi-tui types installed"`
+Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager && npx tsc --noEmit finder-progress.ts 2>&1 || echo "Note: May need pi-tui types installed"`
 
 Expected: File compiles without errors (or only missing type declarations from dependencies)
 
@@ -208,7 +208,7 @@ Wrap the main execution in try/finally. Find the search execution block and rest
 
 - [ ] **Step 8: Verify TypeScript compiles**
 
-Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/subagents && npx tsc --noEmit finder.ts finder-progress.ts 2>&1`
+Run: `cd /Users/sabyasachipatra/go/src/github.com/asabya/nightmanager && npx tsc --noEmit finder.ts finder-progress.ts 2>&1`
 
 Expected: No TypeScript errors
 

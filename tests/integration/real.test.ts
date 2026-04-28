@@ -5,10 +5,10 @@
 import { describe, expect, it } from "vitest";
 import { spawn } from "node:child_process";
 
-const PROJECT_DIR = "/Users/sabyasachipatra/.pi/agent/extensions/subagents";
+const PROJECT_DIR = "/Users/sabyasachipatra/.pi/agent/extensions/nightmanager";
 
 /**
- * Run a Pi command with the subagents extension via spawn
+ * Run a Pi command with the nightmanager extension via spawn
  */
 function runPi(task: string, timeoutMs = 60000): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
   return new Promise((resolve) => {

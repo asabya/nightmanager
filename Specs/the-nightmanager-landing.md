@@ -2,7 +2,7 @@
 
 ## Overview
 
-Style the subagents landing page to match X's design aesthetic — a dark theme with clean typography, subtle animations, and professional SaaS look-and-feel.
+Style the nightmanager landing page to match X's design aesthetic — a dark theme with clean typography, subtle animations, and professional SaaS look-and-feel.
 
 ## Design System
 
@@ -100,13 +100,13 @@ Style the subagents landing page to match X's design aesthetic — a dark theme 
 
 ### 1. Header (sticky)
 - Logo/site title left-aligned
-- Navigation: Features | Tools | Docs | Night Shift
+- Navigation: Features | Tools | Docs | Nightmanager
 - GitHub link right-aligned
 - Background: semi-transparent dark with blur
 
 ### 2. Hero Section
-- Main headline: "Subagents for Pi"
-- Subheadline: description of what subagents do
+- Main headline: "The Nightmanager"
+- Subheadline: description of what nightmanager do
 - CTA button: "Get Started" (links to README)
 - Secondary link: "View on GitHub"
 
@@ -120,9 +120,9 @@ Style the subagents landing page to match X's design aesthetic — a dark theme 
 - Each card: tool name, role, best-for use cases
 - Reference existing README table
 
-### 5. Night Shift Section
+### 5. Nightmanager Section
 - Brief description of autonomous workflow
-- Link to docs/nightshift.md
+- Link to docs/nightmanager.md
 
 ### 6. Footer
 - Repository link

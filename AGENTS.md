@@ -1,12 +1,12 @@
 # Project Agent Router
 
-This repository uses a Night Shift workflow for autonomous, reviewable implementation with Pi subagents.
+This repository uses a Nightmanager workflow for autonomous, reviewable implementation with Pi nightmanager.
 
 ## Start Here
 
 When asked to do autonomous work, read these files in order:
 
-1. `AGENT_LOOP.md` — operating procedure for Day Shift planning and Night Shift execution.
+1. `AGENT_LOOP.md` — operating procedure for Day Shift planning and Nightmanager execution.
 2. `TODOs.md` — the implementation queue. Only items marked `[ready]` or `[bug]` are eligible for autonomous implementation.
 3. `Specs/` — detailed feature/bug specs. Ignore files whose basename starts with `draft-`.
 4. `REVIEW_PERSONAS.md` — review lenses to apply before and after implementation.
@@ -21,7 +21,7 @@ Use the installed subagent tools this way:
 - `worker`: focused edits when target files and verification are already clear.
 - `manager`: broad TODO/spec implementation that may need discovery, reasoning, implementation, and verification.
 
-For Night Shift execution, the outer Pi session should delegate the selected TODO to `manager`. Do not bypass `manager` for implementation unless the human explicitly asks.
+For Nightmanager execution, the outer Pi session should delegate the selected TODO to `manager`. Do not bypass `manager` for implementation unless the human explicitly asks.
 
 ## Repository Commands
 

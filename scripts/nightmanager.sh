@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run one autonomous Night Shift cycle for this repository.
+# Run one autonomous Nightmanager cycle for this repository.
 # Intended for cron/launchd. Configure with env vars below.
 
 ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PI_BIN="${PI_BIN:-pi}"
 NIGHTSHIFT_THINKING="${NIGHTSHIFT_THINKING:-high}"
-LOG_DIR="${NIGHTSHIFT_LOG_DIR:-$ROOT/.pi/nightshift/logs}"
-SESSION_DIR="${NIGHTSHIFT_SESSION_DIR:-$ROOT/.pi/nightshift/sessions}"
-LOCK_DIR="${NIGHTSHIFT_LOCK_DIR:-$ROOT/.pi/nightshift/lock}"
+LOG_DIR="${NIGHTSHIFT_LOG_DIR:-$ROOT/.pi/nightmanager/logs}"
+SESSION_DIR="${NIGHTSHIFT_SESSION_DIR:-$ROOT/.pi/nightmanager/sessions}"
+LOCK_DIR="${NIGHTSHIFT_LOCK_DIR:-$ROOT/.pi/nightmanager/lock}"
 
 cd "$ROOT"
 mkdir -p "$LOG_DIR" "$SESSION_DIR" "$(dirname "$LOCK_DIR")"
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-  echo "Night Shift is already running: $LOCK_DIR" >&2
+  echo "Nightmanager is already running: $LOCK_DIR" >&2
   exit 0
 fi
 cleanup() {
@@ -39,13 +39,13 @@ if [[ -z "$SUBAGENTS_EXTENSION" ]]; then
 fi
 
 if [[ ! -f "$SUBAGENTS_EXTENSION" ]]; then
-  echo "Subagents extension not found: $SUBAGENTS_EXTENSION" >&2
-  echo "Run npm run build or set SUBAGENTS_EXTENSION=/path/to/subagents/dist/index.js" >&2
+  echo "The Nightmanager extension not found: $SUBAGENTS_EXTENSION" >&2
+  echo "Run npm run build or set SUBAGENTS_EXTENSION=/path/to/nightmanager/dist/index.js" >&2
   exit 1
 fi
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-log_file="$LOG_DIR/nightshift-$stamp.log"
+log_file="$LOG_DIR/nightmanager-$stamp.log"
 
 pi_args=(
   --print
@@ -91,10 +91,10 @@ if [[ -d "$ROOT/Specs" ]]; then
   done < <(find "$ROOT/Specs" -type f -name '*.md' -print0)
 fi
 
-add_context_file ".pi/prompts/nightshift.md"
+add_context_file ".pi/prompts/nightmanager.md"
 
 {
-  echo "Night Shift started at $stamp"
+  echo "Nightmanager started at $stamp"
   echo "Root: $ROOT"
   echo "Extension: $SUBAGENTS_EXTENSION"
   echo "Session dir: $SESSION_DIR"
@@ -103,8 +103,8 @@ add_context_file ".pi/prompts/nightshift.md"
 
   "$PI_BIN" "${pi_args[@]}" \
     "${context_args[@]}" \
-    "Run the Night Shift prompt exactly as written. Use manager for implementation."
+    "Run the Nightmanager prompt exactly as written. Use manager for implementation."
 
   echo
-  echo "Night Shift finished at $(date -u +%Y%m%dT%H%M%SZ)"
+  echo "Nightmanager finished at $(date -u +%Y%m%dT%H%M%SZ)"
 } 2>&1 | tee "$log_file"

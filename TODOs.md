@@ -1,12 +1,12 @@
 # TODOs
 
-Night Shift implementation queue.
+Nightmanager implementation queue.
 
 ## Status Tags
 
 - `[bug]` — eligible; highest priority defect.
 - `[ready]` — eligible for autonomous implementation.
-- `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote to `[ready]` before Night Shift can pick it up.
+- `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote to `[ready]` before Nightmanager can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.
 - `[done]` — complete; include commit hash when available.
@@ -19,14 +19,14 @@ Spec: `Specs/inbuilt-planning-skills.md`
 
 Acceptance criteria:
 
-- [ ] `grill-me`, `to-prd`, and `to-issues` are packaged with `subagents` as inbuilt Pi skills.
+- [ ] `grill-me`, `to-prd`, and `to-issues` are packaged with `nightmanager` as inbuilt Pi skills.
 - [ ] Pi discovers the skills automatically after install with no extra setup step.
 - [ ] `grill-me` remains a tiny prompt matching the approved wording.
 - [ ] `to-prd` creates draft specs in `Specs/` using the existing spec template and format.
 - [ ] `to-issues` creates local `TODOs.md` entries in the existing format by default.
 - [ ] `to-issues` breaks a spec into multiple vertically scalable TODOs when the work is large enough to justify slices.
 - [ ] GitHub issue creation is available only when explicitly requested and is not the default behavior.
-- [ ] Existing Night Shift docs and conventions remain compatible with the generated artifacts.
+- [ ] Existing Nightmanager docs and conventions remain compatible with the generated artifacts.
 
 Validation:
 
@@ -41,7 +41,7 @@ Notes:
 - Packaging approach confirmed: expose the skills through the extension entrypoint in a way Pi already scans.
 - Keep the skill content itself tiny; the repo workflow guidance should live in the planning skills and docs.
 
-### [ready][P1][meta] Rebrand "subagents" to "The Nightmanager"
+### [done][P1][meta] Rebrand "subagents" to "The Nightmanager" (16d6b2cc31a5854e39bb55c140023d34f8375df3)
 
 Spec: `Specs/nightmanager-rebrand.md`
 
@@ -52,8 +52,8 @@ Acceptance criteria:
 - [ ] Scripts renamed: `nightshift.sh` → `nightmanager.sh`, etc.
 - [ ] Prompts renamed: `nightshift.md` → `nightmanager.md`, etc.
 - [ ] Landing page title changed to "The Nightmanager"
-- [ ] Landing page hero copy positions nightmanager as Nightmanager orchestrator
-- [ ] "Nightmanager" workflow name used throughout (replaces "Night Shift")
+- [ ] Landing page hero copy positions Nightmanager as the orchestrator
+- [ ] "Nightmanager" workflow name used throughout
 - [ ] Subagent tool names (manager, finder, oracle, worker) unchanged
 
 Validation:
@@ -122,23 +122,23 @@ Notes:
 
 - File-based handoffs were already implemented in prior work. This commit adds missing documentation to README.md.
 - Handoff artifacts stored at `~/.pi/handoffs/<timestamp>-worker-handoff.json`
-- See `docs/nightshift.md#inspecting-handoffs` for operational guidance.
+- See `docs/nightmanager.md#inspecting-handoffs` for operational guidance.
 
-### [done][P1][workflow] Add worktree Night Shift mode with PR creation
+### [done][P1][workflow] Add worktree Nightmanager mode with PR creation
 
-Spec: `Specs/worktree-nightshift.md`
+Spec: `Specs/worktree-nightmanager.md`
 
 Acceptance criteria:
 
-- [ ] A worktree Night Shift spec exists at `Specs/worktree-nightshift.md`.
-- [ ] A worktree prompt template exists at `.pi/prompts/worktree-nightshift.md`.
-- [ ] A shell script exists at `scripts/worktree-nightshift.sh`.
+- [ ] A worktree Nightmanager spec exists at `Specs/worktree-nightmanager.md`.
+- [ ] A worktree prompt template exists at `.pi/prompts/worktree-nightmanager.md`.
+- [ ] A shell script exists at `scripts/worktree-nightmanager.sh`.
 - [ ] The workflow creates a git worktree per TODO.
 - [ ] Each TODO commits to a feature branch (not main).
 - [ ] PR is created via `gh pr create` after implementation.
 - [ ] Codex is detected and review requested if available.
 - [ ] TODOs.md is updated with PR link.
-- [ ] Documentation in `docs/nightshift.md` covers worktree mode.
+- [ ] Documentation in `docs/nightmanager.md` covers worktree mode.
 - [ ] Validations pass:
 
 ```bash
@@ -151,7 +151,7 @@ Notes:
 
 - This is a new workflow option, not replacing the standard one.
 - Enable via `NIGHTSHIFT_MODE=worktree` env var.
-- See `Specs/worktree-nightshift.md` for full design.
+- See `Specs/worktree-nightmanager.md` for full design.
 
 ### [done][P2][workflow] Add a Day Shift planner workflow for better specs (8db81fd)
 
@@ -164,7 +164,7 @@ Acceptance criteria:
 - [x] Planner-created specs are written as `Specs/draft-*.md` by default.
 - [x] Planner-created TODOs are `[draft]` by default.
 - [x] The workflow includes a readiness checklist for promoting a draft to `[ready]`.
-- [x] Documentation distinguishes Day Shift planner work from Night Shift manager implementation work.
+- [x] Documentation distinguishes Day Shift planner work from Nightmanager manager implementation work.
 - [x] At least one example prompt or prompt template is added for using the planner.
 
 Validation:
@@ -177,7 +177,7 @@ npm run build
 
 Notes:
 
-- Implementation complete: AGENT_LOOP.md, docs/nightshift.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
+- Implementation complete: AGENT_LOOP.md, docs/nightmanager.md, .pi/prompts/day-planner.md, TODOs.md, Specs/README.md all updated.
 - Do not add a dedicated fifth `planner` subagent in this TODO.
 
 ### [done][bug][P1][ui] Fix landing page dark theme not rendering correctly

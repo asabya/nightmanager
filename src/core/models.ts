@@ -13,7 +13,7 @@ export interface SubagentConfig {
   thinking?: SubagentThinkingLevel;
 }
 
-export interface SubagentsConfig {
+export interface NightmanagerConfig {
   agents?: Partial<Record<SubagentName, SubagentConfig>>;
 }
 
@@ -55,7 +55,7 @@ function normalizeSubagentConfig(value: unknown): SubagentConfig {
   };
 }
 
-export function loadSubagentsConfig(configPath = SUBAGENTS_CONFIG_PATH): SubagentsConfig | null {
+export function loadNightmanagerConfig(configPath = SUBAGENTS_CONFIG_PATH): NightmanagerConfig | null {
   if (!existsSync(configPath)) return null;
   try {
     const parsed = JSON.parse(readFileSync(configPath, "utf-8")) as unknown;
@@ -63,7 +63,7 @@ export function loadSubagentsConfig(configPath = SUBAGENTS_CONFIG_PATH): Subagen
     const rawAgents = (parsed as { agents?: unknown }).agents;
     if (!rawAgents || typeof rawAgents !== "object") return { agents: {} };
 
-    const agents: SubagentsConfig["agents"] = {};
+    const agents: NightmanagerConfig["agents"] = {};
     for (const name of ["finder", "oracle", "worker", "manager"] as const) {
       const normalized = normalizeSubagentConfig((rawAgents as Record<string, unknown>)[name]);
       if (normalized.model || normalized.thinking) agents[name] = normalized;
@@ -77,7 +77,7 @@ export function loadSubagentsConfig(configPath = SUBAGENTS_CONFIG_PATH): Subagen
 export function resolveSubagentConfig(
   ctx: ExtensionContext,
   name: SubagentName,
-  config = loadSubagentsConfig(),
+  config = loadNightmanagerConfig(),
 ): ResolvedSubagentConfig {
   const agentConfig = config?.agents?.[name];
   const configuredModel = agentConfig?.model;

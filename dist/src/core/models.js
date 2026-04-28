@@ -25,7 +25,7 @@ function normalizeSubagentConfig(value) {
         thinking: normalizeThinkingLevel(raw.thinking),
     };
 }
-export function loadSubagentsConfig(configPath = SUBAGENTS_CONFIG_PATH) {
+export function loadNightmanagerConfig(configPath = SUBAGENTS_CONFIG_PATH) {
     if (!existsSync(configPath))
         return null;
     try {
@@ -47,7 +47,7 @@ export function loadSubagentsConfig(configPath = SUBAGENTS_CONFIG_PATH) {
         return null;
     }
 }
-export function resolveSubagentConfig(ctx, name, config = loadSubagentsConfig()) {
+export function resolveSubagentConfig(ctx, name, config = loadNightmanagerConfig()) {
     const agentConfig = config?.agents?.[name];
     const configuredModel = agentConfig?.model;
     const parsed = configuredModel ? parseModelReference(configuredModel) : null;

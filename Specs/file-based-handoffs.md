@@ -10,9 +10,9 @@ Manager-to-worker handoffs are currently assembled as in-memory structured data 
 
 - Did a handoff actually happen?
 - What exact objective, findings, files, decisions, constraints, risks, and verification commands were handed to Worker?
-- Can a failed Night Shift run be inspected after the fact without relying on the chat transcript?
+- Can a failed Nightmanager run be inspected after the fact without relying on the chat transcript?
 
-Night Shift needs a reviewable, file-based handoff trail so humans can verify that delegation worked and so future debugging can compare the manager plan against worker execution.
+Nightmanager needs a reviewable, file-based handoff trail so humans can verify that delegation worked and so future debugging can compare the manager plan against worker execution.
 
 ## Goals
 
@@ -21,7 +21,7 @@ Night Shift needs a reviewable, file-based handoff trail so humans can verify th
 - Make Worker consume or reference that file so the persisted handoff is the canonical handoff source for the run.
 - Keep the feature local-only and safe for repository use.
 - Add tests that prove handoff files are created and the Worker task references them.
-- Document how to inspect handoff files during or after Night Shift.
+- Document how to inspect handoff files during or after Nightmanager.
 
 ## Non-Goals
 
@@ -38,7 +38,7 @@ Relevant files identified during Day Shift discovery:
 - `src/core/handoff.ts` defines `handoffSchema` and `formatWorkerTask`.
 - `src/tools/manager.ts` exposes the internal `handoff_to_worker` tool, validates required handoff fields, and delegates to Worker.
 - `src/tools/worker.ts` formats the direct task plus optional handoff and calls `runIsolatedSubagent`.
-- `src/core/subagent.ts` runs isolated subagents with a task string.
+- `src/core/subagent.ts` runs isolated nightmanager with a task string.
 - `tests/unit/handoff.test.ts` covers current handoff formatting.
 - `tests/integration/subagent-tools.test.ts` covers handoff flow through subagent tools.
 - `tests/integration/manager.test.ts` covers manager prompt/tool registration.
@@ -121,9 +121,9 @@ Generated handoff files must not be committed. `.gitignore` should ignore the ha
 5. Update `.gitignore` for `.pi/handoffs/` if needed.
 6. Add unit tests for artifact writing and formatting changes.
 7. Add/update integration tests that spy on isolated subagent execution and assert the task references the artifact path.
-8. Update `README.md` and/or `docs/nightshift.md` with a short “Inspecting handoffs” section.
+8. Update `README.md` and/or `docs/nightmanager.md` with a short “Inspecting handoffs” section.
 
-Rejected alternative: only logging the handoff to stdout. Logs are harder to locate after a long run and do not give Night Shift a durable file contract.
+Rejected alternative: only logging the handoff to stdout. Logs are harder to locate after a long run and do not give Nightmanager a durable file contract.
 
 ## Testing Plan
 
@@ -152,11 +152,11 @@ Manual check:
 ## Documentation Updates
 
 - `README.md`: mention file-based handoff artifacts in the delegation model or Worker/Manager sections.
-- `docs/nightshift.md`: add operational guidance for checking `.pi/handoffs/` after a Night Shift run.
+- `docs/nightmanager.md`: add operational guidance for checking `.pi/handoffs/` after a Nightmanager run.
 - `.gitignore`: ignore generated handoff artifacts.
 
 ## Risks / Open Questions
 
 - Should handoff files be retained indefinitely or should there be a cleanup policy? For this spec, retain them and document manual deletion.
 - Should artifacts live under `.pi/handoffs/` or a temp directory? Prefer `.pi/handoffs/` for reviewability, with gitignore protection.
-- If Pi subagents cannot directly read local files from task instructions, the artifact still serves as audit evidence; keep the formatted text fallback until file reading is proven reliable.
+- If Pi nightmanager cannot directly read local files from task instructions, the artifact still serves as audit evidence; keep the formatted text fallback until file reading is proven reliable.

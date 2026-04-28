@@ -1,6 +1,6 @@
 # Specs
 
-This directory contains Day Shift planning documents for Night Shift implementation.
+This directory contains Day Shift planning documents for Nightmanager implementation.
 
 Rules:
 
@@ -14,7 +14,7 @@ Rules:
 Draft specs are created by the Day Shift planner workflow (see `.pi/prompts/day-planner.md`):
 
 - Filename format: `draft-<title>.md`
-- Night Shift ignores specs with `draft-` prefix
+- Nightmanager ignores specs with `draft-` prefix
 - TODOs linked to draft specs should be tagged `[draft]`
 - Human must review and manually promote: remove `draft-` from filename, change TODO to `[ready]`
 
@@ -23,7 +23,7 @@ Draft specs are created by the Day Shift planner workflow (see `.pi/prompts/day-
 Before promoting a draft spec, human must confirm:
 
 - Problem and desired behavior are clear
-- Scope is small enough for one Night Shift TODO
+- Scope is small enough for one Nightmanager TODO
 - Acceptance criteria are testable
 - Edge cases and non-goals are documented
 - Validation commands are listed

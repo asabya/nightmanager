@@ -1,6 +1,6 @@
 ---
 name: to-prd
-description: Turn a rough idea into a draft local spec in Specs/ using this repository's existing spec template and Night Shift conventions.
+description: Turn a rough idea into a draft local spec in Specs/ using this repository's existing spec template and Nightmanager conventions.
 ---
 
 # To PRD

@@ -1,11 +1,11 @@
-# Subagents Package Conversion Design
+# The Nightmanager Package Conversion Design
 
 Date: 2026-04-21
 Status: Approved in conversation; written for review before implementation planning
 
 ## Summary
 
-Convert the `subagents` repository from a flat pair of Pi extension files into a proper TypeScript package and Pi package with modular source layout, real tests, and one combined Pi extension entrypoint.
+Convert the `nightmanager` repository from a flat pair of Pi extension files into a proper TypeScript package and Pi package with modular source layout, real tests, and one combined Pi extension entrypoint.
 
 The package will contain four tools:
 - `finder`
@@ -54,7 +54,7 @@ This gives a strong balance of confidence, maintainability, and speed.
 Proposed structure:
 
 ```text
-subagents/
+nightmanager/
   package.json
   tsconfig.json
   vitest.config.ts

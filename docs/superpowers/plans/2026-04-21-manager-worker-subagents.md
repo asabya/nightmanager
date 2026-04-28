@@ -1,8 +1,8 @@
-# Manager + Worker Subagents Implementation Plan
+# Manager + Worker The Nightmanager Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add lightweight `manager` and `worker` Pi subagents that complement the existing `finder` and `oracle` tools while preserving a strong token-cost to performance ratio.
+**Goal:** Add lightweight `manager` and `worker` Pi nightmanager that complement the existing `finder` and `oracle` tools while preserving a strong token-cost to performance ratio.
 
 **Architecture:** Keep the existing single-file extension pattern. Refactor `finder.ts` and `oracle.ts` to export reusable tool definitions, then build `worker.ts` and `manager.ts` on top of those definitions. `worker` is an implementation-focused subagent with one constrained `finder` fallback; `manager` is a read-only routing subagent that delegates to exactly one best-fit tool by default.
 
@@ -965,7 +965,7 @@ It does not call `oracle` and does not recursively delegate.
 ```md
 ## Manager Subagent
 
-The `manager` tool is a lightweight read-only router for Pi subagents.
+The `manager` tool is a lightweight read-only router for Pi nightmanager.
 
 Use it when you want the system to choose the best next specialized tool:
 - `finder` for search and codebase exploration
@@ -1085,7 +1085,7 @@ Expected:
 
 ```bash
 git add finder.ts oracle.ts worker.ts manager.ts README.md
-git commit -m "feat: add manager and worker subagents"
+git commit -m "feat: add manager and worker nightmanager"
 ```
 
 ## Spec coverage self-review

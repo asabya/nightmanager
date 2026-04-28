@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
 import type { Model } from "@mariozechner/pi-ai";
 import {
-  loadSubagentsConfig,
+  loadNightmanagerConfig,
   parseModelReference,
   resolveSubagentConfig,
 } from "../../src/core/models.js";
@@ -13,7 +13,7 @@ import {
 const tempDirs: string[] = [];
 
 function tempConfig(content: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "subagents-config-"));
+  const dir = mkdtempSync(join(tmpdir(), "nightmanager-config-"));
   tempDirs.push(dir);
   const path = join(dir, "subagents.json");
   writeFileSync(path, content);
@@ -52,7 +52,7 @@ describe("subagent config", () => {
       },
     }));
 
-    expect(loadSubagentsConfig(path)).toEqual({
+    expect(loadNightmanagerConfig(path)).toEqual({
       agents: {
         finder: { model: "ollama/small", thinking: "medium" },
         oracle: { model: "openai/reasoning", thinking: "high" },
@@ -61,8 +61,8 @@ describe("subagent config", () => {
   });
 
   it("returns null for missing or malformed config", () => {
-    expect(loadSubagentsConfig(join(tmpdir(), "does-not-exist-subagents.json"))).toBeNull();
-    expect(loadSubagentsConfig(tempConfig("{"))).toBeNull();
+    expect(loadNightmanagerConfig(join(tmpdir(), "does-not-exist-subagents.json"))).toBeNull();
+    expect(loadNightmanagerConfig(tempConfig("{"))).toBeNull();
   });
 
   it("falls back to session model and medium thinking when config is missing", () => {
@@ -110,6 +110,6 @@ describe("subagent config", () => {
 
   it("normalizes unsupported low thinking to medium", () => {
     const path = tempConfig(JSON.stringify({ agents: { manager: { model: "ollama/small", thinking: "low" } } }));
-    expect(loadSubagentsConfig(path)?.agents?.manager?.thinking).toBe("medium");
+    expect(loadNightmanagerConfig(path)?.agents?.manager?.thinking).toBe("medium");
   });
 });

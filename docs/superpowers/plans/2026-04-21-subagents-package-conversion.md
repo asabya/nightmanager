@@ -1,4 +1,4 @@
-# Subagents Package Conversion Implementation Plan
+# The Nightmanager Package Conversion Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -119,12 +119,12 @@ Expected: FAIL because the scaffold files do not exist yet.
 
 ```json
 {
-  "name": "subagents",
+  "name": "nightmanager",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Finder, Oracle, Manager, and Worker subagents for Pi",
-  "keywords": ["pi-package", "pi", "pi-coding-agent", "extension", "subagents"],
+  "description": "Finder, Oracle, Manager, and Worker nightmanager for Pi",
+  "keywords": ["pi-package", "pi", "pi-coding-agent", "extension", "nightmanager"],
   "license": "MIT",
   "exports": {
     ".": "./dist/src/index.js"
@@ -206,7 +206,7 @@ export { default } from "./src/index.js";
 // src/index.ts
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-export default function subagentsExtension(_pi: ExtensionAPI) {
+export default function nightmanagerExtension(_pi: ExtensionAPI) {
   // tools registered in later tasks
 }
 ```
@@ -713,7 +713,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { finderTool } from "./tools/finder.js";
 import { oracleTool } from "./tools/oracle.js";
 
-export default function subagentsExtension(pi: ExtensionAPI) {
+export default function nightmanagerExtension(pi: ExtensionAPI) {
   pi.registerTool(finderTool);
   pi.registerTool(oracleTool);
 }
@@ -882,7 +882,7 @@ export const workerTool = defineTool({
 ```ts
 import { workerTool } from "./tools/worker.js";
 
-export default function subagentsExtension(pi: ExtensionAPI) {
+export default function nightmanagerExtension(pi: ExtensionAPI) {
   pi.registerTool(finderTool);
   pi.registerTool(oracleTool);
   pi.registerTool(workerTool);
@@ -1049,7 +1049,7 @@ export const managerTool = defineTool({
 ```ts
 import { managerTool } from "./tools/manager.js";
 
-export default function subagentsExtension(pi: ExtensionAPI) {
+export default function nightmanagerExtension(pi: ExtensionAPI) {
   pi.registerTool(finderTool);
   pi.registerTool(oracleTool);
   pi.registerTool(workerTool);
@@ -1171,7 +1171,7 @@ Add these sections:
 ## Install
 
 ```bash
-pi install /absolute/path/to/subagents
+pi install /absolute/path/to/nightmanager
 ```
 
 ## Tools
