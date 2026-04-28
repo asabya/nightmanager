@@ -19,7 +19,7 @@ This project is new and does not need legacy config compatibility. We can replac
 
 ## Goals
 
-- Add a unified config file at `~/.pi/agent/subagents.json`.
+- Add a unified config file at `~/.pi/agent/nightmanager.json`.
 - Support per-agent `model` and `thinking` settings.
 - Use `thinking: "medium"` as the minimum/default thinking level for all nightmanager.
 - Recommend cheaper/smaller models for `manager` and `finder`.
@@ -41,7 +41,7 @@ This project is new and does not need legacy config compatibility. We can replac
 Path:
 
 ```text
-~/.pi/agent/subagents.json
+~/.pi/agent/nightmanager.json
 ```
 
 Shape:
@@ -86,7 +86,7 @@ docs/subagent-config-setup.md
 
 The guide should be written so an agent can execute it safely. It should include:
 
-1. The target path: `~/.pi/agent/subagents.json`.
+1. The target path: `~/.pi/agent/nightmanager.json`.
 2. A command to create the parent directory.
 3. A command/template to write the JSON config.
 4. Instructions to ask the human which provider/model IDs to use if unknown.
@@ -97,14 +97,14 @@ The guide should be written so an agent can execute it safely. It should include
 ## Implementation Notes
 
 - Replace `ToolConfig` with a unified subagent config type in `src/core/models.ts` or a new config module.
-- Each subagent should resolve its config from `~/.pi/agent/subagents.json` by subagent name.
+- Each subagent should resolve its config from `~/.pi/agent/nightmanager.json` by subagent name.
 - If config is missing or malformed, fall back to the current Pi session model and default `thinking: "medium"` where supported.
 - If an agent-specific model is invalid or not found in the model registry, fall back to the current Pi session model and surface enough diagnostic detail for debugging.
 - Pi's `pi-agent-core` `Agent` type supports `thinkingLevel`; apply the resolved per-agent `thinking` value through that API when creating isolated nightmanager.
 
 ## Acceptance Criteria
 
-- [ ] A unified config file at `~/.pi/agent/subagents.json` is the only documented subagent config path.
+- [ ] A unified config file at `~/.pi/agent/nightmanager.json` is the only documented subagent config path.
 - [ ] `manager`, `finder`, `worker`, and `oracle` read model config from `agents.<name>.model`.
 - [ ] `manager`, `finder`, `worker`, and `oracle` apply thinking config from `agents.<name>.thinking` via the `pi-agent-core` `Agent` `thinkingLevel` option.
 - [ ] No new docs or examples set `thinking` to `low`.

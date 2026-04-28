@@ -21,10 +21,10 @@ Install once, delegate intelligently.
 
 | Tool | Role | Best For | Config |
 |------|------|---------|--------|
-| **finder** | Codebase search | Finding where features live, tracing module connections | `~/.pi/agent/subagents.json` |
-| **oracle** | Reasoning & debugging | Ambiguous failures, root-cause analysis, trade-off planning | `~/.pi/agent/subagents.json` |
-| **worker** | Implementation | Smallest viable fix, verified changes | `~/.pi/agent/subagents.json` |
-| **manager** | Orchestration | Coordinating finder/oracle/worker workflows | `~/.pi/agent/subagents.json` |
+| **finder** | Codebase search | Finding where features live, tracing module connections | `~/.pi/agent/nightmanager.json` |
+| **oracle** | Reasoning & debugging | Ambiguous failures, root-cause analysis, trade-off planning | `~/.pi/agent/nightmanager.json` |
+| **worker** | Implementation | Smallest viable fix, verified changes | `~/.pi/agent/nightmanager.json` |
+| **manager** | Orchestration | Coordinating finder/oracle/worker workflows | `~/.pi/agent/nightmanager.json` |
 
 Model selection follows a fallback chain: unified subagent config → current Pi session model.
 
@@ -100,7 +100,7 @@ Use manager to investigate the failing auth flow, choose the safest fix, impleme
 
 ## Configuration
 
-All four tools support a unified optional config file at `~/.pi/agent/subagents.json`:
+All four tools support a unified optional config file at `~/.pi/agent/nightmanager.json`:
 
 ```json
 {

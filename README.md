@@ -47,7 +47,7 @@ Use `finder` for codebase exploration tasks like:
 - which files participate in a flow
 - how modules connect
 
-Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -63,7 +63,7 @@ Use `oracle` for reasoning-heavy tasks like:
 - trade-off-aware planning
 - deciding the best next probe
 
-Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -88,7 +88,7 @@ When invoked with handoff context, `worker` persists a JSON handoff artifact to 
 When handoff context is provided, `worker` uses it as the starting map and avoids repeating broad discovery unless the context is missing or contradictory.
 It may still use `finder` once if blocked by codebase uncertainty. It does not call `oracle` and does not recursively delegate.
 
-Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -113,7 +113,7 @@ Default orchestration policy:
 
 > **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [`docs/nightmanager.md`](docs/nightmanager.md#inspecting-handoffs) for how to inspect them.
 
-Configuration is shared across nightmanager in `~/.pi/agent/subagents.json`; see [Configuration](#configuration).
+Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
 
 Example prompt:
 
@@ -126,7 +126,7 @@ Use manager to investigate the failing auth flow, choose the safest fix, impleme
 The Nightmanager use one optional config file:
 
 ```text
-~/.pi/agent/subagents.json
+~/.pi/agent/nightmanager.json
 ```
 
 If the file is missing, malformed, or a configured model cannot be found, the subagent falls back to the current Pi session model. `thinking` defaults to `medium`; avoid `low` for nightmanager.

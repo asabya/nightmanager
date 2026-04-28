@@ -48,13 +48,13 @@ Spec: `specs/nightmanager-rebrand.md`
 Acceptance criteria:
 
 - [x] `package.json` name changed to `nightmanager`
-- [ ] "Night Shift" → "Nightmanager" workflow name updated throughout
+- [x] "Night Shift" → "Nightmanager" workflow name updated throughout
 - [x] Scripts renamed: `nightshift.sh` → `nightmanager.sh`, etc.
 - [x] Prompts renamed: `nightshift.md` → `nightmanager.md`, etc.
 - [x] Landing page title changed to "The Nightmanager"
 - [x] Landing page hero copy positions Nightmanager as the orchestrator
-- [ ] "Nightmanager" workflow name used throughout
-- [ ] Subagent tool names (manager, finder, oracle, worker) unchanged
+- [x] "Nightmanager" workflow name used throughout
+- [x] Subagent tool names (manager, finder, oracle, worker) unchanged
 
 Validation:
 
@@ -73,15 +73,15 @@ Spec: `specs/subagent-config-streamlining.md`
 
 Acceptance criteria:
 
-- [ ] Unified `~/.pi/agent/subagents.json` config supports per-agent `model` and `thinking`.
-- [ ] Legacy per-agent config files are no longer used or documented.
-- [ ] Manager and Finder can be configured with cheaper/smaller models.
-- [ ] Worker and especially Oracle can be configured with higher-tier models.
-- [ ] No docs or examples set `thinking` to `low`; use at least `medium`.
-- [ ] An agent-friendly Markdown setup guide explains how to create/update the config after installation.
-- [ ] README documents the new config format and recommended model split.
-- [ ] Tests cover unified config parsing, fallback behavior, malformed config, invalid models, and per-agent resolution.
-- [ ] Validations pass:
+- [x] Unified `~/.pi/agent/nightmanager.json` config supports per-agent `model` and `thinking`.
+- [x] Legacy per-agent config files are no longer used or documented.
+- [x] Manager and Finder can be configured with cheaper/smaller models.
+- [x] Worker and especially Oracle can be configured with higher-tier models.
+- [x] No docs or examples set `thinking` to `low`; use at least `medium`.
+- [x] An agent-friendly Markdown setup guide explains how to create/update the config after installation.
+- [x] README documents the new config format and recommended model split.
+- [x] Tests cover unified config parsing, fallback behavior, malformed config, invalid models, and per-agent resolution.
+- [x] Validations pass:
 
 ```bash
 npm run typecheck

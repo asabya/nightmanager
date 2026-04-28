@@ -30,7 +30,7 @@ export interface ResolvedSubagentConfig {
   invalidModel?: boolean;
 }
 
-export const SUBAGENTS_CONFIG_PATH = join(homedir(), ".pi", "agent", "subagents.json");
+export const SUBAGENTS_CONFIG_PATH = join(homedir(), ".pi", "agent", "nightmanager.json");
 export const DEFAULT_SUBAGENT_THINKING: SubagentThinkingLevel = "medium";
 
 export function parseModelReference(input: string): ParsedModelReference | null {

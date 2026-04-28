@@ -5,7 +5,7 @@ Use this guide to create or update the unified Pi subagent config safely.
 ## Target
 
 ```text
-~/.pi/agent/subagents.json
+~/.pi/agent/nightmanager.json
 ```
 
 This is the only subagent config file used by this package. If it is missing or invalid, nightmanager fall back to the current Pi session model and `thinking: "medium"`.
@@ -27,7 +27,7 @@ This is the only subagent config file used by this package. If it is missing or 
 3. Write the config, replacing placeholders with real `provider/model-id` values:
 
    ```bash
-   cat > ~/.pi/agent/subagents.json <<'JSON'
+   cat > ~/.pi/agent/nightmanager.json <<'JSON'
    {
      "agents": {
        "manager": {
@@ -54,13 +54,13 @@ This is the only subagent config file used by this package. If it is missing or 
 4. Validate the final JSON:
 
    ```bash
-   python -m json.tool ~/.pi/agent/subagents.json
+   python -m json.tool ~/.pi/agent/nightmanager.json
    ```
 
 5. Inspect the result and confirm it contains only the intended model IDs and no `thinking: "low"` values:
 
    ```bash
-   cat ~/.pi/agent/subagents.json
+   cat ~/.pi/agent/nightmanager.json
    ```
 
 ## Notes

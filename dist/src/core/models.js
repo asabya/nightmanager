@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-export const SUBAGENTS_CONFIG_PATH = join(homedir(), ".pi", "agent", "subagents.json");
+export const SUBAGENTS_CONFIG_PATH = join(homedir(), ".pi", "agent", "nightmanager.json");
 export const DEFAULT_SUBAGENT_THINKING = "medium";
 export function parseModelReference(input) {
     const parts = input.split("/");

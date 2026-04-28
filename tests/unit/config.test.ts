@@ -15,7 +15,7 @@ const tempDirs: string[] = [];
 function tempConfig(content: string): string {
   const dir = mkdtempSync(join(tmpdir(), "nightmanager-config-"));
   tempDirs.push(dir);
-  const path = join(dir, "subagents.json");
+  const path = join(dir, "nightmanager.json");
   writeFileSync(path, content);
   return path;
 }
@@ -61,7 +61,7 @@ describe("subagent config", () => {
   });
 
   it("returns null for missing or malformed config", () => {
-    expect(loadNightmanagerConfig(join(tmpdir(), "does-not-exist-subagents.json"))).toBeNull();
+    expect(loadNightmanagerConfig(join(tmpdir(), "does-not-exist-nightmanager.json"))).toBeNull();
     expect(loadNightmanagerConfig(tempConfig("{"))).toBeNull();
   });
 
