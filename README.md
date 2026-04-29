@@ -2,6 +2,8 @@
 
 **Four specialized Pi tools for intelligent delegation.**
 
+Some skills here were shamelessly borrowed from, then lovingly remixed from, https://github.com/mattpocock/skills.
+
 > **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [docs/index.html](docs/index.html) for the source.
 
 | Tool | Role | Best For |
