@@ -43,7 +43,7 @@ Nightmanager implementation queue.
   - Commit: 024c90a4c88ab37c7ed997406ee31fda4ea092b8
   - Notes: keep the format local-file-first and do not require GitHub issue creation.
 
-- [ready] Reposition README around The Nightmanager Loop
+- [done] Reposition README around The Nightmanager Loop
   - Spec: `specs/nightmanager-loop-positioning.md`
   - Scope: rewrite the README intro and quick-start narrative around the loop: `grill-me → to-prd → to-issues → /nightmanager`.
   - Acceptance:
@@ -55,6 +55,7 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 922389688702a7a2ff28a632ed403f06a0f0c016
   - Notes: keep PR claims consistent with the PR creation spec implementation status.
 
 - [ready] Reposition public site around The Nightmanager Loop
