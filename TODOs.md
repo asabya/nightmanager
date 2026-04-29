@@ -13,7 +13,7 @@ Nightmanager implementation queue.
 
 ## Queue
 
-- [ready] Add PR-aware Nightmanager cycle prompt
+- [done] Add PR-aware Nightmanager cycle prompt
   - Spec: `specs/afk-pr-creation.md`
   - Scope: update the `/nightmanager` execution prompts so one eligible TODO becomes one branch, one commit, and one ready-for-review PR when possible.
   - Acceptance:
@@ -26,6 +26,7 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 8b88a3052ecacb2a2adada22dc27518f56b375bd
   - Notes: likely files include `prompts/nightmanager.md`, `prompts/agent-loop.md`, and `prompts/agents.md`.
 
 - [done] Standardize TODO done metadata for PR fallback
