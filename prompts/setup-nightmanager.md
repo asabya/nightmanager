@@ -15,21 +15,21 @@ Do not implement product code while running this setup prompt.
 
 ## Instructions
 
-1. Inspect the repository enough to understand its language, package manager, validation commands, and documentation layout.
-2. Create `specs/` if it does not exist.
-3. Create `specs/README.md` if it does not exist, using the guide below.
-4. Create `specs/TEMPLATE.md` if it does not exist, using the template below.
-5. Create `TODOs.md` if it does not exist, using the queue template below.
-6. If files already exist, preserve existing work and only add missing Nightmanager sections after confirming the local format.
-7. Prefer validation commands that actually exist in the repository. For npm projects, default to:
-
-```bash
-npm run typecheck
-npm test
-npm run build  # alias for typecheck; no dist output
-```
-
-8. End with a concise report listing files created/updated and any follow-up setup needed.
+1. Inspect the repository enough to understand its language, package manager, task runners, CI validation commands, and documentation layout.
+2. Determine the repository default Testing Plan once during setup:
+   - Prefer explicit project commands that already exist in repo-local task runners, manifests, or CI configuration.
+   - Prefer safe validation commands such as test, typecheck, lint, vet, check, build, or format-check commands.
+   - Avoid destructive, deploy, publish, release, migration, or external-service commands.
+   - If multiple plausible command sets exist or the right command is unclear, ask the user to confirm or edit the Testing Plan before writing it.
+   - If no automated validation command is configured or safely inferable, use the explicit no-validation marker shown in the template.
+3. Create `specs/` if it does not exist.
+4. Create `specs/README.md` if it does not exist, using the guide below.
+5. Create `specs/TEMPLATE.md` if it does not exist, using the template below and replacing the Testing Plan placeholder with the setup-time repository default.
+6. If `specs/TEMPLATE.md` already exists and still contains the old hardcoded npm Testing Plan, replace only that old hardcoded block with the setup-time repository default.
+7. Do not change an existing custom `specs/TEMPLATE.md` Testing Plan.
+8. Create `TODOs.md` if it does not exist, using the queue template below.
+9. If files already exist, preserve existing work and only add missing Nightmanager sections after confirming the local format.
+10. End with a concise report listing files created/updated, whether the Testing Plan was created/replaced/preserved, and any follow-up setup needed.
 
 ## `specs/README.md`
 
@@ -62,7 +62,7 @@ Before promoting a draft spec, human must confirm:
 - Scope is small enough for one Nightmanager TODO
 - Acceptance criteria are testable
 - Edge cases and non-goals are documented
-- Validation commands are listed
+- The linked spec includes a `## Testing Plan` section
 - Open questions are resolved or explicitly deferred
 ```
 
@@ -111,15 +111,12 @@ Optional. Include architectural guidance, likely files, trade-offs, and rejected
 
 ## Testing Plan
 
-Minimum expected validation:
+<!-- setup-nightmanager replaces this section with the repository default. If no automated validation is configured, use:
 
-```bash
-npm run typecheck
-npm test
-npm run build  # alias for typecheck; no dist output
-```
+No automated validation commands configured for this repository.
 
-Add narrower tests or manual checks here.
+Add manual checks or project-specific commands when this spec requires them.
+-->
 
 ## Documentation Updates
 
@@ -139,8 +136,8 @@ Nightmanager implementation queue.
 
 ## Status Tags
 
-- `[bug]` — eligible; highest priority defect.
-- `[ready]` — eligible for autonomous implementation.
+- `[bug]` — eligible; highest priority defect. May omit a linked spec; Nightmanager then uses `specs/TEMPLATE.md ## Testing Plan`.
+- `[ready]` — eligible for autonomous implementation only when linked to a non-draft spec.
 - `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote it to `[ready]` before Nightmanager can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.
@@ -156,11 +153,7 @@ Example:
   - Scope: one independently reviewable vertical slice.
   - Acceptance:
     - Observable, testable behavior.
-  - Validation:
-    - npm run typecheck
-    - npm test
-    - npm run build
-  - Notes: risks, constraints, or follow-ups.
+  - Notes: risks, constraints, or follow-ups. Validation comes from the linked spec's Testing Plan.
 -->
 ```
 
@@ -168,6 +161,6 @@ Example:
 
 - Keep unfinished specs as `specs/draft-*.md`.
 - Keep unapproved TODOs as `[draft]`.
-- Promote work to `[ready]` only after human review.
+- Promote work to `[ready]` only after human review and after linking a non-draft spec.
 - Use `[bug]` only for urgent defects that are safe for autonomous implementation.
 - Keep each TODO small enough for one focused implementation and commit.

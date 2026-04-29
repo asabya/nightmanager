@@ -19,6 +19,8 @@ Read these files first when present:
 2. Select exactly one eligible TODO from `TODOs.md`:
    - `[bug]` first
    - then `[ready]` by priority and smallest safe scope
+   - `[ready]` TODOs must link a non-draft spec
+   - `[bug]` TODOs may omit a linked spec; when they do, use `specs/TEMPLATE.md` as the Testing Plan source
    - ignore `[draft]`, `[blocked]`, `[in-progress]`, and `[done]`
    - ignore specs whose basename starts with `draft-`
 3. Derive a branch name from the selected TODO title before implementation:
@@ -26,23 +28,17 @@ Read these files first when present:
    - do not add a `nightmanager/` prefix
    - if the branch exists locally or on `origin`, append `-2`, then `-3`, etc. until free
    - create and switch to the branch from the current branch as-is
-4. Load the linked spec and relevant docs.
+4. Load the linked spec and relevant docs. For a `[bug]` TODO without a linked spec, load `specs/TEMPLATE.md` for the repository default Testing Plan and rely on the TODO for scope and acceptance.
 5. Delegate implementation to the `manager` tool with a self-contained handoff containing:
    - selected TODO title and status
    - linked spec path
    - selected branch name
    - acceptance criteria
    - constraints and risks
-   - validation commands
+   - Testing Plan source: the linked spec's `## Testing Plan`, or `specs/TEMPLATE.md` only for a `[bug]` TODO with no linked spec
+   - explicit validation/manual-check commands from that Testing Plan, if any
    - requirement to complete exactly one TODO as one branch, one commit, and one PR when possible
-6. Require tests/docs/validation appropriate to the TODO, including the repository's standard validation commands when relevant:
-
-```bash
-npm run typecheck
-npm test
-npm run build  # alias for typecheck; no dist output
-```
-
+6. Require tests/docs/validation appropriate to the TODO using the selected Testing Plan as the single source of truth. Do not infer or auto-detect validation commands at Nightmanager runtime. If the Testing Plan says no automated validation commands are configured, run no test/typecheck/build commands and report that limitation.
 7. If validation fails, stop with implementation changes left uncommitted for human inspection. Do not commit, push, open a PR, stash, or reset.
 8. Update `TODOs.md` to `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds; use `[blocked]` with a concise reason when not safely implementable.
 9. Commit exactly one completed TODO. Do not implement multiple TODOs in this run.

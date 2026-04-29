@@ -26,5 +26,5 @@ Before promoting a draft spec, human must confirm:
 - Scope is small enough for one Nightmanager TODO
 - Acceptance criteria are testable
 - Edge cases and non-goals are documented
-- Validation commands are listed
+- The spec includes a `## Testing Plan` section
 - Open questions are resolved or explicitly deferred

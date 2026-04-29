@@ -4,8 +4,8 @@ Nightmanager implementation queue.
 
 ## Status Tags
 
-- `[bug]` — eligible; highest priority defect.
-- `[ready]` — eligible for autonomous implementation.
+- `[bug]` — eligible; highest priority defect. May omit a linked spec; Nightmanager then uses `specs/TEMPLATE.md ## Testing Plan`.
+- `[ready]` — eligible for autonomous implementation only when linked to a non-draft spec.
 - `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote it to `[ready]` before Nightmanager can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.

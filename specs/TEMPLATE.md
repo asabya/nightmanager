@@ -48,7 +48,7 @@ npm test
 npm run build  # alias for typecheck; no dist output
 ```
 
-Add narrower tests or manual checks here.
+Add narrower tests or manual checks here. This section is the single source of truth for Nightmanager validation in specs created for this repository.
 
 ## Documentation Updates
 

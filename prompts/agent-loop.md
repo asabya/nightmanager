@@ -15,8 +15,8 @@ The goal is not to make agents guess better. The goal is to make the project eas
    - Use `specs/TEMPLATE.md` for new work.
    - Prefix unfinished specs with `draft-`; Nightmanager must ignore them.
 3. Add a corresponding item to `TODOs.md`.
-   - Mark it `[ready]` only when the spec is complete enough for autonomous work.
-   - Mark urgent defects `[bug]`.
+   - Mark it `[ready]` only when the TODO links a non-draft spec that is complete enough for autonomous work.
+   - Mark urgent defects `[bug]`; bugs may omit a linked spec, in which case Nightmanager uses `specs/TEMPLATE.md ## Testing Plan` as the validation source.
    - Mark unclear work `[draft]` or `[blocked]`.
 4. Strengthen docs and validations before the agent runs.
 5. End the day without babysitting implementation.
@@ -72,7 +72,7 @@ The outer Pi session should call `manager` with a self-contained task containing
 - selected branch name,
 - acceptance criteria,
 - constraints,
-- validation commands,
+- Testing Plan source and explicit validation/manual-check commands from that source, if any,
 - requirement to complete exactly one TODO as one branch, one commit, and one PR when possible.
 
 `manager` should orchestrate `finder`, `oracle`, and `worker` as needed. Implementation must flow through `worker` via manager handoff.
@@ -86,14 +86,7 @@ The manager/nightmanager should:
 3. Use `oracle` for ambiguous designs, failures, or trade-offs.
 4. Create or update tests before or alongside implementation.
 5. Implement the smallest correct change.
-6. Run narrow validation, then full validation:
-
-```bash
-npm run typecheck
-npm test
-npm run build  # alias for typecheck; no dist output
-```
-
+6. Run narrow checks from the selected Testing Plan, then the full listed validation set. The linked spec's `## Testing Plan` is the single source of truth; for `[bug]` TODOs without a linked spec, use `specs/TEMPLATE.md ## Testing Plan`. Do not infer or auto-detect validation commands during Nightmanager execution. If the selected Testing Plan says no automated validation commands are configured, run no test/typecheck/build commands and report that limitation.
 7. Update docs when behavior or workflow changes.
 8. Re-check the diff against `prompts/review-personas.md`.
 9. If validation fails, stop with implementation changes left uncommitted for human inspection. Do not commit, push, open a PR, stash, or reset.
