@@ -144,7 +144,7 @@ Nightmanager implementation queue.
 - `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote it to `[ready]` before Nightmanager can pick it up.
 - `[blocked]` — not eligible until the reason is resolved.
 - `[in-progress]` — currently being worked.
-- `[done]` — complete; include commit hash when available.
+- `[done]` — complete; include commit hash once available. Include PR URL only when PR creation succeeds.
 
 ## Queue
 

@@ -37,8 +37,8 @@ npm test
 npm run build  # alias for typecheck; no dist output
 ```
 
-6. Update `TODOs.md` to `[done]` with commit hash when complete, or `[blocked]` with a concise reason when not safely implementable.
+6. Update `TODOs.md` to `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds; use `[blocked]` with a concise reason when not safely implementable.
 7. Commit exactly one completed TODO. Do not implement multiple TODOs in this run.
-8. End with a concise report: selected TODO, commit or blocked reason, files changed, validations run, and follow-ups.
+8. End with a concise report: selected TODO, commit hash or blocked reason, PR URL only if created, local-commit fallback reason when PR creation fails, files changed, validations run, and follow-ups.
 
 Do not ask for live steering. If the TODO/spec is ambiguous or unsafe, block it with an explanation instead of guessing.

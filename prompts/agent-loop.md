@@ -87,7 +87,7 @@ npm run build  # alias for typecheck; no dist output
 7. Update docs when behavior or workflow changes.
 8. Re-check the diff against `prompts/review-personas.md`.
 9. Update `TODOs.md` status:
-   - `[done]` with commit hash when complete, or
+   - `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds, or
    - `[blocked]` with reason when not safely implementable.
 10. Commit the completed TODO as one coherent commit.
 
@@ -110,6 +110,7 @@ End with a concise report containing:
 
 - TODO selected,
 - commit hash or blocked reason,
+- PR URL only if created, or `completed locally; PR fallback used` with the exact `git`/`gh` reason when PR creation fails,
 - files changed,
 - validations run and results,
 - risks/follow-ups.
