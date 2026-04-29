@@ -58,7 +58,7 @@ Nightmanager implementation queue.
   - Commit: 922389688702a7a2ff28a632ed403f06a0f0c016
   - Notes: keep PR claims consistent with the PR creation spec implementation status.
 
-- [ready] Reposition public site around The Nightmanager Loop
+- [done] Reposition public site around The Nightmanager Loop
   - Spec: `specs/nightmanager-loop-positioning.md`
   - Scope: update `docs/index.html` hero, meta description, workflow section, and subagent cards to match the new loop-first positioning.
   - Acceptance:
@@ -70,4 +70,5 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
-  - Notes: update after README wording is approved so both surfaces stay consistent.
+  - Commit: e730e75e5903977ebe1914e9fa0e0913e7f29a1f
+  - PR: https://github.com/asabya/nightmanager/pull/5
