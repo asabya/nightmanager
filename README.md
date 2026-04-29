@@ -1,10 +1,25 @@
 # The Nightmanager for Pi
 
-**Four specialized Pi tools for intelligent delegation.**
+**Stop babysitting agents. Give them shared understanding.**
+
+Nightmanager is a spec-driven loop for solo developers and small teams: clarify intent, turn it into local specs and vertical TODOs, then delegate one ready slice for AFK implementation. You come back to a validated commit and, when possible, a PR for human review. Nightmanager does not merge automatically.
 
 Some skills here were shamelessly borrowed from, then lovingly remixed from, https://github.com/mattpocock/skills.
 
 > **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [docs/index.html](docs/index.html) for the source.
+
+## The Nightmanager Loop
+
+```text
+grill-me → to-prd → to-issues → /nightmanager → PR for review
+```
+
+1. **Grill the intent** — use `grill-me` to interrogate a feature, bug, or plan one question at a time until hidden requirements, risks, and trade-offs are surfaced.
+2. **Generate/refine the spec** — use `to-prd` to turn the clarified conversation into a concrete local spec with goals, non-goals, acceptance criteria, edge cases, testing, and risks.
+3. **Slice the work** — use `to-issues` to break the spec into small, vertical local TODOs that are safe for one focused implementation pass. This is local-file-first; it does not create GitHub issues by default.
+4. **Delegate AFK implementation** — run `/nightmanager` to select one ready TODO and delegate through Manager, Finder, Oracle, and Worker to implement, validate, commit, and open a PR when possible for human review.
+
+Specs are the shared understanding. Subagents are the execution machinery that preserves your main-session context while doing focused work inside the loop.
 
 | Tool | Role | Best For |
 |------|------|----------|
@@ -14,17 +29,6 @@ Some skills here were shamelessly borrowed from, then lovingly remixed from, htt
 | `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
 
 ---
-
-## Quick Intro
-
-Nightmanager transforms Pi into a multi-specialist team:
-
-- **Finder** — codebase search and exploration
-- **Oracle** — reasoning, debugging, and root-cause analysis
-- **Worker** — focused implementation with minimal diffs
-- **Manager** — orchestration across the right specialists
-
-Install once, delegate intelligently.
 
 ## Install
 
