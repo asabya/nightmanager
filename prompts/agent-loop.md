@@ -4,7 +4,7 @@ This file defines the workflow for using Pi nightmanager to implement planned wo
 
 ## Intent
 
-Day Shift is for human thinking: requirements, architecture, specs, and review. Nightmanager is for autonomous execution: one ready TODO at a time, delegated to `manager`, with tests, docs, commits, and a concise report.
+Day Shift is for human thinking: requirements, architecture, specs, and review. Nightmanager is for autonomous execution: one ready TODO at a time, delegated to `manager`, with tests, docs, one branch, one commit, one PR when possible, and a concise report.
 
 The goal is not to make agents guess better. The goal is to make the project easier for agents to execute correctly by improving specs, docs, validations, and review loops.
 
@@ -34,13 +34,13 @@ The planner is not autonomous execution — it helps the human think, but does n
 
 ## Nightmanager — Autonomous Execution
 
-A Nightmanager run should perform at most one TODO unless explicitly instructed otherwise.
+A Nightmanager run should perform at most one TODO unless explicitly instructed otherwise: one TODO = one branch = one commit = one PR when possible.
 
 ### 0. Prep
 
-- Inspect `git status`.
-- If the tree contains unrelated uncommitted work, do not overwrite it.
-- If the tree is unsafe to proceed, update/report the issue and stop.
+- Inspect `git status --porcelain`.
+- Nightmanager requires a clean working tree at start; if any pre-existing uncommitted changes are present, stop without modifying anything and report that a clean tree is required.
+- Do not stash, reset, or overwrite user changes.
 - Run relevant baseline validation when practical. If baseline is already failing, diagnose whether the failure is related before changing feature code.
 
 ### 1. Select Work
@@ -54,16 +54,26 @@ Read `TODOs.md` and choose exactly one eligible item:
 
 If nothing is eligible, write a concise report and stop.
 
+### 1.5. Create TODO Branch
+
+Before implementation, derive a branch name from the selected TODO title:
+
+- sanitize the title into a valid branch slug; if it is empty, stop and report,
+- do not add a `nightmanager/` prefix,
+- if the branch exists locally or on `origin`, append `-2`, then `-3`, etc. until free,
+- create and switch to the branch from the current branch as-is.
+
 ### 2. Delegate to Manager
 
 The outer Pi session should call `manager` with a self-contained task containing:
 
 - selected TODO title and status,
 - linked spec path,
+- selected branch name,
 - acceptance criteria,
 - constraints,
 - validation commands,
-- requirement to commit one completed TODO only.
+- requirement to complete exactly one TODO as one branch, one commit, and one PR when possible.
 
 `manager` should orchestrate `finder`, `oracle`, and `worker` as needed. Implementation must flow through `worker` via manager handoff.
 
@@ -86,10 +96,13 @@ npm run build  # alias for typecheck; no dist output
 
 7. Update docs when behavior or workflow changes.
 8. Re-check the diff against `prompts/review-personas.md`.
-9. Update `TODOs.md` status:
+9. If validation fails, stop with implementation changes left uncommitted for human inspection. Do not commit, push, open a PR, stash, or reset.
+10. Update `TODOs.md` status:
    - `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds, or
    - `[blocked]` with reason when not safely implementable.
-10. Commit the completed TODO as one coherent commit.
+11. Commit the completed TODO as one coherent commit.
+12. After the local commit succeeds, push the branch to `origin` and open a normal ready-for-review PR with `gh pr create`. Generate the PR title/body from the TODO, linked spec, implementation summary, changed files, validation results, and commit hash. Do not merge the PR.
+13. If push or PR creation fails after commit, keep the local commit and report `completed locally; PR fallback used` with the exact `git`/`gh` failure reason.
 
 ### 4. Review Expectations
 

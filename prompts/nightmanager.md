@@ -15,21 +15,27 @@ Read these files first when present:
 
 ## Instructions
 
-1. Inspect `git status`. If unrelated uncommitted work makes the tree unsafe, stop and report.
+1. Inspect `git status --porcelain`. Nightmanager requires a clean working tree at start; if any pre-existing uncommitted changes are present, stop without modifying anything and report that a clean tree is required. Do not stash, reset, or overwrite user changes.
 2. Select exactly one eligible TODO from `TODOs.md`:
    - `[bug]` first
    - then `[ready]` by priority and smallest safe scope
    - ignore `[draft]`, `[blocked]`, `[in-progress]`, and `[done]`
    - ignore specs whose basename starts with `draft-`
-3. Load the linked spec and relevant docs.
-4. Delegate implementation to the `manager` tool with a self-contained handoff containing:
+3. Derive a branch name from the selected TODO title before implementation:
+   - sanitize the title into a valid branch slug; if it is empty, stop and report
+   - do not add a `nightmanager/` prefix
+   - if the branch exists locally or on `origin`, append `-2`, then `-3`, etc. until free
+   - create and switch to the branch from the current branch as-is
+4. Load the linked spec and relevant docs.
+5. Delegate implementation to the `manager` tool with a self-contained handoff containing:
    - selected TODO title and status
    - linked spec path
+   - selected branch name
    - acceptance criteria
    - constraints and risks
    - validation commands
-   - requirement to commit one completed TODO only
-5. Require tests/docs/validation appropriate to the TODO, including the repository's standard validation commands when relevant:
+   - requirement to complete exactly one TODO as one branch, one commit, and one PR when possible
+6. Require tests/docs/validation appropriate to the TODO, including the repository's standard validation commands when relevant:
 
 ```bash
 npm run typecheck
@@ -37,8 +43,11 @@ npm test
 npm run build  # alias for typecheck; no dist output
 ```
 
-6. Update `TODOs.md` to `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds; use `[blocked]` with a concise reason when not safely implementable.
-7. Commit exactly one completed TODO. Do not implement multiple TODOs in this run.
-8. End with a concise report: selected TODO, commit hash or blocked reason, PR URL only if created, local-commit fallback reason when PR creation fails, files changed, validations run, and follow-ups.
+7. If validation fails, stop with implementation changes left uncommitted for human inspection. Do not commit, push, open a PR, stash, or reset.
+8. Update `TODOs.md` to `[done]` when complete, recording the commit hash once available and the PR URL only if PR creation succeeds; use `[blocked]` with a concise reason when not safely implementable.
+9. Commit exactly one completed TODO. Do not implement multiple TODOs in this run.
+10. After the local commit succeeds, try to push the branch to `origin` and open a normal ready-for-review PR with `gh pr create`. Use PR title/body content from the TODO, linked spec, implementation summary, files changed, validation results, and commit hash. Do not merge the PR.
+11. If push or PR creation fails after commit, keep the local commit and report `completed locally; PR fallback used` with the exact `git`/`gh` failure reason.
+12. End with a concise report: selected TODO, branch name, commit hash or blocked reason, PR URL only if created, local-commit fallback reason when PR creation fails, files changed, validations run, and follow-ups.
 
 Do not ask for live steering. If the TODO/spec is ambiguous or unsafe, block it with an explanation instead of guessing.
