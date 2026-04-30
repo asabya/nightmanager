@@ -387,6 +387,52 @@ describe("runIsolatedSubagent", () => {
       expect(result.details).toHaveProperty("status");
     });
 
+    it("propagates live usage snapshots from assistant messages", async () => {
+      const onUpdate = vi.fn();
+      const ctx = createMockContext();
+      const model = createMockModel();
+
+      const events: any[] = [
+        {
+          type: "message_update",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Hello " }],
+            usage: { input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, totalTokens: 1350, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.003 } },
+            timestamp: Date.now(),
+          },
+          assistantMessageEvent: { type: "content_delta", delta: "Hello " } as any,
+        },
+        {
+          type: "message_end",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Hello done" }],
+            usage: { input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, totalTokens: 1450, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.006 } },
+            timestamp: Date.now(),
+          },
+        },
+      ];
+
+      if (setPendingEventsFn) {
+        setPendingEventsFn(events);
+      }
+
+      const result = await runIsolatedSubagent({
+        ctx,
+        model,
+        systemPrompt: "You are a helpful assistant",
+        tools: [],
+        task: "Test task",
+        timeoutMs: 30000,
+        subagentName: "worker",
+        onUpdate,
+      });
+
+      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003 });
+      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006 });
+    });
+
     it("returns result with finalText extracted from final assistant message", async () => {
       const onUpdate = vi.fn();
       const ctx = createMockContext();

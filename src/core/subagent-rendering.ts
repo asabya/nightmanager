@@ -1,5 +1,5 @@
 import { Text } from "@mariozechner/pi-tui";
-import type { SubagentName, SubagentTranscriptDetails, TranscriptEntry, TranscriptStatus } from "./transcript.js";
+import type { SubagentName, SubagentTranscriptDetails, TranscriptEntry, TranscriptStatus, TranscriptUsage } from "./transcript.js";
 
 const COLLAPSED_TOOL_LIMIT = 3;
 const MAX_TASK_PREVIEW = 96;
@@ -111,6 +111,23 @@ function summaryLine(details: SubagentTranscriptDetails): string {
   return compactText(lines[0] ?? "No response yet.", MAX_TASK_PREVIEW);
 }
 
+function formatTokenCount(value: number): string {
+  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(value);
+}
+
+export function formatUsageLabel(usage: TranscriptUsage | undefined): string {
+  if (!usage) return "";
+  const parts = [`↑${formatTokenCount(usage.input)}`, `↓${formatTokenCount(usage.output)}`];
+  if (typeof usage.cost === "number") parts.push(`$${usage.cost.toFixed(3)}`);
+  return parts.join(" ");
+}
+
+function withUsageLabel(text: string, usage: TranscriptUsage | undefined): string {
+  const label = formatUsageLabel(usage);
+  return label ? `${text} · ${label}` : text;
+}
+
 export function formatSubagentCall(tool: SubagentName, task: string): string {
   const preview = compactText(task, MAX_TASK_PREVIEW) || "…";
   return `${titleCase(tool)} Task - ${preview}`;
@@ -191,16 +208,22 @@ export function buildCollapsedPreview(
     lines.push(`   + ${hidden} More (Press Ctrl+O to see)`);
   }
 
+  const usageLabel = formatUsageLabel(details.usage);
+  if (usageLabel && lines.length > 0) {
+    lines.unshift(`   ${usageLabel}`);
+  }
+
   if (lines.length === 0) {
     const icon = statusIcon(details.status, isPartial, spinnerIcon);
-    lines.push(`   ${icon} ${isPartial ? "Working…" : summaryLine(details)}`);
+    lines.push(`   ${icon} ${withUsageLabel(isPartial ? "Working…" : summaryLine(details), details.usage)}`);
   }
 
   return lines.join("\n");
 }
 
 export function buildExpandedTranscript(details: SubagentTranscriptDetails, spinnerIcon = DEFAULT_SPINNER_FRAME): string {
-  const lines = [`Status: ${details.status}${details.model ? ` · ${details.model}` : ""}`];
+  const usageLabel = formatUsageLabel(details.usage);
+  const lines = [`Status: ${details.status}${details.model ? ` · ${details.model}` : ""}${usageLabel ? ` · ${usageLabel}` : ""}`];
   const calls = latestToolCalls(details);
 
   lines.push("", "Tool Calls");

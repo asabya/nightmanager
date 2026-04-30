@@ -4,6 +4,7 @@ import {
   buildExpandedTranscript,
   formatTranscriptEntry,
   formatSubagentCall,
+  formatUsageLabel,
 } from "../../src/core/subagent-rendering.js";
 
 describe("subagent rendering helpers", () => {
@@ -52,6 +53,21 @@ describe("subagent rendering helpers", () => {
     expect(text).toContain("Find *.ts");
     expect(text).toContain("Grep foo");
     expect(text).toContain("+ 1 More (Press Ctrl+O to see)");
+  });
+
+  it("formats and renders usage labels", () => {
+    expect(formatUsageLabel({ input: 8400, output: 2200, cost: 0.019 })).toBe("↑8.4k ↓2.2k $0.019");
+
+    const collapsed = buildCollapsedPreview({
+      tool: "finder",
+      task: "Inspect README",
+      status: "running",
+      usage: { input: 8400, output: 2200, cost: 0.019 },
+      entries: [
+        { type: "tool_call", toolName: "read", args: { path: "/tmp/project/README.md" }, timestamp: 1, toolCallId: "1" },
+      ],
+    }, true);
+    expect(collapsed.split("\n")[0]).toBe("   ↑8.4k ↓2.2k $0.019");
   });
 
   it("builds an expanded transcript with latest tool calls first and final response", () => {

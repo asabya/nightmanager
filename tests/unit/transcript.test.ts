@@ -5,6 +5,7 @@ import {
   appendAssistantText,
   appendToolCall,
   appendToolResult,
+  setTranscriptUsage,
   finalizeTranscriptDetails,
   SubagentName,
   TranscriptStatus,
@@ -133,6 +134,17 @@ describe("transcript", () => {
       
       // Verify finalText is the explicit value provided, NOT derived from entries
       expect(details.finalText).toBe("Explicit final text response");
+    });
+
+    it("should preserve live usage from transcript state when finalizing", () => {
+      let state = createTranscriptState("worker" as SubagentName, "test task");
+      state = setTranscriptUsage(state, { input: 1000, output: 250, cacheRead: 50, cacheWrite: 10, cost: 0.012 });
+
+      const details = finalizeTranscriptDetails(state, {
+        status: "error" as TranscriptStatus,
+      });
+
+      expect(details.usage).toEqual({ input: 1000, output: 250, cacheRead: 50, cacheWrite: 10, cost: 0.012 });
     });
 
     it("should use derived finalText when not explicitly provided in options", () => {
