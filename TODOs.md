@@ -28,6 +28,7 @@ Nightmanager implementation queue.
     - npm test
     - npm run build
   - Commit: 5601f66
+  - PR: https://github.com/asabya/nightmanager/pull/6
   - Notes: likely files include `scripts/nightmanager.sh` and any small helper extracted for TODO parsing / branch checks.
 
 - [ready] Trim Nightmanager context loading to the active spec batch
