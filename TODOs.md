@@ -31,7 +31,7 @@ Nightmanager implementation queue.
   - PR: https://github.com/asabya/nightmanager/pull/6
   - Notes: likely files include `scripts/nightmanager.sh` and any small helper extracted for TODO parsing / branch checks.
 
-- [ready] Trim Nightmanager context loading to the active spec batch
+- [done] Trim Nightmanager context loading to the active spec batch
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: replace the broad preload of every non-draft spec with a minimal prompt/context set plus only the active spec needed for the selected batch.
   - Acceptance:
@@ -43,6 +43,7 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 3601e9a
   - Notes: likely files include `scripts/nightmanager.sh`, `prompts/nightmanager.md`, `prompts/agent-loop.md`, and `prompts/agents.md`.
 
 - [ready] Batch same-spec TODOs through one branch and one PR per spec
