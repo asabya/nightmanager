@@ -13,7 +13,7 @@ Nightmanager implementation queue.
 
 ## Queue
 
-- [ready] Add Nightmanager helpers for spec-batch selection and branch names
+- [done] Add Nightmanager helpers for spec-batch selection and branch names
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: select the first eligible TODO, identify the active batch by exact `Spec:` path, and derive branch slugs from the spec basename or TODO title for bug-only runs.
   - Acceptance:
@@ -27,6 +27,7 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 5601f66
   - Notes: likely files include `scripts/nightmanager.sh` and any small helper extracted for TODO parsing / branch checks.
 
 - [ready] Trim Nightmanager context loading to the active spec batch
