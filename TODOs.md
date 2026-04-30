@@ -74,6 +74,7 @@ Nightmanager implementation queue.
     - npm test
     - npm run build
   - Commit: 04af8da
+  - PR: https://github.com/asabya/nightmanager/pull/7
   - Notes: likely files include `src/core/subagent.ts`, `src/core/transcript.ts`, and subagent tool update paths.
 
 - [ready] Render Pi-style usage labels on built-in subagent cards
