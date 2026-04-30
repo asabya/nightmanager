@@ -34,7 +34,7 @@ The planner is not autonomous execution — it helps the human think, but does n
 
 ## Nightmanager — Autonomous Execution
 
-A Nightmanager run should perform at most one TODO unless explicitly instructed otherwise: one TODO = one branch = one commit = one PR when possible.
+A Nightmanager run works from the runner-selected active batch and should complete at most one TODO unless explicitly instructed otherwise: one TODO = one branch = one commit = one PR when possible.
 
 ### 0. Prep
 
@@ -45,7 +45,7 @@ A Nightmanager run should perform at most one TODO unless explicitly instructed 
 
 ### 1. Select Work
 
-Read `TODOs.md` and choose exactly one eligible item:
+Use the active TODO/batch selected by the runner from `TODOs.md`:
 
 1. `[bug]` first.
 2. Then `[ready]` items by priority and smallest safe scope.
@@ -83,7 +83,7 @@ The outer Pi session should call `manager` with a self-contained task containing
 
 The manager/nightmanager should:
 
-1. Load the spec and relevant docs.
+1. Use the shared docs and runner-loaded active spec only. For a `[bug]` TODO without a linked spec, use `specs/TEMPLATE.md`; do not load unrelated specs.
 2. Use `finder` for unfamiliar code paths.
 3. Use `oracle` for ambiguous designs, failures, or trade-offs.
 4. Create or update tests before or alongside implementation.

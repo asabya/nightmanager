@@ -181,15 +181,14 @@ add_context_file "prompts/review-personas.md"
 add_context_file "README.md"
 add_context_file "package.json"
 
-if [[ -d "$ROOT/specs" ]]; then
-  while IFS= read -r -d '' spec_path; do
-    spec_rel="${spec_path#"$ROOT"/}"
-    spec_base="$(basename "$spec_rel")"
-    if [[ "$spec_base" == draft-* ]]; then
-      continue
-    fi
-    context_args+=("@$spec_rel")
-  done < <(find "$ROOT/specs" -type f -name '*.md' -print0)
+if [[ -n "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then
+  if [[ ! -f "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then
+    echo "Active Nightmanager spec not found: $NIGHTMANAGER_ACTIVE_SPEC" >&2
+    exit 1
+  fi
+  context_args+=("@$NIGHTMANAGER_ACTIVE_SPEC")
+else
+  add_context_file "specs/TEMPLATE.md"
 fi
 
 add_context_file "prompts/nightmanager.md"
