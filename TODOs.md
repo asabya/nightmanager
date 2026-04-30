@@ -61,7 +61,7 @@ Nightmanager implementation queue.
     - npm run build
   - Notes: likely files include `scripts/nightmanager.sh`, `scripts/worktree-nightmanager.sh`, and prompt/reporting paths that describe the cycle.
 
-- [ready] Capture live usage snapshots in the subagent transcript
+- [done] Capture live usage snapshots in the subagent transcript
   - Spec: `specs/live-subagent-usage-labels.md`
   - Scope: add live usage state to isolated subagent runs and transcript details so built-in subagent invocations can stream their own token/cost totals while running, including partial values on failure or cancellation.
   - Acceptance:
@@ -73,6 +73,7 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 04af8da
   - Notes: likely files include `src/core/subagent.ts`, `src/core/transcript.ts`, and subagent tool update paths.
 
 - [ready] Render Pi-style usage labels on built-in subagent cards
