@@ -56,11 +56,13 @@ If nothing is eligible, write a concise report and stop.
 
 ### 1.5. Create TODO Branch
 
-Before implementation, derive a branch name from the selected TODO title:
+Before implementation, use the branch name selected by the Nightmanager runner from the active batch:
 
-- sanitize the title into a valid branch slug; if it is empty, stop and report,
+- spec-backed work uses the linked spec basename,
+- `[bug]` TODOs without a spec use the TODO title,
 - do not add a `nightmanager/` prefix,
-- if the branch exists locally or on `origin`, append `-2`, then `-3`, etc. until free,
+- the runner checks local and `origin` branch collisions and appends `-2`, then `-3`, etc. until free,
+- if slug derivation is empty, stop and report,
 - create and switch to the branch from the current branch as-is.
 
 ### 2. Delegate to Manager

@@ -23,11 +23,7 @@ Read these files first when present:
    - `[bug]` TODOs may omit a linked spec; when they do, use `specs/TEMPLATE.md` as the Testing Plan source
    - ignore `[draft]`, `[blocked]`, `[in-progress]`, and `[done]`
    - ignore specs whose basename starts with `draft-`
-3. Derive a branch name from the selected TODO title before implementation:
-   - sanitize the title into a valid branch slug; if it is empty, stop and report
-   - do not add a `nightmanager/` prefix
-   - if the branch exists locally or on `origin`, append `-2`, then `-3`, etc. until free
-   - create and switch to the branch from the current branch as-is
+3. Use the branch name selected by the Nightmanager runner before implementation. The runner derives it from the active batch: spec-backed work uses the linked spec basename; `[bug]` TODOs without a spec use the TODO title. It must have no `nightmanager/` prefix and must be free locally and on `origin` after any `-2`, `-3`, etc. suffix. Create and switch to that branch from the current branch as-is.
 4. Load the linked spec and relevant docs. For a `[bug]` TODO without a linked spec, load `specs/TEMPLATE.md` for the repository default Testing Plan and rely on the TODO for scope and acceptance.
 5. Delegate implementation to the `manager` tool with a self-contained handoff containing:
    - selected TODO title and status
