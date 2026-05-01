@@ -146,6 +146,11 @@ else
   exit "$select_status"
 fi
 
+START_BRANCH="$(git branch --show-current)"
+if [[ -z "$START_BRANCH" ]]; then
+  START_BRANCH="$(git rev-parse --short HEAD)"
+fi
+
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 log_file="$LOG_DIR/nightmanager-$stamp.log"
 
@@ -201,12 +206,13 @@ add_context_file "prompts/nightmanager.md"
   echo "Selected TODO: [$NIGHTMANAGER_TODO_STATUS] $NIGHTMANAGER_TODO_TITLE"
   echo "Active batch key: $NIGHTMANAGER_BATCH_KEY"
   echo "Selected branch: $NIGHTMANAGER_BRANCH"
+  echo "Starting branch: $START_BRANCH"
   echo "Context files: ${#context_args[@]}"
   echo
 
   "$PI_BIN" "${pi_args[@]}" \
     "${context_args[@]}" \
-    "Run the Nightmanager prompt exactly as written. Use manager for implementation. Selected TODO: [$NIGHTMANAGER_TODO_STATUS] $NIGHTMANAGER_TODO_TITLE. Active batch key: $NIGHTMANAGER_BATCH_KEY. Selected branch name: $NIGHTMANAGER_BRANCH. Use this selected branch name instead of deriving a different one."
+    "Run the Nightmanager prompt exactly as written. Use manager for implementation. Selected TODO: [$NIGHTMANAGER_TODO_STATUS] $NIGHTMANAGER_TODO_TITLE. Active batch key: $NIGHTMANAGER_BATCH_KEY. Selected branch name: $NIGHTMANAGER_BRANCH. Starting branch: $START_BRANCH. Use this selected branch name for the whole active batch instead of deriving a different one, and return to the starting branch after the batch PR is created."
 
   echo
   echo "Nightmanager finished at $(date -u +%Y%m%dT%H%M%SZ)"

@@ -46,7 +46,7 @@ Nightmanager implementation queue.
   - Commit: 3601e9a
   - Notes: likely files include `scripts/nightmanager.sh`, `prompts/nightmanager.md`, `prompts/agent-loop.md`, and `prompts/agents.md`.
 
-- [ready] Batch same-spec TODOs through one branch and one PR per spec
+- [done] Batch same-spec TODOs through one branch and one PR per spec
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: keep Nightmanager on the active spec until every TODO for that exact `Spec:` path is complete, while still committing each TODO separately and opening one PR per spec.
   - Acceptance:
