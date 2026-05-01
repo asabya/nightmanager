@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run Nightmanager in worktree mode: each TODO gets its own branch and PR.
-# Intended for cron/launchd with NIGHTSHIFT_MODE=worktree.
+# Run Nightmanager in legacy worktree mode.
+# Spec-batched Nightmanager runs should use scripts/nightmanager.sh.
 
 ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PI_BIN="${PI_BIN:-pi}"
@@ -82,16 +82,9 @@ add_context_file "specs/worktree-nightmanager.md"
 add_context_file "README.md"
 add_context_file "package.json"
 
-if [[ -d "$ROOT/specs" ]]; then
-  while IFS= read -r -d '' spec_path; do
-    spec_rel="${spec_path#"$ROOT"/}"
-    spec_base="$(basename "$spec_rel")"
-    if [[ "$spec_base" == draft-* ]]; then
-      continue
-    fi
-    context_args+=("@$spec_rel")
-  done < <(find "$ROOT/specs" -type f -name '*.md' -print0)
-fi
+# Do not preload every spec file here; the batch-safe runner loads only the
+# active spec, and any legacy worktree selection must read only the spec it
+# selects from TODOs.md.
 
 {
   echo "Worktree Nightmanager started at $stamp"

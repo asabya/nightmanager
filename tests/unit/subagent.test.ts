@@ -95,6 +95,7 @@ describe("runIsolatedSubagent", () => {
   const createMockModel = (): Model<any> => ({
     provider: "openai",
     name: "gpt-4o",
+    contextWindow: 272000,
   } as Model<any>);
 
   // Track created agent instances
@@ -385,6 +386,53 @@ describe("runIsolatedSubagent", () => {
       expect(result).toHaveProperty("details");
       expect(result.details).toHaveProperty("entries");
       expect(result.details).toHaveProperty("status");
+    });
+
+    it("propagates live usage snapshots from assistant messages", async () => {
+      const onUpdate = vi.fn();
+      const ctx = createMockContext();
+      const model = createMockModel();
+
+      const events: any[] = [
+        {
+          type: "message_update",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Hello " }],
+            usage: { input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, totalTokens: 1350, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.003 } },
+            timestamp: Date.now(),
+          },
+          assistantMessageEvent: { type: "content_delta", delta: "Hello " } as any,
+        },
+        {
+          type: "message_end",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Hello done" }],
+            usage: { input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, totalTokens: 1450, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.006 } },
+            timestamp: Date.now(),
+          },
+        },
+      ];
+
+      if (setPendingEventsFn) {
+        setPendingEventsFn(events);
+      }
+
+      const result = await runIsolatedSubagent({
+        ctx,
+        model,
+        systemPrompt: "You are a helpful assistant",
+        tools: [],
+        task: "Test task",
+        timeoutMs: 30000,
+        subagentName: "worker",
+        onUpdate,
+      });
+
+      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003, totalTokens: 1350, contextWindow: 272000 });
+      expect(onUpdate.mock.calls.length).toBeLessThan(events.length + 1);
+      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006, totalTokens: 1450, contextWindow: 272000 });
     });
 
     it("returns result with finalText extracted from final assistant message", async () => {

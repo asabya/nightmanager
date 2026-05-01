@@ -24,6 +24,8 @@ export interface TranscriptUsage {
   cacheRead?: number;
   cacheWrite?: number;
   cost?: number;
+  totalTokens?: number;
+  contextWindow?: number;
   turns?: number;
 }
 
@@ -41,6 +43,7 @@ export interface TranscriptState {
   tool: SubagentName;
   task: string;
   entries: TranscriptEntry[];
+  usage?: TranscriptUsage;
 }
 
 // Factory function to create initial transcript state
@@ -160,6 +163,13 @@ export function appendStatus(
   });
 }
 
+export function setTranscriptUsage(
+  state: TranscriptState,
+  usage: TranscriptUsage
+): TranscriptState {
+  return { ...state, usage };
+}
+
 // Append a tool call entry to the transcript
 export function appendToolCall(
   state: TranscriptState,
@@ -229,7 +239,7 @@ export function finalizeTranscriptDetails(
     status: options.status,
     finalText,
     model: options.model,
-    usage: options.usage,
+    usage: options.usage ?? state.usage,
     entries: [...state.entries],
   };
 }

@@ -8,7 +8,7 @@ When asked to do autonomous work, read these files in order:
 
 1. `prompts/agent-loop.md` — operating procedure for Day Shift planning and Nightmanager execution.
 2. `TODOs.md` — the implementation queue. Only items marked `[ready]` or `[bug]` are eligible for autonomous implementation.
-3. `specs/` — detailed feature/bug specs. Ignore files whose basename starts with `draft-`.
+3. The runner-selected active spec only, or `specs/TEMPLATE.md` for a `[bug]` TODO without a linked spec. Do not load unrelated specs.
 4. `prompts/review-personas.md` — review lenses to apply before and after implementation.
 5. `README.md` and repo manifests — repository overview, commands, and conventions.
 
@@ -25,7 +25,7 @@ For Nightmanager execution, the outer Pi session should delegate the selected TO
 
 ## Testing Plan Source of Truth
 
-Use the selected TODO's linked spec `## Testing Plan` as the single source of truth for validation. Do not duplicate or infer repository validation commands here.
+Use the selected active batch's linked spec `## Testing Plan` as the single source of truth for validation. Do not duplicate or infer repository validation commands here.
 
 For `[bug]` TODOs without a linked spec, use `specs/TEMPLATE.md ## Testing Plan` as the repository default. If the selected Testing Plan says no automated validation commands are configured, run no test/typecheck/build commands and report that limitation.
 

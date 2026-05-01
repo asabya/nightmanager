@@ -13,7 +13,7 @@ Nightmanager implementation queue.
 
 ## Queue
 
-- [ready] Add Nightmanager helpers for spec-batch selection and branch names
+- [done] Add Nightmanager helpers for spec-batch selection and branch names
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: select the first eligible TODO, identify the active batch by exact `Spec:` path, and derive branch slugs from the spec basename or TODO title for bug-only runs.
   - Acceptance:
@@ -27,9 +27,11 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 5601f66
+  - PR: https://github.com/asabya/nightmanager/pull/6
   - Notes: likely files include `scripts/nightmanager.sh` and any small helper extracted for TODO parsing / branch checks.
 
-- [ready] Trim Nightmanager context loading to the active spec batch
+- [done] Trim Nightmanager context loading to the active spec batch
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: replace the broad preload of every non-draft spec with a minimal prompt/context set plus only the active spec needed for the selected batch.
   - Acceptance:
@@ -41,9 +43,10 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 3601e9a
   - Notes: likely files include `scripts/nightmanager.sh`, `prompts/nightmanager.md`, `prompts/agent-loop.md`, and `prompts/agents.md`.
 
-- [ready] Batch same-spec TODOs through one branch and one PR per spec
+- [done] Batch same-spec TODOs through one branch and one PR per spec
   - Spec: `specs/nightmanager-spec-batched-execution-loop.md`
   - Scope: keep Nightmanager on the active spec until every TODO for that exact `Spec:` path is complete, while still committing each TODO separately and opening one PR per spec.
   - Acceptance:
@@ -57,9 +60,11 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 3b782036b441838c289a9c778817cf85ff59f63f
+  - PR: https://github.com/asabya/nightmanager/pull/10
   - Notes: likely files include `scripts/nightmanager.sh`, `scripts/worktree-nightmanager.sh`, and prompt/reporting paths that describe the cycle.
 
-- [ready] Capture live usage snapshots in the subagent transcript
+- [done] Capture live usage snapshots in the subagent transcript
   - Spec: `specs/live-subagent-usage-labels.md`
   - Scope: add live usage state to isolated subagent runs and transcript details so built-in subagent invocations can stream their own token/cost totals while running, including partial values on failure or cancellation.
   - Acceptance:
@@ -71,10 +76,13 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 04af8da
+  - PR: https://github.com/asabya/nightmanager/pull/7
   - Notes: likely files include `src/core/subagent.ts`, `src/core/transcript.ts`, and subagent tool update paths.
 
-- [ready] Render Pi-style usage labels on built-in subagent cards
+- [done] Render Pi-style usage labels on built-in subagent cards
   - Spec: `specs/live-subagent-usage-labels.md`
+  - PR: https://github.com/asabya/nightmanager/pull/9
   - Scope: add compact inline usage labels to `finder`, `oracle`, `worker`, and `manager` cards using the shared transcript usage snapshot and Pi-native formatting.
   - Acceptance:
     - Each built-in subagent card shows a live compact label while running.
