@@ -120,6 +120,9 @@ export function formatUsageLabel(usage: TranscriptUsage | undefined): string {
   if (!usage) return "";
   const parts = [`↑${formatTokenCount(usage.input)}`, `↓${formatTokenCount(usage.output)}`];
   if (typeof usage.cost === "number") parts.push(`$${usage.cost.toFixed(3)}`);
+  if (typeof usage.totalTokens === "number" && typeof usage.contextWindow === "number" && usage.contextWindow > 0) {
+    parts.push(`${((usage.totalTokens / usage.contextWindow) * 100).toFixed(1)}%/${formatTokenCount(usage.contextWindow)}`);
+  }
   return parts.join(" ");
 }
 

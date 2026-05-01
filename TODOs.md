@@ -78,8 +78,9 @@ Nightmanager implementation queue.
   - PR: https://github.com/asabya/nightmanager/pull/7
   - Notes: likely files include `src/core/subagent.ts`, `src/core/transcript.ts`, and subagent tool update paths.
 
-- [ready] Render Pi-style usage labels on built-in subagent cards
+- [done] Render Pi-style usage labels on built-in subagent cards
   - Spec: `specs/live-subagent-usage-labels.md`
+  - PR: https://github.com/asabya/nightmanager/pull/9
   - Scope: add compact inline usage labels to `finder`, `oracle`, `worker`, and `manager` cards using the shared transcript usage snapshot and Pi-native formatting.
   - Acceptance:
     - Each built-in subagent card shows a live compact label while running.

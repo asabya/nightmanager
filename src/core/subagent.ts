@@ -16,6 +16,8 @@ import {
   finalizeTranscriptDetails,
 } from "./transcript.js";
 
+const UPDATE_THROTTLE_MS = 100;
+
 /**
  * Rich result returned from runIsolatedSubagent
  */
@@ -124,8 +126,20 @@ async function runIsolatedSubagentImpl(
   // Initialize transcript state
   let transcriptState = createTranscriptState(subagentName, task);
 
-  // Helper to emit updates
-  const emitUpdate = (
+  let pendingUpdate: Partial<SubagentTranscriptDetails> | undefined;
+  let pendingUpdateTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastUpdateEmittedAt = 0;
+
+  const clearPendingUpdate = () => {
+    if (pendingUpdateTimer) {
+      clearTimeout(pendingUpdateTimer);
+      pendingUpdateTimer = undefined;
+    }
+    pendingUpdate = undefined;
+  };
+
+  // Helper to emit updates, throttled so live usage/text does not repaint every event.
+  const sendUpdate = (
     update: Partial<SubagentTranscriptDetails>,
     isFinal: boolean = false
   ) => {
@@ -187,10 +201,40 @@ async function runIsolatedSubagentImpl(
       ? [{ type: "text", text: currentText }]
       : [];
 
+    lastUpdateEmittedAt = Date.now();
     onUpdate({
       content,
       details: completeDetails,
     });
+  };
+
+  const emitUpdate = (
+    update: Partial<SubagentTranscriptDetails>,
+    isFinal: boolean = false
+  ) => {
+    if (!onUpdate) return;
+
+    if (isFinal) {
+      clearPendingUpdate();
+      sendUpdate(update, true);
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - lastUpdateEmittedAt;
+    if (lastUpdateEmittedAt === 0 || elapsed >= UPDATE_THROTTLE_MS) {
+      clearPendingUpdate();
+      sendUpdate(update, false);
+      return;
+    }
+
+    pendingUpdate = { ...pendingUpdate, ...update };
+    pendingUpdateTimer ??= setTimeout(() => {
+      const nextUpdate = pendingUpdate ?? {};
+      pendingUpdate = undefined;
+      pendingUpdateTimer = undefined;
+      sendUpdate(nextUpdate, false);
+    }, UPDATE_THROTTLE_MS - elapsed);
   };
 
   let unsubscribe: (() => void) | undefined;
@@ -241,6 +285,8 @@ async function runIsolatedSubagentImpl(
         ...(typeof value.cacheRead === "number" ? { cacheRead: value.cacheRead } : {}),
         ...(typeof value.cacheWrite === "number" ? { cacheWrite: value.cacheWrite } : {}),
         ...(typeof cost === "number" ? { cost } : {}),
+        ...(typeof value.totalTokens === "number" ? { totalTokens: value.totalTokens } : {}),
+        ...(typeof model.contextWindow === "number" ? { contextWindow: model.contextWindow } : {}),
       };
     };
 
@@ -271,7 +317,6 @@ async function runIsolatedSubagentImpl(
       transcriptState = appendAssistantText(transcriptState, finalAssistantText, timestamp, false);
     };
 
-    let unsubscribe: (() => void) | undefined;
     unsubscribe = agent.subscribe(async (event) => {
       const timestamp = Date.now();
 
@@ -368,12 +413,7 @@ async function runIsolatedSubagentImpl(
       model: model.name,
     });
 
-    if (onUpdate) {
-      onUpdate({
-        content: finalText ? [{ type: "text", text: finalText }] : [],
-        details,
-      });
-    }
+    emitUpdate(details, true);
 
     return {
       finalText,
@@ -390,16 +430,12 @@ async function runIsolatedSubagentImpl(
       status,
     });
 
-    if (onUpdate) {
-      onUpdate({
-        content: [],
-        details,
-      });
-    }
+    emitUpdate(details, true);
 
     throw error;
   } finally {
     unsubscribe?.();
+    clearPendingUpdate();
     clearTimeout(timeoutId);
   }
 }

@@ -24,6 +24,8 @@ export interface TranscriptUsage {
   cacheRead?: number;
   cacheWrite?: number;
   cost?: number;
+  totalTokens?: number;
+  contextWindow?: number;
   turns?: number;
 }
 

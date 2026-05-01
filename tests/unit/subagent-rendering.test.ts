@@ -56,7 +56,7 @@ describe("subagent rendering helpers", () => {
   });
 
   it("formats and renders usage labels", () => {
-    expect(formatUsageLabel({ input: 8400, output: 2200, cost: 0.019 })).toBe("↑8.4k ↓2.2k $0.019");
+    expect(formatUsageLabel({ input: 8400, output: 2200, cost: 0.019, totalTokens: 5200, contextWindow: 272000 })).toBe("↑8.4k ↓2.2k $0.019 1.9%/272k");
 
     const collapsed = buildCollapsedPreview({
       tool: "finder",

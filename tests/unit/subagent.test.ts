@@ -95,6 +95,7 @@ describe("runIsolatedSubagent", () => {
   const createMockModel = (): Model<any> => ({
     provider: "openai",
     name: "gpt-4o",
+    contextWindow: 272000,
   } as Model<any>);
 
   // Track created agent instances
@@ -429,8 +430,9 @@ describe("runIsolatedSubagent", () => {
         onUpdate,
       });
 
-      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003 });
-      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006 });
+      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003, totalTokens: 1350, contextWindow: 272000 });
+      expect(onUpdate.mock.calls.length).toBeLessThan(events.length + 1);
+      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006, totalTokens: 1450, contextWindow: 272000 });
     });
 
     it("returns result with finalText extracted from final assistant message", async () => {
