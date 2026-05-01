@@ -60,6 +60,8 @@ Nightmanager implementation queue.
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 3b782036b441838c289a9c778817cf85ff59f63f
+  - PR: https://github.com/asabya/nightmanager/pull/10
   - Notes: likely files include `scripts/nightmanager.sh`, `scripts/worktree-nightmanager.sh`, and prompt/reporting paths that describe the cycle.
 
 - [done] Capture live usage snapshots in the subagent transcript
