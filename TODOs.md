@@ -155,3 +155,71 @@ Nightmanager implementation queue.
     - npm run build
   - Commit: e730e75e5903977ebe1914e9fa0e0913e7f29a1f
   - PR: https://github.com/asabya/nightmanager/pull/5
+
+- [done] Register Librarian as a public research subagent
+  - Spec: `specs/librarian-subagent.md`
+  - Commit: 7124d43
+  - PR: https://github.com/asabya/nightmanager/pull/12
+  - Scope: add `src/tools/librarian.ts`, register Librarian in `src/index.ts`, add `librarian` to `src/core/models.ts`, keep the tool read-only, expose `web_search` and `code_search`, and update the README/tool overview.
+  - Acceptance:
+    - Librarian is available through the extension entrypoint.
+    - `src/core/models.ts` accepts Librarian config.
+    - Librarian can call `web_search` and `code_search`.
+    - README mentions Librarian in the subagent/tool overview.
+  - Validation:
+    - npm run typecheck
+    - npm test
+    - npm run build
+  - Notes: likely files include `src/tools/librarian.ts`, `src/index.ts`, `src/core/models.ts`, `README.md`, and `tests/integration/subagent-tools.test.ts`.
+
+- [done] Implement Librarian GitHub-first repo discovery and local clone analysis
+  - Spec: `specs/librarian-subagent.md`
+  - Commit: a709577
+  - PR: https://github.com/asabya/nightmanager/pull/12
+  - Scope: search GitHub for canonical upstream repos when the user only names a library/package, clone named repos into `/tmp`, inspect tests/examples first, then production source, and fall back to docs only when code evidence is insufficient.
+  - Acceptance:
+    - Named repos clone and analyze from `/tmp`.
+    - Package-only queries search GitHub for canonical upstream repos.
+    - Ambiguous upstream repos fail without guessing.
+    - Code evidence outranks docs; docs are only consulted when code evidence is insufficient.
+    - Tests/examples are inspected before README/docs.
+    - Versioned requests prefer the requested version over latest HEAD.
+  - Validation:
+    - npm run typecheck
+    - npm test
+    - npm run build
+    - manual checks on a small OSS example set
+  - Notes: may require helper extraction from `src/tools/oracle.ts` or a shared OSS-search helper.
+
+- [done] Add Librarian multi-repo comparison and evidence formatting
+  - Spec: `specs/librarian-subagent.md`
+  - Commit: 9205dd9
+  - PR: https://github.com/asabya/nightmanager/pull/12
+  - Scope: support 2–3 repos by default, 4–5 when user-provided, split 6+ into batches, rank findings by API correctness/question fit/recency/docs quality, choose output format adaptively, and emit strict GitHub permalink evidence with quotes/snippets when available.
+  - Acceptance:
+    - Librarian compares multiple upstream repos in one pass when relevant.
+    - Larger repo sets are split into batches.
+    - Output format adapts to the question (table, ranked list, side-by-side, etc.).
+    - Every code claim uses GitHub permalinks.
+    - The final answer states uncertainty and stops when evidence is weak.
+  - Validation:
+    - npm run typecheck
+    - npm test
+    - npm run build
+    - manual comparison run across 2-3 repos
+  - Notes: likely files include `src/tools/librarian.ts` and any shared formatting helpers.
+
+- [done] Add Librarian tests for registration, discovery policy, and comparison behavior
+  - Spec: `specs/librarian-subagent.md`
+  - Commit: 18233ff
+  - PR: https://github.com/asabya/nightmanager/pull/12
+  - Scope: extend unit/integration coverage for the new subagent registration, tool availability, config resolution, and prompt/policy behavior.
+  - Acceptance:
+    - Tests cover Librarian registration and execution wiring.
+    - Tests cover config lookup for Librarian.
+    - Tests cover the new policy/ranking behavior at the tool level where practical.
+  - Validation:
+    - npm run typecheck
+    - npm test
+    - npm run build
+  - Notes: likely files include `tests/integration/subagent-tools.test.ts`, `tests/unit/models.test.ts`, and any Librarian-specific unit tests.

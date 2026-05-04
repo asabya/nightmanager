@@ -1,11 +1,11 @@
 // Types for Subagent Transcript System
 
 // Subagent names are the high-level agent types
-export type SubagentName = "finder" | "oracle" | "worker" | "manager";
+export type SubagentName = "finder" | "oracle" | "librarian" | "worker" | "manager";
 
 // Inner tool names are actual tools that can be called within a subagent
 // These include file operations, shell commands, and other utilities
-export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "finder" | "handoff_to_worker";
+export type InnerToolName = "read" | "write" | "grep" | "find" | "ls" | "bash" | "edit" | "web_search" | "code_search" | "finder" | "handoff_to_worker";
 
 // Tool name can be either a subagent name or an inner tool name
 export type ToolName = SubagentName | InnerToolName;

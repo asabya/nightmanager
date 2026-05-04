@@ -20,6 +20,7 @@ import { finderTool } from "../../src/tools/finder.js";
 import { oracleTool } from "../../src/tools/oracle.js";
 import { workerTool } from "../../src/tools/worker.js";
 import { managerTool } from "../../src/tools/manager.js";
+import { librarianTool, LIBRARIAN_SYSTEM_PROMPT } from "../../src/tools/librarian.js";
 
 const ctx = {
   cwd: process.cwd(),
@@ -72,5 +73,41 @@ describe("subagent tools", () => {
     expect(typeof workerTool.renderResult).toBe("function");
     expect(typeof managerTool.renderCall).toBe("function");
     expect(typeof managerTool.renderResult).toBe("function");
+    expect(typeof librarianTool.renderCall).toBe("function");
+    expect(typeof librarianTool.renderResult).toBe("function");
+  });
+
+  it("librarian wires GitHub-first discovery, /tmp clone analysis, and external research tools", async () => {
+    const mockedRun = vi.mocked(runIsolatedSubagent);
+    mockedRun.mockClear();
+
+    await librarianTool.execute("tool-3", { query: "How does zod parse async refinements?" }, undefined, undefined, ctx);
+
+    const options = mockedRun.mock.calls[0]?.[0];
+    expect(options?.subagentName).toBe("librarian");
+    expect(options?.task).toContain("github_repo_discovery first");
+    expect(options?.task).toContain("pass that exact ref to github_clone");
+    expect(options?.task).toContain("compare 2-3 repos by default");
+    expect(options?.task).toContain("split 6+ repos into batches");
+    expect(options?.task).toContain("Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality");
+    expect(options?.task).toContain("pinned to the github_clone commit");
+    expect(options?.task).toContain("state uncertainty and stop");
+    expect(options?.tools.map((tool: any) => tool.name)).toEqual(expect.arrayContaining([
+      "github_repo_discovery",
+      "github_clone",
+      "web_search",
+      "code_search",
+      "read",
+      "grep",
+      "find",
+      "ls",
+    ]));
+    expect(options?.tools.map((tool: any) => tool.name)).not.toContain("bash");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Use github_repo_discovery first");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("pass that ref to github_clone and stop if checkout fails");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Compare 4-5 only when the user explicitly provides them");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Rank findings in this order: API correctness, closest fit to the user's question, recency/current implementation, then documentation/example quality");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("If decisive source/code evidence remains weak");
   });
 });
