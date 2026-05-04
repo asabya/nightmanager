@@ -17,7 +17,7 @@ grill-me → to-prd → to-issues → /nightmanager → PR for review
 1. **Grill the intent** — use `grill-me` to interrogate a feature, bug, or plan one question at a time until hidden requirements, risks, and trade-offs are surfaced.
 2. **Generate/refine the spec** — use `to-prd` to turn the clarified conversation into a concrete local spec with goals, non-goals, acceptance criteria, edge cases, testing, and risks.
 3. **Slice the work** — use `to-issues` to break the spec into small, vertical local TODOs that are safe for one focused implementation pass. This is local-file-first; it does not create GitHub issues by default.
-4. **Delegate AFK implementation** — run `/nightmanager` to select one ready TODO and delegate through Manager, Finder, Oracle, and Worker to implement, validate, commit, and open a PR when possible for human review.
+4. **Delegate AFK implementation** — run `/nightmanager` to select one ready TODO and delegate through Manager, Finder, Oracle, Librarian, and Worker to implement, validate, commit, and open a PR when possible for human review.
 
 Specs are the shared understanding. Subagents are the execution machinery that preserves your main-session context while doing focused work inside the loop.
 
@@ -25,6 +25,7 @@ Specs are the shared understanding. Subagents are the execution machinery that p
 |------|------|----------|
 | `finder` | Codebase search | Locating features, tracing module connections |
 | `oracle` | Reasoning & debugging | Root-cause analysis, trade-off planning |
+| `librarian` | OSS research | Upstream library research, code-first evidence, GitHub permalinks |
 | `worker` | Implementation | Smallest viable fix, verified changes |
 | `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
 
@@ -99,6 +100,24 @@ Example prompt:
 
 ```text
 Use oracle to debug why auth middleware fails intermittently
+```
+
+### `librarian`
+
+Use `librarian` for evidence-backed open-source library research that needs:
+- canonical upstream repository discovery
+- code-first inspection of tests, examples, and source
+- comparison across external repos
+- strict GitHub permalink evidence
+
+Librarian is read-only for the user's repository. It can use `web_search` and `code_search` for external research and may inspect public upstream clones in `/tmp`.
+
+Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
+
+Example prompt:
+
+```text
+Use librarian to compare how Fastify and Express handle request decorators, with source links
 ```
 
 ### `worker`
@@ -179,6 +198,10 @@ If the file is missing, malformed, or a configured model cannot be found, the su
     "oracle": {
       "model": "provider/best-reasoning-model",
       "thinking": "high"
+    },
+    "librarian": {
+      "model": "provider/strong-research-model",
+      "thinking": "high"
     }
   }
 }
@@ -188,6 +211,7 @@ Recommended split:
 - `manager` and `finder`: cheaper/smaller models.
 - `worker`: stronger code-editing model.
 - `oracle`: strongest reasoning model.
+- `librarian`: strong research-capable model.
 
 ## Setup
 
@@ -199,12 +223,13 @@ Use the optional config file at `~/.pi/agent/nightmanager.json` to set models pe
     "manager": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
     "finder": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
     "worker": { "model": "provider/strong-model", "thinking": "medium" },
-    "oracle": { "model": "provider/best-reasoning-model", "thinking": "high" }
+    "oracle": { "model": "provider/best-reasoning-model", "thinking": "high" },
+    "librarian": { "model": "provider/strong-research-model", "thinking": "high" }
   }
 }
 ```
 
-Keep `manager` and `finder` cheaper than `worker` and `oracle` when possible.
+Keep `manager` and `finder` cheaper than `worker`, `oracle`, and `librarian` when possible.
 
 ## Development
 

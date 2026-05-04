@@ -5,13 +5,14 @@ import { dirname } from "node:path";
 import { Container, fuzzyFilter, getKeybindings, Input, Text, type Focusable, type SelectItem } from "@mariozechner/pi-tui";
 import { SUBAGENTS_CONFIG_PATH, type SubagentName, type SubagentThinkingLevel } from "../core/models.js";
 
-const SUBAGENTS: SubagentName[] = ["manager", "finder", "worker", "oracle"];
+const SUBAGENTS: SubagentName[] = ["manager", "finder", "worker", "oracle", "librarian"];
 const THINKING_LEVELS: SubagentThinkingLevel[] = ["medium", "high", "xhigh"];
 const RECOMMENDED_THINKING: Record<SubagentName, SubagentThinkingLevel> = {
   manager: "medium",
   finder: "medium",
   worker: "high",
   oracle: "high",
+  librarian: "high",
 };
 
 type JsonObject = Record<string, unknown>;

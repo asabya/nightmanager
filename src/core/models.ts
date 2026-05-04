@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-export type SubagentName = "finder" | "oracle" | "worker" | "manager";
+export type SubagentName = "finder" | "oracle" | "librarian" | "worker" | "manager";
 export type SubagentThinkingLevel = Exclude<ThinkingLevel, "off" | "minimal" | "low">;
 
 export interface SubagentConfig {
@@ -64,7 +64,7 @@ export function loadNightmanagerConfig(configPath = SUBAGENTS_CONFIG_PATH): Nigh
     if (!rawAgents || typeof rawAgents !== "object") return { agents: {} };
 
     const agents: NightmanagerConfig["agents"] = {};
-    for (const name of ["finder", "oracle", "worker", "manager"] as const) {
+    for (const name of ["finder", "oracle", "librarian", "worker", "manager"] as const) {
       const normalized = normalizeSubagentConfig((rawAgents as Record<string, unknown>)[name]);
       if (normalized.model || normalized.thinking) agents[name] = normalized;
     }

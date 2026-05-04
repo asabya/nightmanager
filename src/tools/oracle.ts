@@ -352,7 +352,7 @@ function formatOracleWebSearchResult(args: {
   return lines.join("\n");
 }
 
-const oracleWebSearchTool = defineTool({
+export const researchWebSearchTool = defineTool({
   name: "web_search",
   label: "Web Search",
   description: "Search the web via pi-web-access (Exa, Perplexity, or Gemini fallback) and return synthesized answers with sources.",
@@ -434,7 +434,7 @@ const oracleWebSearchTool = defineTool({
   },
 });
 
-const oracleCodeSearchTool = defineTool({
+export const researchCodeSearchTool = defineTool({
   name: "code_search",
   label: "Code Search",
   description: "Search remote code examples, documentation, and API references via pi-web-access Exa MCP.",
@@ -535,8 +535,8 @@ export const oracleTool = defineTool({
         createFindTool(ctx.cwd),
         createLsTool(ctx.cwd),
         createBashTool(ctx.cwd),
-        oracleWebSearchTool,
-        oracleCodeSearchTool,
+        researchWebSearchTool,
+        researchCodeSearchTool,
       ],
       task: params.query,
       signal,
