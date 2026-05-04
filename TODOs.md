@@ -191,7 +191,7 @@ Nightmanager implementation queue.
 
 - [done] Add Librarian multi-repo comparison and evidence formatting
   - Spec: `specs/librarian-subagent.md`
-  - Commit: ce84625
+  - Commit: 9205dd9
   - Scope: support 2–3 repos by default, 4–5 when user-provided, split 6+ into batches, rank findings by API correctness/question fit/recency/docs quality, choose output format adaptively, and emit strict GitHub permalink evidence with quotes/snippets when available.
   - Acceptance:
     - Librarian compares multiple upstream repos in one pass when relevant.
@@ -206,8 +206,9 @@ Nightmanager implementation queue.
     - manual comparison run across 2-3 repos
   - Notes: likely files include `src/tools/librarian.ts` and any shared formatting helpers.
 
-- [ready] Add Librarian tests for registration, discovery policy, and comparison behavior
+- [done] Add Librarian tests for registration, discovery policy, and comparison behavior
   - Spec: `specs/librarian-subagent.md`
+  - Commit: 18233ff
   - Scope: extend unit/integration coverage for the new subagent registration, tool availability, config resolution, and prompt/policy behavior.
   - Acceptance:
     - Tests cover Librarian registration and execution wiring.
