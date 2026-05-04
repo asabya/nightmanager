@@ -2,7 +2,6 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import {
   defineTool,
   createReadTool,
@@ -24,7 +23,17 @@ const librarianSchema = Type.Object({
 
 type LibrarianInput = Static<typeof librarianSchema>;
 
-const execFileAsync = promisify(execFile);
+function execFileAsync(file: string, args: string[], options: { signal?: AbortSignal; timeout: number; maxBuffer?: number }) {
+  return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+    execFile(file, args, options, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve({ stdout: String(stdout), stderr: String(stderr) });
+    });
+  });
+}
 
 const githubDiscoverySchema = Type.Object({
   query: Type.String({ description: "Package, library, or repo name to resolve to a canonical GitHub upstream" }),
@@ -64,6 +73,11 @@ function cloneDirName(repo: string, ref?: string): string {
   return `librarian-${repo.replace(/[^A-Za-z0-9_.-]+/g, "-")}${ref ? `-${ref.replace(/[^A-Za-z0-9_.-]+/g, "-")}` : ""}-`;
 }
 
+async function checkoutRequestedGithubRef(dir: string, ref: string, signal?: AbortSignal) {
+  await execFileAsync("git", ["-C", dir, "fetch", "--depth", "1", "origin", ref], { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
+  await execFileAsync("git", ["-C", dir, "checkout", "--detach", "FETCH_HEAD"], { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
+}
+
 async function cloneGithubRepo(repoInput: string, ref: string | undefined, signal?: AbortSignal) {
   const repo = normalizeGithubRepo(repoInput);
   if (!repo) throw new Error("repo must be a GitHub owner/name or github.com URL");
@@ -71,9 +85,10 @@ async function cloneGithubRepo(repoInput: string, ref: string | undefined, signa
   const url = `https://github.com/${repo}.git`;
   try {
     const cloneArgs = ["clone", "--depth", "1"];
-    if (ref) cloneArgs.push("--branch", ref);
+    if (ref) cloneArgs.push("--no-checkout");
     cloneArgs.push(url, dir);
     await execFileAsync("git", cloneArgs, { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
+    if (ref) await checkoutRequestedGithubRef(dir, ref, signal);
     const { stdout } = await execFileAsync("git", ["-C", dir, "rev-parse", "--verify", "HEAD"], { signal, timeout: 30_000 });
     const commit = stdout.trim();
     return { repo, url: `https://github.com/${repo}`, path: dir, ref: ref ?? "HEAD", commit, permalinkBase: `https://github.com/${repo}/blob/${commit}` };
@@ -89,7 +104,7 @@ function githubSearchQuery(query: string): string {
 }
 
 function chooseCanonicalGithubRepo(query: string, items: GithubSearchItem[]) {
-  const candidates = items.filter(item => item.full_name && item.html_url && !item.fork && !item.archived).slice(0, 5);
+  const candidates = items.filter(item => item.full_name && item.html_url && !item.fork && !item.archived);
   if (candidates.length === 0) return { status: "not_found" as const, candidates };
 
   const normalizedQuery = query.trim().toLowerCase();
