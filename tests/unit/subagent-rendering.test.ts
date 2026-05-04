@@ -5,6 +5,7 @@ import {
   formatTranscriptEntry,
   formatSubagentCall,
   formatUsageLabel,
+  formatManagerDelegateUsageLine,
 } from "../../src/core/subagent-rendering.js";
 
 describe("subagent rendering helpers", () => {
@@ -68,6 +69,53 @@ describe("subagent rendering helpers", () => {
       ],
     }, true);
     expect(collapsed.split("\n")[0]).toBe("   ↑8.4k ↓2.2k $0.019");
+  });
+
+  it("renders manager delegate usage lines with placeholders, real usage, and worker naming", () => {
+    expect(formatManagerDelegateUsageLine({
+      tool: "oracle",
+      params: { query: "reason about update propagation" },
+      status: "running",
+      timestamp: 1,
+      contextWindow: 200000,
+    })).toBe("⠼ Oracle reason about update propagation · $0.000 0.0%/200k");
+
+    expect(formatManagerDelegateUsageLine({
+      tool: "handoff_to_worker",
+      params: { task: "patch manager delegate usage" },
+      status: "completed",
+      timestamp: 1,
+      usage: { input: 9800, output: 1100, cost: 0.022, totalTokens: 10900, contextWindow: 200000 },
+    })).toBe("✓ Worker patch manager delegate usage · ↑9.8k ↓1.1k $0.022 5.5%/200k");
+  });
+
+  it("builds collapsed and expanded manager previews with all delegate usage lines", () => {
+    const details = {
+      tool: "manager" as const,
+      task: "orchestrate",
+      status: "running" as const,
+      usage: { input: 12100, output: 1400, cost: 0.031, totalTokens: 13500, contextWindow: 200000 },
+      entries: [
+        { type: "tool_call" as const, toolName: "finder" as const, args: { query: "search render usage paths" }, timestamp: 1, toolCallId: "1" },
+      ],
+      managerDelegateCalls: [
+        { tool: "finder", params: { query: "search render usage paths" }, status: "completed" as const, timestamp: 1, usage: { input: 3200, output: 420, cost: 0.004, totalTokens: 3620, contextWindow: 200000 } },
+        { tool: "oracle", params: { query: "reason about updates" }, status: "running" as const, timestamp: 2, contextWindow: 272000 },
+        { tool: "handoff_to_worker", params: { task: "patch manager delegate usage" }, status: "failed" as const, timestamp: 3, contextWindow: 200000 },
+        { tool: "finder", params: { query: "second pass" }, status: "running" as const, timestamp: 4, contextWindow: 200000 },
+      ],
+    };
+
+    const collapsed = buildCollapsedPreview(details, true);
+    expect(collapsed).toContain("↑12.1k ↓1.4k $0.031 6.8%/200k");
+    expect(collapsed).toContain("✓ Finder search render usage paths · ↑3.2k ↓420 $0.004 1.8%/200k");
+    expect(collapsed).toContain("⠼ Oracle reason about updates · $0.000 0.0%/272k");
+    expect(collapsed).toContain("✕ Worker patch manager delegate usage · $0.000 0.0%/200k");
+    expect(collapsed).toContain("⠼ Finder second pass · $0.000 0.0%/200k");
+
+    const expanded = buildExpandedTranscript(details);
+    expect(expanded).toContain("Delegate Usage");
+    expect(expanded).toContain("Worker patch manager delegate usage");
   });
 
   it("builds an expanded transcript with latest tool calls first and final response", () => {

@@ -4,6 +4,7 @@ import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
+import type { ManagerDelegateUsageDetails, SubagentTranscriptDetails } from "../core/transcript.js";
 import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { handoffEvidenceSchema, handoffVerificationSchema, nonEmptyStringArraySchema } from "../core/handoff.js";
 import { finderTool } from "./finder.js";
@@ -38,14 +39,7 @@ const handoffToWorkerSchema = Type.Object({
 type ManagerInput = Static<typeof managerSchema>;
 type HandoffToWorkerInput = Static<typeof handoffToWorkerSchema>;
 
-type DelegateCallRecord = {
-  tool: string;
-  params: unknown;
-  status: "running" | "completed" | "failed";
-  timestamp: number;
-  isError?: boolean;
-  summary?: string;
-};
+type DelegateCallRecord = ManagerDelegateUsageDetails;
 
 function extractTextExcerpt(result: unknown, maxLength = 2_000): string | undefined {
   const content = (result as { content?: Array<{ type?: string; text?: string }> } | undefined)?.content;
@@ -140,26 +134,63 @@ export const managerTool = defineTool({
     }
 
     const delegateCalls: DelegateCallRecord[] = [];
+    let latestManagerUpdate: { content: Array<{ type: "text"; text: string }>; details: SubagentTranscriptDetails } | undefined;
+    const emitManagerUpdate = () => {
+      if (!latestManagerUpdate) return;
+      const transcript = {
+        ...latestManagerUpdate.details,
+        managerDelegateCalls: [...delegateCalls],
+      };
+      _onUpdate?.({
+        content: latestManagerUpdate.content,
+        details: {
+          query: params.query,
+          delegated: delegateCalls.length > 0,
+          delegateCalls: [...delegateCalls],
+          transcript,
+        },
+      });
+    };
+
     const trackDelegation = (tool: any) => defineTool({
       ...tool,
       async execute(toolCallId: string, toolParams: unknown, toolSignal: AbortSignal | undefined, toolOnUpdate: ((partial: any) => void) | undefined, toolCtx: typeof ctx) {
+        const toolName = String(tool.name ?? "unknown");
+        const delegateName = toolName === "handoff_to_worker" ? "worker" : toolName;
+        const delegateConfig = delegateName === "finder" || delegateName === "oracle" || delegateName === "worker"
+          ? resolveSubagentConfig(toolCtx, delegateName)
+          : undefined;
         const record: DelegateCallRecord = {
-          tool: String(tool.name ?? "unknown"),
+          tool: toolName,
           params: toolParams,
           status: "running",
           timestamp: Date.now(),
+          ...(typeof delegateConfig?.model?.contextWindow === "number" ? { contextWindow: delegateConfig.model.contextWindow } : {}),
         };
         delegateCalls.push(record);
+        emitManagerUpdate();
+
+        const delegateOnUpdate = (partial: any) => {
+          const details = partial?.details as SubagentTranscriptDetails | undefined;
+          if (details?.usage) record.usage = details.usage;
+          toolOnUpdate?.(partial);
+          emitManagerUpdate();
+        };
 
         try {
-          const result = await tool.execute(toolCallId, toolParams, toolSignal, toolOnUpdate, toolCtx);
+          const result = await tool.execute(toolCallId, toolParams, toolSignal, delegateOnUpdate, toolCtx);
           record.status = result?.isError ? "failed" : "completed";
           record.isError = Boolean(result?.isError);
           record.summary = extractTextExcerpt(result);
+          const details = result?.details as { transcript?: SubagentTranscriptDetails; usage?: SubagentTranscriptDetails["usage"] } | undefined;
+          const usage = details?.transcript?.usage ?? details?.usage;
+          if (usage) record.usage = usage;
+          emitManagerUpdate();
           return result;
         } catch (error) {
           record.status = "failed";
           record.isError = true;
+          emitManagerUpdate();
           throw error;
         }
       },
@@ -168,15 +199,8 @@ export const managerTool = defineTool({
     const result = await runIsolatedSubagent({
       subagentName: "manager",
       onUpdate: (partial) => {
-        _onUpdate?.({
-          content: partial.content,
-          details: {
-            query: params.query,
-            delegated: delegateCalls.length > 0,
-            delegateCalls: [...delegateCalls],
-            transcript: partial.details,
-          },
-        });
+        latestManagerUpdate = partial;
+        emitManagerUpdate();
       },
       ctx,
       model,
@@ -194,7 +218,10 @@ export const managerTool = defineTool({
         query: params.query,
         delegated: delegateCalls.length > 0,
         delegateCalls: [...delegateCalls],
-        transcript: result.details,
+        transcript: {
+          ...result.details,
+          managerDelegateCalls: [...delegateCalls],
+        },
       },
     };
   },

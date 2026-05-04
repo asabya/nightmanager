@@ -1,5 +1,5 @@
 import { Text } from "@mariozechner/pi-tui";
-import type { SubagentName, SubagentTranscriptDetails, TranscriptEntry, TranscriptStatus, TranscriptUsage } from "./transcript.js";
+import type { ManagerDelegateUsageDetails, SubagentName, SubagentTranscriptDetails, TranscriptEntry, TranscriptStatus, TranscriptUsage } from "./transcript.js";
 
 const COLLAPSED_TOOL_LIMIT = 3;
 const MAX_TASK_PREVIEW = 96;
@@ -126,9 +126,41 @@ export function formatUsageLabel(usage: TranscriptUsage | undefined): string {
   return parts.join(" ");
 }
 
+function formatPlaceholderUsageLabel(contextWindow: number | undefined): string {
+  const parts = ["$0.000"];
+  if (typeof contextWindow === "number" && contextWindow > 0) parts.push(`0.0%/${formatTokenCount(contextWindow)}`);
+  return parts.join(" ");
+}
+
 function withUsageLabel(text: string, usage: TranscriptUsage | undefined): string {
   const label = formatUsageLabel(usage);
   return label ? `${text} · ${label}` : text;
+}
+
+function delegateDisplayName(tool: string): string {
+  return tool === "handoff_to_worker" || tool === "worker" ? "Worker" : titleCase(tool);
+}
+
+function delegateTask(params: unknown): string {
+  if (!params || typeof params !== "object") return "";
+  const value = params as Record<string, unknown>;
+  return textArg(value.task ?? value.query);
+}
+
+export function formatManagerDelegateUsageLine(
+  delegate: ManagerDelegateUsageDetails,
+  spinnerIcon = DEFAULT_SPINNER_FRAME,
+): string {
+  const status: TranscriptStatus = delegate.status === "failed" ? "error" : delegate.status;
+  const usageLabel = formatUsageLabel(delegate.usage) || formatPlaceholderUsageLabel(delegate.contextWindow);
+  const task = delegateTask(delegate.params);
+  const title = `${delegateDisplayName(delegate.tool)}${task ? ` ${task}` : ""}`;
+  return `${statusIcon(status, false, spinnerIcon)} ${title} · ${usageLabel}`;
+}
+
+function managerDelegateLines(details: SubagentTranscriptDetails, spinnerIcon = DEFAULT_SPINNER_FRAME): string[] {
+  if (details.tool !== "manager") return [];
+  return (details.managerDelegateCalls ?? []).map((delegate) => `   ${formatManagerDelegateUsageLine(delegate, spinnerIcon)}`);
 }
 
 export function formatSubagentCall(tool: SubagentName, task: string): string {
@@ -204,7 +236,10 @@ export function buildCollapsedPreview(
 ): string {
   const calls = latestToolCalls(details);
   const visible = calls.slice(0, COLLAPSED_TOOL_LIMIT);
-  const lines = visible.map((call) => `   ${toolCallIcon(details, call, spinnerIcon)} ${formatTranscriptEntry(call)}`);
+  const lines = [
+    ...managerDelegateLines(details, spinnerIcon),
+    ...visible.map((call) => `   ${toolCallIcon(details, call, spinnerIcon)} ${formatTranscriptEntry(call)}`),
+  ];
 
   const hidden = calls.length - visible.length;
   if (hidden > 0) {
@@ -228,6 +263,11 @@ export function buildExpandedTranscript(details: SubagentTranscriptDetails, spin
   const usageLabel = formatUsageLabel(details.usage);
   const lines = [`Status: ${details.status}${details.model ? ` · ${details.model}` : ""}${usageLabel ? ` · ${usageLabel}` : ""}`];
   const calls = latestToolCalls(details);
+
+  const delegates = managerDelegateLines(details, spinnerIcon);
+  if (delegates.length > 0) {
+    lines.push("", "Delegate Usage", ...delegates.map((line) => line.trimStart()));
+  }
 
   lines.push("", "Tool Calls");
   if (calls.length === 0) {
