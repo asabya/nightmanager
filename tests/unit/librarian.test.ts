@@ -46,12 +46,14 @@ describe("librarian helpers", () => {
     expect(result.details).toMatchObject({ ref, commit: "abc123def456" });
   });
 
-  it("accepts common GitHub URL variants when cloning", async () => {
-    const result = await githubCloneTool.execute("tool-url", { repo: "https://github.com/owner/repo/tree/main" }, undefined, undefined, {} as any);
+  it("preserves branch and tag refs embedded in GitHub tree URLs when cloning", async () => {
+    const result = await githubCloneTool.execute("tool-url", { repo: "https://github.com/owner/repo/tree/release/v1.2.3" }, undefined, undefined, {} as any);
 
     const gitArgs = execFileMock.mock.calls.map(call => call[1]);
-    expect(gitArgs[0]).toEqual(["clone", "--depth", "1", "https://github.com/owner/repo.git", "/tmp/librarian-owner-repo-ref-abc"]);
-    expect(result.details).toMatchObject({ repo: "owner/repo" });
+    expect(gitArgs[0]).toEqual(["clone", "--depth", "1", "--no-checkout", "https://github.com/owner/repo.git", "/tmp/librarian-owner-repo-ref-abc"]);
+    expect(gitArgs[1]).toEqual(["-C", "/tmp/librarian-owner-repo-ref-abc", "fetch", "--depth", "1", "origin", "release/v1.2.3"]);
+    expect(gitArgs[2]).toEqual(["-C", "/tmp/librarian-owner-repo-ref-abc", "checkout", "--detach", "FETCH_HEAD"]);
+    expect(result.details).toMatchObject({ repo: "owner/repo", ref: "release/v1.2.3" });
   });
 
   it("accepts trailing-slash GitHub URLs during discovery", async () => {

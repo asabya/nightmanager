@@ -43,11 +43,12 @@ const githubDiscoverySchema = Type.Object({
 type GithubDiscoveryInput = Static<typeof githubDiscoverySchema>;
 
 const githubCloneSchema = Type.Object({
-  repo: Type.String({ description: "GitHub repo as owner/name, https://github.com/owner/name, or git@github.com:owner/name.git" }),
-  ref: Type.Optional(Type.String({ description: "Requested branch, tag, or commit. If supplied, checkout must succeed." })),
+  repo: Type.String({ description: "GitHub repo as owner/name, https://github.com/owner/name, https://github.com/owner/name/tree/ref, or git@github.com:owner/name.git" }),
+  ref: Type.Optional(Type.String({ description: "Requested branch, tag, or commit. If supplied, checkout must succeed. Overrides refs embedded in GitHub URLs." })),
 });
 
 type GithubCloneInput = Static<typeof githubCloneSchema>;
+type NormalizedGithubRepoInput = { repo: string; ref?: string };
 
 type GithubSearchItem = {
   full_name?: string;
@@ -58,15 +59,38 @@ type GithubSearchItem = {
   archived?: boolean;
 };
 
-function normalizeGithubRepo(repo: string): string | null {
+function decodeGithubPath(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function extractGithubUrlRef(rest?: string): string | undefined {
+  const parts = rest?.split("/").filter(Boolean) ?? [];
+  const kind = parts[0]?.toLowerCase();
+  if (kind === "tree" && parts.length > 1) return decodeGithubPath(parts.slice(1).join("/"));
+  if (kind === "commit" && parts[1]) return decodeGithubPath(parts[1]);
+  if (kind === "releases" && parts[1]?.toLowerCase() === "tag" && parts.length > 2) return decodeGithubPath(parts.slice(2).join("/"));
+  return undefined;
+}
+
+function normalizeGithubRepoInput(repo: string): NormalizedGithubRepoInput | null {
   const trimmed = repo.trim();
-  const match = trimmed.match(/github\.com[:/]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?\s].*)?$/i)
-    ?? trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+  const urlMatch = trimmed.match(/^(?:https?:\/\/)?github\.com\/([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:\/([^#?\s]*))?(?:[?#].*)?$/i);
+  const sshMatch = trimmed.match(/^git@github\.com:([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[#?\s].*)?$/i);
+  const shorthandMatch = trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+  const match = urlMatch ?? sshMatch ?? shorthandMatch;
   if (!match) return null;
   const owner = match[1];
   const name = match[2].replace(/\.git$/i, "");
   if (!owner || !name) return null;
-  return `${owner}/${name}`;
+  return { repo: `${owner}/${name}`, ref: urlMatch ? extractGithubUrlRef(urlMatch[3]) : undefined };
+}
+
+function normalizeGithubRepo(repo: string): string | null {
+  return normalizeGithubRepoInput(repo)?.repo ?? null;
 }
 
 function cloneDirName(repo: string, ref?: string): string {
@@ -78,9 +102,11 @@ async function checkoutRequestedGithubRef(dir: string, ref: string, signal?: Abo
   await execFileAsync("git", ["-C", dir, "checkout", "--detach", "FETCH_HEAD"], { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
 }
 
-async function cloneGithubRepo(repoInput: string, ref: string | undefined, signal?: AbortSignal) {
-  const repo = normalizeGithubRepo(repoInput);
-  if (!repo) throw new Error("repo must be a GitHub owner/name or github.com URL");
+async function cloneGithubRepo(repoInput: string, requestedRef: string | undefined, signal?: AbortSignal) {
+  const normalized = normalizeGithubRepoInput(repoInput);
+  if (!normalized) throw new Error("repo must be a GitHub owner/name or github.com URL");
+  const repo = normalized.repo;
+  const ref = requestedRef ?? normalized.ref;
   const dir = await mkdtemp(join(tmpdir(), cloneDirName(repo, ref)));
   const url = `https://github.com/${repo}.git`;
   try {
@@ -223,6 +249,23 @@ export const githubCloneTool = defineTool({
   },
 });
 
+function createTrackedGithubCloneTool(clonedPaths: Set<string>) {
+  return {
+    ...githubCloneTool,
+    async execute(toolCallId: string, params: GithubCloneInput, signal?: AbortSignal) {
+      const result = await githubCloneTool.execute(toolCallId, params, signal, undefined, undefined as any);
+      const resultDetails = result as { details?: { path?: unknown }; isError?: boolean };
+      const path = resultDetails.details?.path;
+      if (!resultDetails.isError && typeof path === "string") clonedPaths.add(path);
+      return result;
+    },
+  };
+}
+
+async function cleanupLibrarianClonePaths(clonedPaths: Set<string>) {
+  await Promise.all([...clonedPaths].map(path => rm(path, { recursive: true, force: true }).catch(() => undefined)));
+}
+
 export const LIBRARIAN_SYSTEM_PROMPT = `You are Librarian, a read-only research specialist for external open-source codebases.
 Answer library, framework, SDK, and upstream repository questions with evidence rather than guesses.
 You are not responsible for implementing changes or editing files.
@@ -303,36 +346,41 @@ export const librarianTool = defineTool({
       };
     }
 
-    const result = await runIsolatedSubagent({
-      subagentName: "librarian",
-      onUpdate: (partial) => {
-        _onUpdate?.({
-          content: partial.content,
-          details: { query: params.query, transcript: partial.details },
-        });
-      },
-      ctx,
-      model,
-      thinkingLevel: subagentConfig.thinkingLevel,
-      systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
-      tools: [
-        createReadTool("/tmp"),
-        createGrepTool("/tmp"),
-        createFindTool("/tmp"),
-        createLsTool("/tmp"),
-        githubRepoDiscoveryTool,
-        githubCloneTool,
-        researchWebSearchTool,
-        researchCodeSearchTool,
-      ],
-      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous, stop without guessing; if it is missing, fall back to official docs or other authoritative non-code sources and state that source-code evidence was unavailable.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n5. For comparison questions: compare 2-3 repos by default, compare 4-5 only when user-provided, and split 6+ repos into batches.\n6. Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality.\n7. In the final answer, cite code claims only with strict GitHub permalinks pinned to the github_clone commit: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>.\n8. If evidence remains weak or ambiguous, state uncertainty and stop rather than guessing.\n\nUser query: ${params.query}`,
-      signal,
-      timeoutMs: 300_000,
-    });
+    const clonedPaths = new Set<string>();
+    try {
+      const result = await runIsolatedSubagent({
+        subagentName: "librarian",
+        onUpdate: (partial) => {
+          _onUpdate?.({
+            content: partial.content,
+            details: { query: params.query, transcript: partial.details },
+          });
+        },
+        ctx,
+        model,
+        thinkingLevel: subagentConfig.thinkingLevel,
+        systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
+        tools: [
+          createReadTool("/tmp"),
+          createGrepTool("/tmp"),
+          createFindTool("/tmp"),
+          createLsTool("/tmp"),
+          githubRepoDiscoveryTool,
+          createTrackedGithubCloneTool(clonedPaths),
+          researchWebSearchTool,
+          researchCodeSearchTool,
+        ],
+        task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous, stop without guessing; if it is missing, fall back to official docs or other authoritative non-code sources and state that source-code evidence was unavailable.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n5. For comparison questions: compare 2-3 repos by default, compare 4-5 only when user-provided, and split 6+ repos into batches.\n6. Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality.\n7. In the final answer, cite code claims only with strict GitHub permalinks pinned to the github_clone commit: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>.\n8. If evidence remains weak or ambiguous, state uncertainty and stop rather than guessing.\n\nUser query: ${params.query}`,
+        signal,
+        timeoutMs: 300_000,
+      });
 
-    return {
-      content: [{ type: "text", text: result.finalText }],
-      details: { query: params.query, transcript: result.details },
-    };
+      return {
+        content: [{ type: "text", text: result.finalText }],
+        details: { query: params.query, transcript: result.details },
+      };
+    } finally {
+      await cleanupLibrarianClonePaths(clonedPaths);
+    }
   },
 });
