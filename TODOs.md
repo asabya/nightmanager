@@ -223,3 +223,22 @@ Nightmanager implementation queue.
     - npm test
     - npm run build
   - Notes: likely files include `tests/integration/subagent-tools.test.ts`, `tests/unit/models.test.ts`, and any Librarian-specific unit tests.
+
+- [ready] Show manager-spawned subagent usage lines in the live TUI
+  - Spec: `specs/manager-delegate-usage-lines.md`
+  - Issue: https://github.com/asabya/nightmanager/issues/13
+  - Scope: capture live usage/details from manager-delegated `finder`, `oracle`, and `handoff_to_worker`/`worker` calls and render one stable inline line per spawned delegate in the manager card.
+  - Acceptance:
+    - Manager live TUI shows a separate line for each spawned `finder`, `oracle`, and `handoff_to_worker`/`worker` delegate.
+    - `handoff_to_worker` delegates are presented as `Worker` lines.
+    - Each delegate line updates usage live while running and remains visible after completion, failure, abort, or timeout.
+    - Manager usage stays separate and does not aggregate spawned delegate usage.
+    - Real delegate usage uses the same field order, rounding, and symbols as existing subagent usage labels.
+    - Before real input/output usage is available, delegate lines omit input/output counts and show `$0.000 0.0%/<delegate context window>`.
+    - Placeholder context windows come from each delegate's own resolved model context window.
+    - All completed/running delegate lines remain visible in the manager display, including expanded display if practical.
+  - Validation:
+    - npm run typecheck
+    - npm test
+    - npm run build
+  - Notes: likely files include `src/tools/manager.ts`, `src/core/subagent-rendering.ts`, `src/core/transcript.ts`, `src/core/subagent.ts`, `tests/unit/subagent-rendering.test.ts`, and manager/subagent integration tests.
