@@ -24,6 +24,8 @@ describe("manager tool", () => {
     expect(source).toContain("type DelegateCallRecord = ManagerDelegateUsageDetails");
     expect(source).toContain("managerDelegateCalls");
     expect(source).toContain("delegateOnUpdate");
+    expect(source).toContain("extractTranscriptDetails(partial)");
+    expect(source).toContain("partial?.details?.transcript ?? partial?.details");
     expect(source).toContain("record.usage");
     expect(source).toContain("handoff_to_worker");
     expect(source).toContain("invalid_worker_handoff");

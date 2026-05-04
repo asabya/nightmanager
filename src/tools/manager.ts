@@ -56,6 +56,10 @@ function hasNonBlank(items: string[] | undefined): boolean {
   return Array.isArray(items) && items.some((item) => item.trim().length > 0);
 }
 
+function extractTranscriptDetails(partial: any): SubagentTranscriptDetails | undefined {
+  return partial?.details?.transcript ?? partial?.details;
+}
+
 function validateHandoffToWorkerInput(params: HandoffToWorkerInput): string[] {
   const missing: string[] = [];
   const handoff = params.handoff;
@@ -171,7 +175,7 @@ export const managerTool = defineTool({
         emitManagerUpdate();
 
         const delegateOnUpdate = (partial: any) => {
-          const details = partial?.details as SubagentTranscriptDetails | undefined;
+          const details = extractTranscriptDetails(partial);
           if (details?.usage) record.usage = details.usage;
           toolOnUpdate?.(partial);
           emitManagerUpdate();
