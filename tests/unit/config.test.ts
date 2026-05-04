@@ -92,20 +92,24 @@ describe("subagent config", () => {
   it("resolves each agent independently", () => {
     const finderModel = model("ollama", "cheap");
     const workerModel = model("openai", "strong");
+    const librarianModel = model("anthropic", "research");
     const ctx = ctxWithRegistry(undefined);
     vi.mocked(ctx.modelRegistry.find)
       .mockReturnValueOnce(finderModel)
-      .mockReturnValueOnce(workerModel);
+      .mockReturnValueOnce(workerModel)
+      .mockReturnValueOnce(librarianModel);
 
     const config = {
       agents: {
         finder: { model: "ollama/cheap", thinking: "medium" as const },
         worker: { model: "openai/strong", thinking: "xhigh" as const },
+        librarian: { model: "anthropic/research", thinking: "high" as const },
       },
     };
 
     expect(resolveSubagentConfig(ctx, "finder", config)).toMatchObject({ model: finderModel, thinkingLevel: "medium" });
     expect(resolveSubagentConfig(ctx, "worker", config)).toMatchObject({ model: workerModel, thinkingLevel: "xhigh" });
+    expect(resolveSubagentConfig(ctx, "librarian", config)).toMatchObject({ model: librarianModel, thinkingLevel: "high" });
   });
 
   it("normalizes unsupported low thinking to medium", () => {

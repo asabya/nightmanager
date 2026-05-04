@@ -1,10 +1,14 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import {
   defineTool,
   createReadTool,
   createGrepTool,
   createFindTool,
   createLsTool,
-  createBashTool,
 } from "@mariozechner/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
@@ -20,6 +24,171 @@ const librarianSchema = Type.Object({
 
 type LibrarianInput = Static<typeof librarianSchema>;
 
+const execFileAsync = promisify(execFile);
+
+const githubDiscoverySchema = Type.Object({
+  query: Type.String({ description: "Package, library, or repo name to resolve to a canonical GitHub upstream" }),
+  maxCandidates: Type.Optional(Type.Integer({ minimum: 2, maximum: 10, description: "Candidate count to inspect (default: 5)" })),
+});
+
+type GithubDiscoveryInput = Static<typeof githubDiscoverySchema>;
+
+const githubCloneSchema = Type.Object({
+  repo: Type.String({ description: "GitHub repo as owner/name, https://github.com/owner/name, or git@github.com:owner/name.git" }),
+  ref: Type.Optional(Type.String({ description: "Requested branch, tag, or commit. If supplied, checkout must succeed." })),
+});
+
+type GithubCloneInput = Static<typeof githubCloneSchema>;
+
+type GithubSearchItem = {
+  full_name?: string;
+  html_url?: string;
+  description?: string | null;
+  stargazers_count?: number;
+  fork?: boolean;
+  archived?: boolean;
+};
+
+function normalizeGithubRepo(repo: string): string | null {
+  const trimmed = repo.trim();
+  const match = trimmed.match(/github\.com[:/]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[\s#?].*)?$/i)
+    ?? trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+  if (!match) return null;
+  const owner = match[1];
+  const name = match[2].replace(/\.git$/i, "");
+  if (!owner || !name) return null;
+  return `${owner}/${name}`;
+}
+
+function cloneDirName(repo: string, ref?: string): string {
+  return `librarian-${repo.replace(/[^A-Za-z0-9_.-]+/g, "-")}${ref ? `-${ref.replace(/[^A-Za-z0-9_.-]+/g, "-")}` : ""}-`;
+}
+
+async function cloneGithubRepo(repoInput: string, ref: string | undefined, signal?: AbortSignal) {
+  const repo = normalizeGithubRepo(repoInput);
+  if (!repo) throw new Error("repo must be a GitHub owner/name or github.com URL");
+  const dir = await mkdtemp(join(tmpdir(), cloneDirName(repo, ref)));
+  const url = `https://github.com/${repo}.git`;
+  try {
+    const cloneArgs = ["clone", "--depth", "1"];
+    if (ref) cloneArgs.push("--branch", ref);
+    cloneArgs.push(url, dir);
+    await execFileAsync("git", cloneArgs, { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
+    if (ref) {
+      await execFileAsync("git", ["-C", dir, "rev-parse", "--verify", "HEAD"], { signal, timeout: 30_000 });
+    }
+    return { repo, url: `https://github.com/${repo}`, path: dir, ref: ref ?? "HEAD" };
+  } catch (err) {
+    await rm(dir, { recursive: true, force: true });
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(ref ? `failed to clone ${repo} at requested ref ${ref}: ${message}` : `failed to clone ${repo}: ${message}`);
+  }
+}
+
+function githubSearchQuery(query: string): string {
+  return `${query.trim()} in:name,description fork:false archived:false`;
+}
+
+function chooseCanonicalGithubRepo(query: string, items: GithubSearchItem[]) {
+  const candidates = items.filter(item => item.full_name && item.html_url && !item.fork && !item.archived).slice(0, 5);
+  if (candidates.length === 0) return { status: "not_found" as const, candidates };
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const exact = candidates.filter(item => {
+    const fullName = item.full_name!.toLowerCase();
+    const name = fullName.split("/").at(-1) ?? fullName;
+    return fullName === normalizedQuery || name === normalizedQuery;
+  });
+  if (exact.length === 1) return { status: "found" as const, repo: exact[0], candidates };
+  if (exact.length > 1) return { status: "ambiguous" as const, candidates: exact };
+
+  const [first, second] = candidates;
+  const firstStars = first?.stargazers_count ?? 0;
+  const secondStars = second?.stargazers_count ?? 0;
+  if (first && firstStars >= Math.max(100, secondStars * 3)) return { status: "found" as const, repo: first, candidates };
+  return { status: "ambiguous" as const, candidates };
+}
+
+export const githubRepoDiscoveryTool = defineTool({
+  name: "github_repo_discovery",
+  label: "GitHub Repo Discovery",
+  description: "Resolve a package/library name to a canonical GitHub upstream; fails closed on ambiguity.",
+  promptSnippet: "Use github_repo_discovery before answering package-only library questions; stop if it reports ambiguity.",
+  parameters: githubDiscoverySchema,
+  renderCall(args, theme) {
+    return new Text(theme.fg("toolTitle", theme.bold("github_repo_discovery ")) + theme.fg("accent", args.query ?? ""), 0, 0);
+  },
+  renderResult(result, _options, theme) {
+    const details = result.details as { status?: string; repo?: string; candidates?: string[]; error?: string } | undefined;
+    if (details?.error) return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
+    return new Text(`${details?.status ?? "unknown"}${details?.repo ? ` · ${details.repo}` : ""}`, 0, 0);
+  },
+  async execute(_toolCallId, params: GithubDiscoveryInput, signal) {
+    const query = params.query.trim();
+    if (!query) return { content: [{ type: "text", text: "Error: No query provided." }], details: { error: "empty_query" }, isError: true };
+    const repo = normalizeGithubRepo(query);
+    if (repo) {
+      return { content: [{ type: "text", text: `Canonical GitHub repo: https://github.com/${repo}` }], details: { status: "found", repo } };
+    }
+
+    try {
+      const searchUrl = new URL("https://api.github.com/search/repositories");
+      searchUrl.searchParams.set("q", githubSearchQuery(query));
+      searchUrl.searchParams.set("sort", "stars");
+      searchUrl.searchParams.set("order", "desc");
+      searchUrl.searchParams.set("per_page", String(params.maxCandidates ?? 5));
+      const response = await fetch(searchUrl, { headers: { "Accept": "application/vnd.github+json", "User-Agent": "nightmanager-librarian" }, signal });
+      if (!response.ok) throw new Error(`GitHub search failed ${response.status}: ${(await response.text()).slice(0, 200)}`);
+      const body = await response.json() as { items?: GithubSearchItem[] };
+      const decision = chooseCanonicalGithubRepo(query, body.items ?? []);
+      const candidates = decision.candidates.map(item => `${item.full_name} (${item.stargazers_count ?? 0} stars)`).filter(Boolean);
+      if (decision.status === "found") {
+        return {
+          content: [{ type: "text", text: `Canonical GitHub repo: ${decision.repo.html_url}\nCandidates inspected:\n- ${candidates.join("\n- ")}` }],
+          details: { status: "found", repo: decision.repo.full_name, candidates },
+        };
+      }
+      return {
+        content: [{ type: "text", text: `Ambiguous or missing GitHub upstream for '${query}'. Do not guess. Candidates inspected:\n- ${candidates.join("\n- ") || "None"}` }],
+        details: { status: decision.status, candidates },
+        isError: true,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { content: [{ type: "text", text: `Error: ${message}` }], details: { error: message }, isError: true };
+    }
+  },
+});
+
+export const githubCloneTool = defineTool({
+  name: "github_clone",
+  label: "GitHub Clone",
+  description: "Clone a GitHub repo into /tmp and optionally checkout a requested version/ref; never writes outside /tmp.",
+  promptSnippet: "Use github_clone for every named or discovered GitHub repo before local analysis; requested refs must succeed.",
+  parameters: githubCloneSchema,
+  renderCall(args, theme) {
+    const ref = typeof args.ref === "string" ? ` @ ${args.ref}` : "";
+    return new Text(theme.fg("toolTitle", theme.bold("github_clone ")) + theme.fg("accent", `${args.repo ?? ""}${ref}`), 0, 0);
+  },
+  renderResult(result, _options, theme) {
+    const details = result.details as { path?: string; error?: string } | undefined;
+    if (details?.error) return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
+    return new Text(theme.fg("success", details?.path ?? "cloned"), 0, 0);
+  },
+  async execute(_toolCallId, params: GithubCloneInput, signal) {
+    try {
+      const cloned = await cloneGithubRepo(params.repo, params.ref?.trim() || undefined, signal);
+      return {
+        content: [{ type: "text", text: `Cloned ${cloned.url} to ${cloned.path} at ${cloned.ref}. Analyze tests/examples first, then production source, then README/docs only if needed.` }],
+        details: cloned,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { content: [{ type: "text", text: `Error: ${message}` }], details: { error: message }, isError: true };
+    }
+  },
+});
+
 export const LIBRARIAN_SYSTEM_PROMPT = `You are Librarian, a read-only research specialist for external open-source codebases.
 Answer library, framework, SDK, and upstream repository questions with evidence rather than guesses.
 You are not responsible for implementing changes or editing files.
@@ -28,9 +197,10 @@ Read-only: do not create, modify, or delete files in the user's repository. You 
 Never use relative paths in final answers. Use absolute local paths for /tmp clones and strict GitHub permalinks for source-code claims.
 
 ## Research Tools
-- Use web_search for canonical upstream repository discovery, official docs, release notes, and current external facts.
+- Use github_repo_discovery first when the user names only a package or library; it fails closed on ambiguous GitHub upstreams.
+- Use github_clone for every named or discovered GitHub repo before local analysis; it clones only into /tmp.
+- Use web_search for official docs, release notes, current external facts, and secondary validation after GitHub-first discovery.
 - Use code_search for public code examples, API usage patterns, tests, and documentation snippets.
-- Search GitHub for the canonical upstream repository when the user names only a package or library.
 - If upstream identification is ambiguous, state the ambiguity and stop instead of guessing.
 
 ## Evidence Policy
@@ -42,8 +212,8 @@ Never use relative paths in final answers. Use absolute local paths for /tmp clo
 6. Back factual source-code claims with strict GitHub permalinks; include direct quotes/snippets when available.
 
 ## Repository Handling
-- If the user names one or more GitHub repos, clone them into /tmp and inspect local clones.
-- Prefer the latest default branch HEAD unless the user specifies a version; when specified, prefer that version.
+- If the user names one or more GitHub repos, clone them into /tmp with github_clone and inspect local clones.
+- Prefer the latest default branch HEAD unless the user specifies a version; when specified, pass that ref to github_clone and stop if checkout fails.
 - For comparisons, handle 2-3 repos by default, 4-5 when user-provided, and split 6+ repos into batches.
 - Rank findings by API correctness, closest match to the question, current implementation, and best documented example.
 
@@ -108,15 +278,16 @@ export const librarianTool = defineTool({
       thinkingLevel: subagentConfig.thinkingLevel,
       systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
       tools: [
-        createReadTool(ctx.cwd),
-        createGrepTool(ctx.cwd),
-        createFindTool(ctx.cwd),
-        createLsTool(ctx.cwd),
-        createBashTool(ctx.cwd),
+        createReadTool("/tmp"),
+        createGrepTool("/tmp"),
+        createFindTool("/tmp"),
+        createLsTool("/tmp"),
+        githubRepoDiscoveryTool,
+        githubCloneTool,
         researchWebSearchTool,
         researchCodeSearchTool,
       ],
-      task: params.query,
+      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous or missing, stop without guessing.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n\nUser query: ${params.query}`,
       signal,
       timeoutMs: 300_000,
     });

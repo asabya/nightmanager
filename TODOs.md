@@ -156,8 +156,9 @@ Nightmanager implementation queue.
   - Commit: e730e75e5903977ebe1914e9fa0e0913e7f29a1f
   - PR: https://github.com/asabya/nightmanager/pull/5
 
-- [ready] Register Librarian as a public research subagent
+- [done] Register Librarian as a public research subagent
   - Spec: `specs/librarian-subagent.md`
+  - Commit: 7124d43
   - Scope: add `src/tools/librarian.ts`, register Librarian in `src/index.ts`, add `librarian` to `src/core/models.ts`, keep the tool read-only, expose `web_search` and `code_search`, and update the README/tool overview.
   - Acceptance:
     - Librarian is available through the extension entrypoint.
@@ -170,8 +171,9 @@ Nightmanager implementation queue.
     - npm run build
   - Notes: likely files include `src/tools/librarian.ts`, `src/index.ts`, `src/core/models.ts`, `README.md`, and `tests/integration/subagent-tools.test.ts`.
 
-- [ready] Implement Librarian GitHub-first repo discovery and local clone analysis
+- [done] Implement Librarian GitHub-first repo discovery and local clone analysis
   - Spec: `specs/librarian-subagent.md`
+  - Commit: 2f96fe3
   - Scope: search GitHub for canonical upstream repos when the user only names a library/package, clone named repos into `/tmp`, inspect tests/examples first, then production source, and fall back to docs only when code evidence is insufficient.
   - Acceptance:
     - Named repos clone and analyze from `/tmp`.
