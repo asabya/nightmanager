@@ -46,6 +46,20 @@ describe("librarian helpers", () => {
     expect(result.details).toMatchObject({ ref, commit: "abc123def456" });
   });
 
+  it("accepts common GitHub URL variants when cloning", async () => {
+    const result = await githubCloneTool.execute("tool-url", { repo: "https://github.com/owner/repo/tree/main" }, undefined, undefined, {} as any);
+
+    const gitArgs = execFileMock.mock.calls.map(call => call[1]);
+    expect(gitArgs[0]).toEqual(["clone", "--depth", "1", "https://github.com/owner/repo.git", "/tmp/librarian-owner-repo-ref-abc"]);
+    expect(result.details).toMatchObject({ repo: "owner/repo" });
+  });
+
+  it("accepts trailing-slash GitHub URLs during discovery", async () => {
+    const result = await githubRepoDiscoveryTool.execute("tool-url-discovery", { query: "https://github.com/owner/repo/" }, undefined, undefined, {} as any);
+
+    expect(result.details).toMatchObject({ status: "found", repo: "owner/repo" });
+  });
+
   it("uses every fetched candidate when resolving canonical GitHub repos", async () => {
     const fetchMock = vi.fn(async (url: URL) => ({
       ok: true,

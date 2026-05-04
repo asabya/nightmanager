@@ -60,7 +60,7 @@ type GithubSearchItem = {
 
 function normalizeGithubRepo(repo: string): string | null {
   const trimmed = repo.trim();
-  const match = trimmed.match(/github\.com[:/]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[\s#?].*)?$/i)
+  const match = trimmed.match(/github\.com[:/]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?\s].*)?$/i)
     ?? trimmed.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
   if (!match) return null;
   const owner = match[1];
