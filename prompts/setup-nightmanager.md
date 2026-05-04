@@ -42,7 +42,7 @@ Rules:
 
 - Use `TEMPLATE.md` for new specs.
 - Prefix unfinished specs with `draft-`; autonomous runs must ignore them.
-- Only add a TODO as `[ready]` when the linked spec is complete enough to implement without live human steering.
+- Only promote a TODO to `[ready]` when the linked spec is complete enough to implement without live human steering; use `to-ready` after review to promote draft specs and their associated draft TODOs.
 - Keep specs organized for human thinking first. Good specs reduce agent babysitting.
 
 ## Draft specs
@@ -52,7 +52,7 @@ Draft specs are created by Day Shift planning skills or human planning sessions:
 - Filename format: `draft-<title>.md`
 - Nightmanager ignores specs with `draft-` prefix
 - TODOs linked to draft specs should be tagged `[draft]`
-- Human must review and manually promote: remove `draft-` from filename, change TODO to `[ready]`
+- Human must review and then run `to-ready` to promote: remove `draft-` from filename, set `Status: active`, change associated TODOs to `[ready]`, and create one clean promotion commit
 
 ## Readiness Checklist
 
