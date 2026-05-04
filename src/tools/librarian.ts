@@ -116,10 +116,6 @@ function chooseCanonicalGithubRepo(query: string, items: GithubSearchItem[]) {
   if (exact.length === 1) return { status: "found" as const, repo: exact[0], candidates };
   if (exact.length > 1) return { status: "ambiguous" as const, candidates: exact };
 
-  const [first, second] = candidates;
-  const firstStars = first?.stargazers_count ?? 0;
-  const secondStars = second?.stargazers_count ?? 0;
-  if (first && firstStars >= Math.max(100, secondStars * 3)) return { status: "found" as const, repo: first, candidates };
   return { status: "ambiguous" as const, candidates };
 }
 
@@ -162,8 +158,14 @@ export const githubRepoDiscoveryTool = defineTool({
           details: { status: "found", repo: decision.repo.full_name, candidates },
         };
       }
+      if (decision.status === "not_found") {
+        return {
+          content: [{ type: "text", text: `No canonical GitHub upstream found for '${query}'. Candidates inspected: None. Fall back to official documentation or other authoritative non-code sources; do not invent code evidence.` }],
+          details: { status: "not_found", candidates },
+        };
+      }
       return {
-        content: [{ type: "text", text: `Ambiguous or missing GitHub upstream for '${query}'. Do not guess. Candidates inspected:\n- ${candidates.join("\n- ") || "None"}` }],
+        content: [{ type: "text", text: `Ambiguous GitHub upstream for '${query}'. Do not guess. Candidates inspected:\n- ${candidates.join("\n- ") || "None"}` }],
         details: { status: decision.status, candidates },
         isError: true,
       };
@@ -306,7 +308,7 @@ export const librarianTool = defineTool({
         researchWebSearchTool,
         researchCodeSearchTool,
       ],
-      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous or missing, stop without guessing.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n5. For comparison questions: compare 2-3 repos by default, compare 4-5 only when user-provided, and split 6+ repos into batches.\n6. Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality.\n7. In the final answer, cite code claims only with strict GitHub permalinks pinned to the github_clone commit: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>.\n8. If evidence remains weak or ambiguous, state uncertainty and stop rather than guessing.\n\nUser query: ${params.query}`,
+      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous, stop without guessing; if it is missing, fall back to official docs or other authoritative non-code sources and state that source-code evidence was unavailable.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n5. For comparison questions: compare 2-3 repos by default, compare 4-5 only when user-provided, and split 6+ repos into batches.\n6. Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality.\n7. In the final answer, cite code claims only with strict GitHub permalinks pinned to the github_clone commit: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>.\n8. If evidence remains weak or ambiguous, state uncertainty and stop rather than guessing.\n\nUser query: ${params.query}`,
       signal,
       timeoutMs: 300_000,
     });

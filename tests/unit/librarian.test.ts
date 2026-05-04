@@ -74,4 +74,46 @@ describe("librarian helpers", () => {
     expect((result as any).isError).not.toBe(true);
     expect(result.details).toMatchObject({ status: "found", repo: "owner/target" });
   });
+
+  it("does not infer canonical upstreams from star count without an exact identifier match", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      async json() {
+        return {
+          items: [
+            { full_name: "popular/unrelated", html_url: "https://github.com/popular/unrelated", stargazers_count: 10_000, fork: false, archived: false },
+            { full_name: "other/candidate", html_url: "https://github.com/other/candidate", stargazers_count: 100, fork: false, archived: false },
+          ],
+        };
+      },
+      async text() {
+        return "";
+      },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await githubRepoDiscoveryTool.execute("tool-3", { query: "package-name" }, undefined, undefined, {} as any);
+
+    expect((result as any).isError).toBe(true);
+    expect(result.details).toMatchObject({ status: "ambiguous" });
+  });
+
+  it("allows docs fallback when no GitHub upstream candidates are found", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      async json() {
+        return { items: [] };
+      },
+      async text() {
+        return "";
+      },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await githubRepoDiscoveryTool.execute("tool-4", { query: "docs-only-package" }, undefined, undefined, {} as any);
+
+    expect((result as any).isError).not.toBe(true);
+    expect(result.details).toMatchObject({ status: "not_found", candidates: [] });
+    expect(result.content[0]).toMatchObject({ type: "text", text: expect.stringContaining("Fall back to official documentation") });
+  });
 });
