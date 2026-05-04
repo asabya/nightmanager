@@ -224,8 +224,9 @@ Nightmanager implementation queue.
     - npm run build
   - Notes: likely files include `tests/integration/subagent-tools.test.ts`, `tests/unit/models.test.ts`, and any Librarian-specific unit tests.
 
-- [ready] Show manager-spawned subagent usage lines in the live TUI
+- [done] Show manager-spawned subagent usage lines in the live TUI
   - Spec: `specs/manager-delegate-usage-lines.md`
+  - Commit: f63aba3
   - Issue: https://github.com/asabya/nightmanager/issues/13
   - Scope: capture live usage/details from manager-delegated `finder`, `oracle`, and `handoff_to_worker`/`worker` calls and render one stable inline line per spawned delegate in the manager card.
   - Acceptance:
