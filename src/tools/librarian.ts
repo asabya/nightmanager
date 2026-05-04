@@ -74,10 +74,9 @@ async function cloneGithubRepo(repoInput: string, ref: string | undefined, signa
     if (ref) cloneArgs.push("--branch", ref);
     cloneArgs.push(url, dir);
     await execFileAsync("git", cloneArgs, { signal, timeout: 120_000, maxBuffer: 1024 * 1024 });
-    if (ref) {
-      await execFileAsync("git", ["-C", dir, "rev-parse", "--verify", "HEAD"], { signal, timeout: 30_000 });
-    }
-    return { repo, url: `https://github.com/${repo}`, path: dir, ref: ref ?? "HEAD" };
+    const { stdout } = await execFileAsync("git", ["-C", dir, "rev-parse", "--verify", "HEAD"], { signal, timeout: 30_000 });
+    const commit = stdout.trim();
+    return { repo, url: `https://github.com/${repo}`, path: dir, ref: ref ?? "HEAD", commit, permalinkBase: `https://github.com/${repo}/blob/${commit}` };
   } catch (err) {
     await rm(dir, { recursive: true, force: true });
     const message = err instanceof Error ? err.message : String(err);
@@ -171,15 +170,16 @@ export const githubCloneTool = defineTool({
     return new Text(theme.fg("toolTitle", theme.bold("github_clone ")) + theme.fg("accent", `${args.repo ?? ""}${ref}`), 0, 0);
   },
   renderResult(result, _options, theme) {
-    const details = result.details as { path?: string; error?: string } | undefined;
+    const details = result.details as { path?: string; commit?: string; error?: string } | undefined;
     if (details?.error) return new Text(theme.fg("error", `Error: ${details.error}`), 0, 0);
-    return new Text(theme.fg("success", details?.path ?? "cloned"), 0, 0);
+    const commit = details?.commit ? ` @ ${details.commit.slice(0, 12)}` : "";
+    return new Text(theme.fg("success", `${details?.path ?? "cloned"}${commit}`), 0, 0);
   },
   async execute(_toolCallId, params: GithubCloneInput, signal) {
     try {
       const cloned = await cloneGithubRepo(params.repo, params.ref?.trim() || undefined, signal);
       return {
-        content: [{ type: "text", text: `Cloned ${cloned.url} to ${cloned.path} at ${cloned.ref}. Analyze tests/examples first, then production source, then README/docs only if needed.` }],
+        content: [{ type: "text", text: `Cloned ${cloned.url} to ${cloned.path} at ${cloned.ref} (${cloned.commit}). Permalink base: ${cloned.permalinkBase}. Analyze tests/examples first, then production source, then README/docs only if needed.` }],
         details: cloned,
       };
     } catch (err) {
@@ -194,7 +194,7 @@ Answer library, framework, SDK, and upstream repository questions with evidence 
 You are not responsible for implementing changes or editing files.
 
 Read-only: do not create, modify, or delete files in the user's repository. You may clone public upstream repositories into /tmp for inspection when needed. Never write findings into files; return them as message text.
-Never use relative paths in final answers. Use absolute local paths for /tmp clones and strict GitHub permalinks for source-code claims.
+Never use relative paths in final answers. Use absolute local paths for /tmp clones during analysis only; final source-code claims must use strict GitHub permalinks pinned to the cloned commit.
 
 ## Research Tools
 - Use github_repo_discovery first when the user names only a package or library; it fails closed on ambiguous GitHub upstreams.
@@ -209,22 +209,26 @@ Never use relative paths in final answers. Use absolute local paths for /tmp clo
 3. Use production source when tests/examples are insufficient.
 4. Treat source code as authoritative over docs when they conflict.
 5. Consult official docs only when source-code evidence is insufficient or unavailable.
-6. Back factual source-code claims with strict GitHub permalinks; include direct quotes/snippets when available.
+6. Back every factual source-code claim with a strict GitHub permalink; include direct quotes/snippets when available.
+7. Strict permalink format: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end> (or #L<line> for one line). Use the github_clone commit/permalinkBase metadata; do not cite branch names or local-only paths as final evidence for code claims.
+8. If decisive source/code evidence remains weak, missing, or ambiguous after reasonable inspection, state the uncertainty and stop instead of filling gaps with docs or guesses.
 
 ## Repository Handling
 - If the user names one or more GitHub repos, clone them into /tmp with github_clone and inspect local clones.
 - Prefer the latest default branch HEAD unless the user specifies a version; when specified, pass that ref to github_clone and stop if checkout fails.
-- For comparisons, handle 2-3 repos by default, 4-5 when user-provided, and split 6+ repos into batches.
-- Rank findings by API correctness, closest match to the question, current implementation, and best documented example.
+- For comparisons, handle 2-3 repos by default. Compare 4-5 only when the user explicitly provides them. For 6+ repos, split into named batches, summarize each batch, then provide only cross-batch conclusions supported by permalink evidence.
+- Rank findings in this order: API correctness, closest fit to the user's question, recency/current implementation, then documentation/example quality.
+- Choose the final format to fit the question: ranked bullets, comparison table, side-by-side repo summary, or another concise evidence-first structure.
 
 ${LEAN_RESPONSE_INSTRUCTIONS}
 
 ## Final Response Format
 Summary: one sentence answer.
 Evidence:
-- strict GitHub permalink, /absolute/tmp/path, or official URL — decisive detail.
+- strict GitHub permalink pinned to commit with line number(s) — quote/snippet and decisive detail.
+- official URL only for docs/current-fact claims when code evidence is unavailable or insufficient.
 Findings: ranked bullets, comparison table, side-by-side summary, or another format suited to the question.
-Uncertainty: weak or ambiguous evidence, or None.
+Uncertainty: weak or ambiguous evidence and whether you stopped because evidence was insufficient, or None.
 Next: one concrete follow-up, or None.`;
 
 export const librarianTool = defineTool({
@@ -287,7 +291,7 @@ export const librarianTool = defineTool({
         researchWebSearchTool,
         researchCodeSearchTool,
       ],
-      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous or missing, stop without guessing.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n\nUser query: ${params.query}`,
+      task: `Follow this deterministic repository protocol before answering:\n1. If the query names GitHub repos, call github_clone for each one and analyze the /tmp clone.\n2. If the query names only a package/library, call github_repo_discovery first; if it is ambiguous or missing, stop without guessing.\n3. If a version/ref is requested, pass that exact ref to github_clone and do not silently fall back to HEAD.\n4. In each clone inspect tests/ and examples/ before README/docs, and use docs only when code evidence is insufficient.\n5. For comparison questions: compare 2-3 repos by default, compare 4-5 only when user-provided, and split 6+ repos into batches.\n6. Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality.\n7. In the final answer, cite code claims only with strict GitHub permalinks pinned to the github_clone commit: https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>.\n8. If evidence remains weak or ambiguous, state uncertainty and stop rather than guessing.\n\nUser query: ${params.query}`,
       signal,
       timeoutMs: 300_000,
     });
