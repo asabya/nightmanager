@@ -89,6 +89,29 @@ describe("librarian helpers", () => {
     expect(result.details).toMatchObject({ status: "found", repo: "owner/target" });
   });
 
+  it("resolves scoped package names against normalized GitHub identifiers", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      async json() {
+        return {
+          items: [
+            { full_name: "reduxjs/redux-toolkit", html_url: "https://github.com/reduxjs/redux-toolkit", stargazers_count: 12_000, fork: false, archived: false },
+            { full_name: "other/toolkit", html_url: "https://github.com/other/toolkit", stargazers_count: 100, fork: false, archived: false },
+          ],
+        };
+      },
+      async text() {
+        return "";
+      },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await githubRepoDiscoveryTool.execute("tool-scoped", { query: "@reduxjs/toolkit" }, undefined, undefined, {} as any);
+
+    expect((result as any).isError).not.toBe(true);
+    expect(result.details).toMatchObject({ status: "found", repo: "reduxjs/redux-toolkit" });
+  });
+
   it("does not infer canonical upstreams from star count without an exact identifier match", async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,

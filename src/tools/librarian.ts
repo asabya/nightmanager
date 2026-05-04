@@ -103,16 +103,33 @@ function githubSearchQuery(query: string): string {
   return `${query.trim()} in:name,description fork:false archived:false`;
 }
 
+function scopedPackageParts(query: string) {
+  const match = query.trim().toLowerCase().match(/^@([^/\s]+)\/([^/\s]+)$/);
+  if (!match) return null;
+  return { scope: match[1], packageName: match[2] };
+}
+
+function matchesCanonicalIdentifier(query: string, fullNameInput: string) {
+  const normalizedQuery = query.trim().toLowerCase().replace(/^@/, "");
+  const fullName = fullNameInput.toLowerCase();
+  const [owner, name = fullName] = fullName.split("/");
+  const scoped = scopedPackageParts(query);
+
+  if (scoped) {
+    if (fullName === normalizedQuery) return true;
+    if (owner !== scoped.scope) return false;
+    return name === scoped.packageName || name === `${scoped.scope}-${scoped.packageName}` || name.endsWith(`-${scoped.packageName}`);
+  }
+
+  const queryName = normalizedQuery.split("/").at(-1) ?? normalizedQuery;
+  return fullName === normalizedQuery || name === normalizedQuery || name === queryName;
+}
+
 function chooseCanonicalGithubRepo(query: string, items: GithubSearchItem[]) {
   const candidates = items.filter(item => item.full_name && item.html_url && !item.fork && !item.archived);
   if (candidates.length === 0) return { status: "not_found" as const, candidates };
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const exact = candidates.filter(item => {
-    const fullName = item.full_name!.toLowerCase();
-    const name = fullName.split("/").at(-1) ?? fullName;
-    return fullName === normalizedQuery || name === normalizedQuery;
-  });
+  const exact = candidates.filter(item => matchesCanonicalIdentifier(query, item.full_name!));
   if (exact.length === 1) return { status: "found" as const, repo: exact[0], candidates };
   if (exact.length > 1) return { status: "ambiguous" as const, candidates: exact };
 
