@@ -89,6 +89,7 @@ describe("subagent tools", () => {
     expect(options?.task).toContain("pass that exact ref to github_clone");
     expect(options?.task).toContain("compare 2-3 repos by default");
     expect(options?.task).toContain("split 6+ repos into batches");
+    expect(options?.task).toContain("Rank comparison findings by API correctness, question fit, recency/current implementation, then documentation/example quality");
     expect(options?.task).toContain("pinned to the github_clone commit");
     expect(options?.task).toContain("state uncertainty and stop");
     expect(options?.tools.map((tool: any) => tool.name)).toEqual(expect.arrayContaining([
@@ -105,6 +106,7 @@ describe("subagent tools", () => {
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Use github_repo_discovery first");
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain("pass that ref to github_clone and stop if checkout fails");
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Compare 4-5 only when the user explicitly provides them");
+    expect(LIBRARIAN_SYSTEM_PROMPT).toContain("Rank findings in this order: API correctness, closest fit to the user's question, recency/current implementation, then documentation/example quality");
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain("https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>");
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain("If decisive source/code evidence remains weak");
   });
