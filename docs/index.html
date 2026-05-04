@@ -287,7 +287,8 @@
       gap: var(--space-6);
     }
     
-    .card-grid-4 {
+    .card-grid-4,
+    .card-grid-5 {
       grid-template-columns: 1fr;
     }
     
@@ -428,10 +429,12 @@
     .fade-in-delay-2 { transition-delay: 200ms; }
     .fade-in-delay-3 { transition-delay: 300ms; }
     .fade-in-delay-4 { transition-delay: 400ms; }
+    .fade-in-delay-5 { transition-delay: 500ms; }
     
     /* Responsive - Tablet */
     @media (min-width: 640px) {
-      .card-grid-4 {
+      .card-grid-4,
+      .card-grid-5 {
         grid-template-columns: repeat(2, 1fr);
       }
       
@@ -460,6 +463,10 @@
       
       .card-grid-4 {
         grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .card-grid-5 {
+        grid-template-columns: repeat(5, 1fr);
       }
       
       .card-grid-3 {
@@ -529,9 +536,9 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title fade-in">The Nightmanager Loop</h2>
-          <p class="section-subtitle fade-in fade-in-delay-1">grill-me → to-prd → to-issues → /nightmanager</p>
+          <p class="section-subtitle fade-in fade-in-delay-1">grill-me → to-prd → to-issues → to-ready → /nightmanager</p>
         </div>
-        <div class="card-grid card-grid-4">
+        <div class="card-grid card-grid-5">
           <div class="card fade-in fade-in-delay-1">
             <div class="card-icon">❓</div>
             <div class="card-title">Grill the intent</div>
@@ -548,6 +555,11 @@
             <p class="card-description">Use to-issues to break the spec into small, vertical local TODOs that are safe for one focused implementation pass.</p>
           </div>
           <div class="card fade-in fade-in-delay-4">
+            <div class="card-icon">✅</div>
+            <div class="card-title">Promote reviewed work</div>
+            <p class="card-description">Use to-ready to activate reviewed specs, flip associated draft TODOs to ready, and make one clean promotion commit.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-5">
             <div class="card-icon">🌙</div>
             <div class="card-title">Delegate AFK implementation</div>
             <p class="card-description">Run /nightmanager to select one ready TODO, delegate through subagents, validate the change, and prepare reviewable output.</p>
