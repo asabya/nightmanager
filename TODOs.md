@@ -159,6 +159,7 @@ Nightmanager implementation queue.
 - [done] Register Librarian as a public research subagent
   - Spec: `specs/librarian-subagent.md`
   - Commit: 7124d43
+  - PR: https://github.com/asabya/nightmanager/pull/12
   - Scope: add `src/tools/librarian.ts`, register Librarian in `src/index.ts`, add `librarian` to `src/core/models.ts`, keep the tool read-only, expose `web_search` and `code_search`, and update the README/tool overview.
   - Acceptance:
     - Librarian is available through the extension entrypoint.
@@ -174,6 +175,7 @@ Nightmanager implementation queue.
 - [done] Implement Librarian GitHub-first repo discovery and local clone analysis
   - Spec: `specs/librarian-subagent.md`
   - Commit: a709577
+  - PR: https://github.com/asabya/nightmanager/pull/12
   - Scope: search GitHub for canonical upstream repos when the user only names a library/package, clone named repos into `/tmp`, inspect tests/examples first, then production source, and fall back to docs only when code evidence is insufficient.
   - Acceptance:
     - Named repos clone and analyze from `/tmp`.
@@ -192,6 +194,7 @@ Nightmanager implementation queue.
 - [done] Add Librarian multi-repo comparison and evidence formatting
   - Spec: `specs/librarian-subagent.md`
   - Commit: 9205dd9
+  - PR: https://github.com/asabya/nightmanager/pull/12
   - Scope: support 2–3 repos by default, 4–5 when user-provided, split 6+ into batches, rank findings by API correctness/question fit/recency/docs quality, choose output format adaptively, and emit strict GitHub permalink evidence with quotes/snippets when available.
   - Acceptance:
     - Librarian compares multiple upstream repos in one pass when relevant.
@@ -209,6 +212,7 @@ Nightmanager implementation queue.
 - [done] Add Librarian tests for registration, discovery policy, and comparison behavior
   - Spec: `specs/librarian-subagent.md`
   - Commit: 18233ff
+  - PR: https://github.com/asabya/nightmanager/pull/12
   - Scope: extend unit/integration coverage for the new subagent registration, tool availability, config resolution, and prompt/policy behavior.
   - Acceptance:
     - Tests cover Librarian registration and execution wiring.
