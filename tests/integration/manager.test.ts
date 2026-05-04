@@ -21,10 +21,16 @@ describe("manager tool", () => {
     const source = readFileSync("src/tools/manager.ts", "utf-8");
     expect(source).toContain("delegateCalls");
     expect(source).toContain("status: \"running\"");
-    expect(source).toContain("summary?: string");
+    expect(source).toContain("type DelegateCallRecord = ManagerDelegateUsageDetails");
+    expect(source).toContain("managerDelegateCalls");
+    expect(source).toContain("delegateOnUpdate");
+    expect(source).toContain("extractTranscriptDetails(partial)");
+    expect(source).toContain("partial?.details?.transcript ?? partial?.details");
+    expect(source).toContain("record.usage");
     expect(source).toContain("handoff_to_worker");
     expect(source).toContain("invalid_worker_handoff");
     expect(source).toContain("trackDelegation(handoffToWorkerTool)");
+    expect(source).toContain("delegateName = toolName === \"handoff_to_worker\" ? \"worker\" : toolName");
     expect(source).not.toContain("trackDelegation(workerTool)");
     expect(source).toContain("timeoutMs: 600_000");
   });

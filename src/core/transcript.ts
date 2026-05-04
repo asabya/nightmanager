@@ -29,6 +29,17 @@ export interface TranscriptUsage {
   turns?: number;
 }
 
+export interface ManagerDelegateUsageDetails {
+  tool: "finder" | "oracle" | "worker" | "handoff_to_worker" | string;
+  params?: unknown;
+  status: "running" | "completed" | "failed";
+  timestamp: number;
+  isError?: boolean;
+  summary?: string;
+  usage?: TranscriptUsage;
+  contextWindow?: number;
+}
+
 export interface SubagentTranscriptDetails {
   tool: SubagentName;
   task: string;
@@ -37,6 +48,7 @@ export interface SubagentTranscriptDetails {
   model?: string;
   usage?: TranscriptUsage;
   entries: TranscriptEntry[];
+  managerDelegateCalls?: ManagerDelegateUsageDetails[];
 }
 
 export interface TranscriptState {
