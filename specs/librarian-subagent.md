@@ -1,6 +1,6 @@
 # Spec: Librarian subagent for evidence-backed OSS research
 
-Status: draft
+Status: active
 Owner: human
 Created: 2026-05-02
 
