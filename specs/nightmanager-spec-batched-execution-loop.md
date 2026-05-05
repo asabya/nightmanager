@@ -1,7 +1,7 @@
 # Spec: Nightmanager spec-batched execution loop
 
-Status: draft
-Owner: <human>
+Status: completed
+Owner: human
 Created: 2026-04-30
 
 ## Problem

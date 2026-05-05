@@ -1,6 +1,6 @@
 # Spec: Manager delegate usage lines in live TUI
 
-Status: ready
+Status: completed
 Owner: human
 Created: 2026-05-04
 
