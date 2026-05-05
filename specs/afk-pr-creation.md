@@ -1,6 +1,6 @@
 # Spec: AFK PR creation for Nightmanager cycles
 
-Status: ready
+Status: completed
 Owner: human
 Created: 2026-04-29
 

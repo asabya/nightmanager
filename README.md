@@ -2,96 +2,74 @@
 
 **Stop babysitting agents. Give them shared understanding.**
 
-Nightmanager is a spec-driven loop for solo developers and small teams: clarify intent, turn it into local specs and vertical TODOs, then delegate one ready slice for AFK implementation. You come back to a validated commit and, when possible, a PR for human review. Nightmanager does not merge automatically.
+Nightmanager is a spec-driven Pi workflow for solo developers and small teams: clarify intent, write local specs/TODOs, then delegate one ready slice for AFK implementation. You come back to validated commits and, when possible, a ready-for-review PR. Nightmanager never merges automatically.
 
-Some skills here were shamelessly borrowed from, then lovingly remixed from, https://github.com/mattpocock/skills.
+Borrowed/remixed with appreciation from https://github.com/mattpocock/skills.
 
-> **Public site**: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — or see [docs/index.html](docs/index.html) for the source.
+> Public site: [asabya.github.io/nightmanager](https://asabya.github.io/nightmanager) — source: [docs/index.html](docs/index.html).
 
-## The Nightmanager Loop
+## Loop
 
 ```text
-grill-me → to-prd → to-issues → to-ready → /nightmanager → PR for review
+grill-me → to-prd → to-issues → to-ready → /nightmanager → PR review
 ```
 
-1. **Grill the intent** — use `grill-me` to interrogate a feature, bug, or plan one question at a time until hidden requirements, risks, and trade-offs are surfaced.
-2. **Generate/refine the spec** — use `to-prd` to turn the clarified conversation into a concrete local spec with goals, non-goals, acceptance criteria, edge cases, testing, and risks.
-3. **Slice the work** — use `to-issues` to break the spec into small, vertical local TODOs that are safe for one focused implementation pass. This is local-file-first; it does not create GitHub issues by default.
-4. **Promote reviewed work** — use `to-ready` to remove `draft-` from reviewed specs, mark them `Status: active`, flip associated draft TODOs to `[ready]`, and create one clean promotion commit.
-5. **Delegate AFK implementation** — run `/nightmanager` to select one ready TODO and delegate through Manager, Finder, Oracle, Librarian, and Worker to implement, validate, commit, and open a PR when possible for human review.
+1. `grill-me`: interrogate unclear intent one question at a time.
+2. `to-prd`: create a local draft spec in `specs/draft-*.md`.
+3. `to-issues`: slice the spec into vertical draft `TODOs.md` entries.
+4. `to-ready`: promote reviewed specs/TODOs and create one promotion commit.
+5. `/nightmanager`: select the active ready/bug batch, implement through subagents, validate, commit, push, and open one PR when possible.
 
-Specs are the shared understanding. Subagents are the execution machinery that preserves your main-session context while doing focused work inside the loop.
+Runtime context is intentionally lean: the runner preloads only shared Nightmanager prompts, `TODOs.md`, and the active spec/template. Agents read `README.md`, manifests, or unrelated docs only when needed.
 
-| Tool | Role | Best For |
-|------|------|----------|
-| `finder` | Codebase search | Locating features, tracing module connections |
-| `oracle` | Reasoning & debugging | Root-cause analysis, trade-off planning |
-| `librarian` | OSS research | Upstream library research, code-first evidence, GitHub permalinks |
-| `worker` | Implementation | Smallest viable fix, verified changes |
-| `manager` | Orchestration | Coordinating finder/oracle/worker workflows |
+## Tools
 
----
+| Tool | Role | Use for |
+| --- | --- | --- |
+| `finder` | Codebase search | Files, usages, relationships |
+| `oracle` | Reasoning/debugging | Root cause, trade-offs, next probes |
+| `librarian` | OSS research | Upstream code evidence and GitHub permalinks |
+| `worker` | Implementation | Small verified edits |
+| `manager` | Orchestration | Coordinating finder/oracle/worker phases |
 
-## Install
-
-Install Nightmanager with Pi:
-
-### Global install
+## Install and run
 
 ```bash
 pi install npm:nightmanager
 ```
 
-### Local install
-
-From your project:
+Local development install from another project:
 
 ```bash
 pi install -l ./path/to/nightmanager
 ```
 
-### Run it
-
-Open Pi and run:
+Run the autonomous loop in Pi:
 
 ```text
 /nightmanager
 ```
 
-If you are developing from the repo instead:
+Run this repo from source:
 
 ```bash
 pi -e ./src/index.ts
 ```
 
-Source package usage:
+## Planning skills
 
-```bash
-pi -e ./src/index.ts
-```
+- `grill-me`: ask one question at a time until goals, risks, and trade-offs are clear.
+- `to-prd`: write `specs/draft-<slug>.md` from the current idea/conversation.
+- `to-issues`: add draft local `TODOs.md` slices; no GitHub issues unless requested.
+- `to-ready`: promote reviewed draft specs/TODOs and commit only the promotion.
 
-
-### Planning skills
-
-Nightmanager ships local planning skills for the Day Shift side of the loop:
-
-- `grill-me` interrogates an idea one question at a time.
-- `to-prd` writes `specs/draft-<slug>.md` from the clarified plan.
-- `to-issues` slices a spec into draft local `TODOs.md` entries.
-- `to-ready` promotes reviewed draft specs and associated draft TODOs, then creates one clean promotion commit so `/nightmanager` can run.
-
-## Tools
+## Tool details
 
 ### `finder`
 
-Use `finder` for codebase exploration tasks like:
-- where a feature is implemented
-- which files participate in a flow
-- how modules connect
+Read-only codebase exploration. Use it to find where features live, which files participate in a flow, or how modules connect.
 
-Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
-
-Example prompt:
+Example:
 
 ```text
 Use finder to find where authentication is handled
@@ -99,15 +77,9 @@ Use finder to find where authentication is handled
 
 ### `oracle`
 
-Use `oracle` for reasoning-heavy tasks like:
-- debugging ambiguous failures
-- root-cause analysis
-- trade-off-aware planning
-- deciding the best next probe
+Read-only reasoning for ambiguous failures, root-cause analysis, trade-offs, and the best next probe.
 
-Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
-
-Example prompt:
+Example:
 
 ```text
 Use oracle to debug why auth middleware fails intermittently
@@ -115,17 +87,9 @@ Use oracle to debug why auth middleware fails intermittently
 
 ### `librarian`
 
-Use `librarian` for evidence-backed open-source library research that needs:
-- canonical upstream repository discovery
-- code-first inspection of tests, examples, and source
-- comparison across external repos
-- strict GitHub permalink evidence
+Read-only external library research. It resolves/clones upstream repos into `/tmp`, inspects source/tests/examples before docs, and cites strict commit-pinned GitHub permalinks.
 
-Librarian is read-only for the user's repository. It can use `web_search` and `code_search` for external research and may inspect public upstream clones in `/tmp`.
-
-Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
-
-Example prompt:
+Example:
 
 ```text
 Use librarian to compare how Fastify and Express handle request decorators, with source links
@@ -133,24 +97,9 @@ Use librarian to compare how Fastify and Express handle request decorators, with
 
 ### `worker`
 
-Use `worker` for implementation work that needs:
-- focused edits
-- smallest viable diff
-- concrete verification
+Focused implementation with the smallest viable diff and concrete verification. With handoff context, Worker writes an audit artifact to `.pi/handoffs/` and avoids rediscovery unless context is missing or contradictory. It may use `finder` once; it cannot use `oracle` or delegate recursively.
 
-When invoked with handoff context, `worker` persists a JSON handoff artifact to `.pi/handoffs/` for auditability before execution. The artifact includes objective, findings, target files, decisions, constraints, risks, verification guidance, and evidence.
-
-`worker` accepts optional handoff context from `manager`, `finder`, or `oracle`:
-- target files and related files
-- findings and decisions
-- constraints, risks, and suggested verification
-
-When handoff context is provided, `worker` uses it as the starting map and avoids repeating broad discovery unless the context is missing or contradictory.
-It may still use `finder` once if blocked by codebase uncertainty. It does not call `oracle` and does not recursively delegate.
-
-Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
-
-Example prompt:
+Example:
 
 ```text
 Use worker to make the smallest possible fix and verify it
@@ -158,24 +107,9 @@ Use worker to make the smallest possible fix and verify it
 
 ### `manager`
 
-Use `manager` when a task may need multiple specialist phases, such as discovery -> diagnosis -> implementation.
+Orchestrates multi-phase tasks: search → reasoning → implementation. Manager does not inspect or edit directly; implementation is gated through internal `handoff_to_worker`, requiring objective, findings, target files, and decisions.
 
-Default orchestration policy:
-- simple search -> `finder`
-- simple reasoning/debugging -> `oracle`
-- clear implementation -> `worker`
-- implementation in unfamiliar code -> `finder` -> `worker`
-- ambiguous failure plus requested fix -> `oracle` -> `worker`
-- broad feature/change -> `finder` -> optional `oracle` -> `worker`
-- ambiguous intent -> clarifying question
-
-`manager` does not inspect or edit files directly. It delegates to specialized tools, passes structured handoff context between phases, and synthesizes the final result. Implementation is hard-gated through an internal `handoff_to_worker` tool, which requires non-empty objective, findings, target files, and decisions before Worker can run.
-
-> **Handoff artifacts**: When Worker receives handoff context, a JSON artifact is written to `.pi/handoffs/` for auditability. See [Notes](#notes).
-
-Configuration is shared across nightmanager in `~/.pi/agent/nightmanager.json`; see [Configuration](#configuration).
-
-Example prompt:
+Example:
 
 ```text
 Use manager to investigate the failing auth flow, choose the safest fix, implement it, and verify the result
@@ -183,80 +117,38 @@ Use manager to investigate the failing auth flow, choose the safest fix, impleme
 
 ## Configuration
 
-The Nightmanager use one optional config file:
+Optional per-agent config lives at:
 
 ```text
 ~/.pi/agent/nightmanager.json
 ```
 
-If the file is missing, malformed, or a configured model cannot be found, the subagent falls back to the current Pi session model. `thinking` defaults to `medium`; avoid `low` for nightmanager.
-
-```json
-{
-  "agents": {
-    "manager": {
-      "model": "provider/cheap-or-small-model",
-      "thinking": "medium"
-    },
-    "finder": {
-      "model": "provider/cheap-or-small-model",
-      "thinking": "medium"
-    },
-    "worker": {
-      "model": "provider/strong-model",
-      "thinking": "medium"
-    },
-    "oracle": {
-      "model": "provider/best-reasoning-model",
-      "thinking": "high"
-    },
-    "librarian": {
-      "model": "provider/strong-research-model",
-      "thinking": "high"
-    }
-  }
-}
-```
-
-Recommended split:
-- `manager` and `finder`: cheaper/smaller models.
-- `worker`: stronger code-editing model.
-- `oracle`: strongest reasoning model.
-- `librarian`: strong research-capable model.
-
-## Setup
-
-Use the optional config file at `~/.pi/agent/nightmanager.json` to set models per tool. Missing or malformed config falls back to the current Pi session model.
+If missing, malformed, or invalid, subagents fall back to the current Pi model. `thinking` defaults to `medium`; avoid `low`.
 
 ```json
 {
   "agents": {
     "manager": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
     "finder": { "model": "provider/cheap-or-small-model", "thinking": "medium" },
-    "worker": { "model": "provider/strong-model", "thinking": "medium" },
+    "worker": { "model": "provider/strong-code-model", "thinking": "medium" },
     "oracle": { "model": "provider/best-reasoning-model", "thinking": "high" },
     "librarian": { "model": "provider/strong-research-model", "thinking": "high" }
   }
 }
 ```
 
-Keep `manager` and `finder` cheaper than `worker`, `oracle`, and `librarian` when possible.
+Keep `manager`/`finder` cheaper when possible; reserve stronger models for `worker`, `oracle`, and `librarian`.
 
 ## Development
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Run the test suite:
-
-```bash
+npm run typecheck
 npm test
+npm run build      # alias for typecheck; no dist output
 ```
 
-Run specific test layers:
+Focused tests:
 
 ```bash
 npm run test:unit
@@ -264,48 +156,20 @@ npm run test:integration
 npm run test:e2e
 ```
 
-Typecheck:
-
-```bash
-npm run typecheck
-```
-
-Build/typecheck (no dist output):
-
-```bash
-npm run build
-```
-
-Run from source:
-
-```bash
-pi -e ./src/index.ts
-```
-
-Run the package entrypoint:
-
-```bash
-pi -e ./src/index.ts
-```
-
-## Package Shape
+Package shape:
 
 ```text
 nightmanager/
   package.json
-  src/
-    index.ts
-    tools/
-    core/
-    types/
-  tests/
-    unit/
-    integration/
-    e2e/
+  src/{core,tools,types}/
+  prompts/
+  skills/
+  specs/
+  tests/{unit,integration,e2e}/
 ```
 
 ## Notes
 
-- The package uses one combined Pi extension entrypoint.
-- The internal code is modular for testability and maintenance.
-- The test strategy is layered: unit + integration + selective CLI smoke tests.
+- One Pi extension entrypoint registers all tools and commands.
+- Handoff artifacts are written to `.pi/handoffs/` when Worker receives structured context.
+- Tests are layered: unit, integration, and selective CLI smoke tests.

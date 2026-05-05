@@ -1,6 +1,6 @@
 # Spec: Live Pi-style usage labels on built-in subagent cards
 
-Status: ready
+Status: completed
 Owner: human
 Created: 2026-04-30
 

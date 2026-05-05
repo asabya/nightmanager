@@ -76,10 +76,10 @@ const handoffToWorkerTool = defineTool({
   name: "handoff_to_worker",
   label: "Handoff to Worker",
   description: "Invoke worker with a required structured handoff. This is Manager's only implementation path.",
-  promptSnippet: "Use handoff_to_worker to call worker only after providing objective, findings, target files, and decisions.",
+  promptSnippet: "Invoke worker with objective, findings, target files, and decisions.",
   promptGuidelines: [
-    "Use this instead of worker for every implementation step inside manager.",
-    "Populate handoff from finder/oracle/user context so worker does not rediscover prior work.",
+    "Manager must use this for implementation.",
+    "Populate handoff from user/finder/oracle context to avoid rediscovery.",
   ],
   parameters: handoffToWorkerSchema,
   async execute(toolCallId: string, params: HandoffToWorkerInput, signal, onUpdate, ctx) {
@@ -103,10 +103,10 @@ export const managerTool = defineTool({
   name: "manager",
   label: "Manager",
   description: "Launch an orchestration subagent that plans and coordinates finder, oracle, and worker workflows.",
-  promptSnippet: "Use manager for multi-step tasks that may need coordinated finder -> oracle -> worker workflows.",
+  promptSnippet: "Use manager for tasks spanning discovery, reasoning, and implementation.",
   promptGuidelines: [
-    "Use manager when a task spans discovery, reasoning, and implementation phases.",
-    "Manager orchestrates finder/oracle/worker as needed, but does not inspect or edit files directly.",
+    "Manager coordinates finder/oracle/worker phases.",
+    "Manager delegates all inspection/editing and implements only through handoff_to_worker.",
   ],
   parameters: managerSchema,
   renderCall(args, _theme, context) {

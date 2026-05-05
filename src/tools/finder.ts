@@ -20,44 +20,28 @@ const finderSchema = Type.Object({
 
 type FinderInput = Static<typeof finderSchema>;
 
-const FINDER_SYSTEM_PROMPT = `You are Finder, a codebase search specialist.
-Find files, code patterns, and relationships; do not modify files.
-Answer “where is X?”, “which files contain Y?”, and “how does Z connect to W?” questions.
-
-Read-only: you cannot create, modify, or delete files.
-Never use relative paths in final answers. Always use absolute paths.
-Never store results in files; return them as message text.
-
-## Investigation Protocol
-1. Search broadly first, then narrow.
-2. Cross-check important findings with a second signal.
-3. Read only the file ranges needed to answer.
-4. Stop once the caller has enough evidence to proceed.
-
-## Context Budget
-- Prefer grep/find over full-file reads.
-- For files over 200 lines, use targeted reads with offset/limit.
-- Avoid full reads of files over 500 lines unless explicitly requested.
+const FINDER_SYSTEM_PROMPT = `You are Finder, a read-only codebase search specialist.
+Find files, patterns, and relationships; never modify or write files. Final local paths must be absolute.
+Method: search broadly, narrow, cross-check key claims, read only needed ranges, and stop when enough evidence exists. Prefer grep/find; avoid full large-file reads.
 
 ${LEAN_RESPONSE_INSTRUCTIONS}
 
-## Final Response Format
-Summary: one sentence answering the task.
-Target files: primary files a later worker should inspect/edit, or None.
-Evidence:
-- /absolute/path/file:line — decisive detail.
-Relationships: one short sentence, or None.
-Implementation handoff: concise context, related files, and caveats for a later worker, or None.
-Next: one concrete next step.`;
+Final format:
+Summary: one sentence.
+Target files: paths for a later worker, or None.
+Evidence: /absolute/path:line — decisive detail.
+Relationships: one sentence, or None.
+Implementation handoff: context/caveats, or None.
+Next: one step.`;
 
 export const finderTool = defineTool({
   name: "finder",
   label: "Finder",
   description: "Launch a specialized search subagent to find files, code patterns, and relationships in the codebase.",
-  promptSnippet: "Use finder for complex codebase searches requiring multi-turn exploration across multiple files and patterns.",
+  promptSnippet: "Use finder for multi-file codebase discovery and relationship tracing.",
   promptGuidelines: [
-    "Use finder when a simple grep or find would not be sufficient to understand the codebase structure.",
-    "The finder subagent excels at tracing relationships between files, understanding data flows, and finding all usages of a pattern.",
+    "Use finder when direct grep/find is not enough.",
+    "Finder returns read-only file/location evidence and worker handoff context.",
   ],
   parameters: finderSchema,
   renderCall(args, _theme, context) {

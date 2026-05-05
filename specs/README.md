@@ -1,30 +1,24 @@
 # specs
 
-This directory contains Day Shift planning documents for Nightmanager implementation.
+Day Shift planning docs for Nightmanager.
 
 Rules:
+- Start new specs from `TEMPLATE.md`.
+- Keep unfinished specs as `draft-*.md`; Nightmanager ignores them.
+- Promote TODOs to `[ready]` only after human review and only when linked to a complete non-draft spec. Use `to-ready` for promotion.
+- Optimize specs for clear autonomous execution: testable acceptance, explicit validation, small scope.
 
-- Use `TEMPLATE.md` for new specs.
-- Prefix unfinished specs with `draft-`; autonomous runs must ignore them.
-- Only promote a TODO to `[ready]` when the linked spec is complete enough to implement without live human steering; use `to-ready` after review to promote draft specs and their associated draft TODOs.
-- Keep specs organized for human thinking first. Good specs reduce agent babysitting.
+## Drafts
 
-## Draft specs
+- Filename: `draft-<title>.md`
+- Linked TODOs stay `[draft]`
+- Promotion: remove `draft-`, set `Status: active`, update linked TODOs to `[ready]`, create one clean promotion commit
 
-Draft specs are created by Day Shift planning skills or human planning sessions:
-
-- Filename format: `draft-<title>.md`
-- Nightmanager ignores specs with `draft-` prefix
-- TODOs linked to draft specs should be tagged `[draft]`
-- Human must review and then run `to-ready` to promote: remove `draft-` from filename, set `Status: active`, change associated TODOs to `[ready]`, and create one clean promotion commit
-
-## Readiness Checklist
-
-Before promoting a draft spec, human must confirm:
+## Readiness checklist
 
 - Problem and desired behavior are clear
-- Scope is small enough for one Nightmanager TODO
+- Scope fits one focused Nightmanager TODO/commit
 - Acceptance criteria are testable
 - Edge cases and non-goals are documented
-- The spec includes a `## Testing Plan` section
+- `## Testing Plan` lists exact validation/manual checks, or says none are configured
 - Open questions are resolved or explicitly deferred

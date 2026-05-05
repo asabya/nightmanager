@@ -1,6 +1,6 @@
 # Spec: Nightmanager Loop marketing and branding
 
-Status: ready
+Status: completed
 Owner: human
 Created: 2026-04-29
 
