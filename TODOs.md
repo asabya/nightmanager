@@ -245,17 +245,20 @@ Nightmanager implementation queue.
     - npm run build
   - Notes: likely files include `src/tools/manager.ts`, `src/core/subagent-rendering.ts`, `src/core/transcript.ts`, `src/core/subagent.ts`, `tests/unit/subagent-rendering.test.ts`, and manager/subagent integration tests.
 
-- [ready] Deduplicate manager delegate rows in the live TUI
+- [done] Deduplicate manager delegate rows in the live TUI
   - Spec: `specs/manager-delegate-row-deduplication.md`
   - Scope: keep the usage-bearing manager delegate line and suppress the duplicate raw nested Finder/Oracle/Worker/Handoff row for the same delegate call inside the manager card.
   - Acceptance:
     - Each manager delegate call appears once and only once in the manager card.
     - The visible delegate row includes usage stats.
-    - Duplicate nested delegate rows are not rendered.
+    - Duplicate nested delegate rows are no longer rendered inside the manager card.
     - Manager usage still appears separately and only once.
-    - Live usage updates continue to work on the remaining delegate row.
+    - Live usage updates continue to refresh the remaining delegate row as usage changes.
+    - `handoff_to_worker` continues to display as `Worker`.
+    - Unit tests cover a manager transcript that contains both `managerDelegateCalls` and matching delegate `tool_call` entries and assert that only one visible row remains per delegate.
   - Validation:
     - npm run typecheck
     - npm test
     - npm run build
+  - Commit: 2dd214b
   - Notes: likely files include `src/core/subagent-rendering.ts`, `src/tools/manager.ts`, `src/core/transcript.ts`, and `tests/unit/subagent-rendering.test.ts`.
