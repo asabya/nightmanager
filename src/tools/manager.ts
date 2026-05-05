@@ -169,6 +169,7 @@ export const managerTool = defineTool({
           params: toolParams,
           status: "running",
           timestamp: Date.now(),
+          ...(toolCallId ? { toolCallId } : {}),
           ...(typeof delegateConfig?.model?.contextWindow === "number" ? { contextWindow: delegateConfig.model.contextWindow } : {}),
         };
         delegateCalls.push(record);

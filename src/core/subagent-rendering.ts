@@ -102,6 +102,25 @@ function latestToolCalls(details: SubagentTranscriptDetails): Array<Extract<Tran
     .map((item) => item.entry);
 }
 
+function isSameDelegateTool(callToolName: string, delegateToolName: string): boolean {
+  if (callToolName === delegateToolName) return true;
+  return callToolName === "handoff_to_worker" && delegateToolName === "worker";
+}
+
+function visibleToolCalls(details: SubagentTranscriptDetails): Array<Extract<TranscriptEntry, { type: "tool_call" }>> {
+  const calls = latestToolCalls(details);
+  const delegates = details.managerDelegateCalls ?? [];
+  if (details.tool !== "manager" || delegates.length === 0) return calls;
+
+  const delegatedToolCallIds = new Set(delegates.map((delegate) => delegate.toolCallId).filter((id): id is string => Boolean(id)));
+  if (delegatedToolCallIds.size > 0) {
+    return calls.filter((call) => !call.toolCallId || !delegatedToolCallIds.has(call.toolCallId));
+  }
+
+  const delegatedToolNames = new Set(delegates.map((delegate) => delegate.tool));
+  return calls.filter((call) => ![...delegatedToolNames].some((toolName) => isSameDelegateTool(call.toolName, toolName)));
+}
+
 function summaryLine(details: SubagentTranscriptDetails): string {
   const lines = (details.finalText ?? "")
     .split("\n")
@@ -234,7 +253,7 @@ export function buildCollapsedPreview(
   isPartial = false,
   spinnerIcon = DEFAULT_SPINNER_FRAME,
 ): string {
-  const calls = latestToolCalls(details);
+  const calls = visibleToolCalls(details);
   const visible = calls.slice(0, COLLAPSED_TOOL_LIMIT);
   const lines = [
     ...managerDelegateLines(details, spinnerIcon),
@@ -262,7 +281,7 @@ export function buildCollapsedPreview(
 export function buildExpandedTranscript(details: SubagentTranscriptDetails, spinnerIcon = DEFAULT_SPINNER_FRAME): string {
   const usageLabel = formatUsageLabel(details.usage);
   const lines = [`Status: ${details.status}${details.model ? ` · ${details.model}` : ""}${usageLabel ? ` · ${usageLabel}` : ""}`];
-  const calls = latestToolCalls(details);
+  const calls = visibleToolCalls(details);
 
   const delegates = managerDelegateLines(details, spinnerIcon);
   if (delegates.length > 0) {

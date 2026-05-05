@@ -89,19 +89,21 @@ describe("subagent rendering helpers", () => {
     })).toBe("✓ Worker patch manager delegate usage · ↑9.8k ↓1.1k $0.022 5.5%/200k");
   });
 
-  it("builds collapsed and expanded manager previews with all delegate usage lines", () => {
+  it("builds collapsed and expanded manager previews with one row per delegate call", () => {
     const details = {
       tool: "manager" as const,
       task: "orchestrate",
       status: "running" as const,
       usage: { input: 12100, output: 1400, cost: 0.031, totalTokens: 13500, contextWindow: 200000 },
       entries: [
-        { type: "tool_call" as const, toolName: "finder" as const, args: { query: "search render usage paths" }, timestamp: 1, toolCallId: "1" },
+        { type: "tool_call" as const, toolName: "finder" as const, args: { query: "search render usage paths" }, timestamp: 1, toolCallId: "delegate-1" },
+        { type: "tool_call" as const, toolName: "handoff_to_worker" as const, args: { task: "patch manager delegate usage" }, timestamp: 3, toolCallId: "delegate-3" },
+        { type: "tool_call" as const, toolName: "bash" as const, args: { command: "pwd" }, timestamp: 5, toolCallId: "internal-1" },
       ],
       managerDelegateCalls: [
-        { tool: "finder", params: { query: "search render usage paths" }, status: "completed" as const, timestamp: 1, usage: { input: 3200, output: 420, cost: 0.004, totalTokens: 3620, contextWindow: 200000 } },
+        { tool: "finder", params: { query: "search render usage paths" }, status: "completed" as const, timestamp: 1, toolCallId: "delegate-1", usage: { input: 3200, output: 420, cost: 0.004, totalTokens: 3620, contextWindow: 200000 } },
         { tool: "oracle", params: { query: "reason about updates" }, status: "running" as const, timestamp: 2, contextWindow: 272000 },
-        { tool: "handoff_to_worker", params: { task: "patch manager delegate usage" }, status: "failed" as const, timestamp: 3, contextWindow: 200000 },
+        { tool: "handoff_to_worker", params: { task: "patch manager delegate usage" }, status: "failed" as const, timestamp: 3, toolCallId: "delegate-3", contextWindow: 200000 },
         { tool: "finder", params: { query: "second pass" }, status: "running" as const, timestamp: 4, contextWindow: 200000 },
       ],
     };
@@ -112,10 +114,44 @@ describe("subagent rendering helpers", () => {
     expect(collapsed).toContain("⠼ Oracle reason about updates · $0.000 0.0%/272k");
     expect(collapsed).toContain("✕ Worker patch manager delegate usage · $0.000 0.0%/200k");
     expect(collapsed).toContain("⠼ Finder second pass · $0.000 0.0%/200k");
+    expect(collapsed).toContain("⠼ Bash pwd");
+    expect(collapsed).not.toContain("Handoff to Worker patch manager delegate usage");
+    expect(collapsed.match(/search render usage paths/g)).toHaveLength(1);
 
     const expanded = buildExpandedTranscript(details);
     expect(expanded).toContain("Delegate Usage");
     expect(expanded).toContain("Worker patch manager delegate usage");
+    expect(expanded).toContain("- ⠼ Bash pwd");
+    expect(expanded).not.toContain("- ✓ Finder search render usage paths");
+    expect(expanded).not.toContain("Handoff to Worker patch manager delegate usage");
+  });
+
+  it("keeps the manager delegate row updated without showing the raw delegate tool call", () => {
+    const details = {
+      tool: "manager" as const,
+      task: "orchestrate",
+      status: "running" as const,
+      entries: [
+        { type: "tool_call" as const, toolName: "oracle" as const, args: { query: "reason about updates" }, timestamp: 1, toolCallId: "delegate-1" },
+      ],
+      managerDelegateCalls: [
+        { tool: "oracle", params: { query: "reason about updates" }, status: "running" as const, timestamp: 1, toolCallId: "delegate-1", contextWindow: 272000 },
+      ],
+    };
+
+    expect(buildCollapsedPreview(details, true)).toContain("⠼ Oracle reason about updates · $0.000 0.0%/272k");
+    expect(buildCollapsedPreview(details, true).match(/Oracle reason about updates/g)).toHaveLength(1);
+
+    const updated = {
+      ...details,
+      managerDelegateCalls: [
+        { ...details.managerDelegateCalls[0], usage: { input: 4200, output: 600, cost: 0.011, totalTokens: 4800, contextWindow: 272000 } },
+      ],
+    };
+
+    const collapsed = buildCollapsedPreview(updated, true);
+    expect(collapsed).toContain("⠼ Oracle reason about updates · ↑4.2k ↓600 $0.011 1.8%/272k");
+    expect(collapsed.match(/Oracle reason about updates/g)).toHaveLength(1);
   });
 
   it("builds an expanded transcript with latest tool calls first and final response", () => {

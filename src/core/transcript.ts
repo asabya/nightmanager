@@ -34,6 +34,7 @@ export interface ManagerDelegateUsageDetails {
   params?: unknown;
   status: "running" | "completed" | "failed";
   timestamp: number;
+  toolCallId?: string;
   isError?: boolean;
   summary?: string;
   usage?: TranscriptUsage;
