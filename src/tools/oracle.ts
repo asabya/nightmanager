@@ -53,36 +53,19 @@ const PI_WEB_ACCESS_SEARCH_MODULE = "pi-web-access/gemini-search.ts";
 const PI_WEB_ACCESS_CODE_SEARCH_MODULE = "pi-web-access/code-search.ts";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
 
-const ORACLE_SYSTEM_PROMPT = `You are Oracle, a deep reasoning specialist for software debugging and nuanced technical planning.
-Investigate tricky problems, weigh competing explanations, and recommend the best next action.
-You are not responsible for implementing changes or editing files.
-
-Read-only in spirit: inspect code, search external sources, and run safe verification commands, but do not modify the repository.
-Never use relative paths in final answers. Always use absolute paths for local files and full URLs for web sources.
-
-## External Research Tools
-- Use web_search for current/external facts, release notes, issue reports, and public documentation not present in the repository.
-- Use code_search for remote code examples, API usage patterns, and library behavior from public code/docs.
-- Prefer local repository evidence first for project-specific behavior; use external evidence to resolve ambiguous dependencies or time-sensitive facts.
-- Cite external evidence by URL in the final answer.
-
-## Investigation Protocol
-1. State the observation before interpreting it.
-2. Consider 2-3 hypotheses when ambiguity exists.
-3. Gather evidence for and against the strongest hypotheses.
-4. Rank by confidence and evidence strength.
-5. End with a best explanation or one discriminating probe.
+const ORACLE_SYSTEM_PROMPT = `You are Oracle, a read-only debugging/planning specialist.
+Inspect code, run safe checks, and use web/code search only for external or dependency facts. Do not modify files. Final local paths must be absolute; external claims need URLs.
+Method: state observation, compare 2-3 hypotheses when needed, gather pro/con evidence, rank confidence, then give the best explanation or one discriminating probe.
 
 ${LEAN_RESPONSE_INSTRUCTIONS}
 
-## Final Response Format
-Assessment: best current explanation in one sentence.
-Evidence:
-- /absolute/path/file:line, full URL, or command — decisive detail.
-Hypotheses: ranked short list with confidence.
+Final format:
+Assessment: one sentence.
+Evidence: /absolute/path:line, command, or URL — decisive detail.
+Hypotheses: ranked with confidence.
 Recommendation: concrete action.
-Implementation handoff: root cause, recommended fix/approach, risks, constraints, and verification guidance for a later worker, or None.
-Next probe: single highest-value probe, or None.`;
+Implementation handoff: root cause/fix/risks/constraints/verification, or None.
+Next probe: one probe, or None.`;
 
 type WebSearchModule = {
   search: (query: string, options?: {
@@ -356,7 +339,7 @@ export const researchWebSearchTool = defineTool({
   name: "web_search",
   label: "Web Search",
   description: "Search the web via pi-web-access (Exa, Perplexity, or Gemini fallback) and return synthesized answers with sources.",
-  promptSnippet: "Use web_search for current/external facts, release notes, issue reports, and public documentation not present in the local repository.",
+  promptSnippet: "Use web_search for current/external facts not in the repo.",
   parameters: oracleWebSearchSchema,
   renderCall(args, theme) {
     const query = typeof args.query === "string" ? args.query : Array.isArray(args.queries) ? `${args.queries.length} queries` : "(no query)";
@@ -438,7 +421,7 @@ export const researchCodeSearchTool = defineTool({
   name: "code_search",
   label: "Code Search",
   description: "Search remote code examples, documentation, and API references via pi-web-access Exa MCP.",
-  promptSnippet: "Use code_search for remote API/library examples, docs, and implementation patterns before diagnosing library behavior.",
+  promptSnippet: "Use code_search for remote API/library examples and behavior.",
   parameters: oracleCodeSearchSchema,
   renderCall(args, theme) {
     const query = typeof args.query === "string" ? args.query : "(no query)";
@@ -483,10 +466,10 @@ export const oracleTool = defineTool({
   name: "oracle",
   label: "Oracle",
   description: "Launch a deep-reasoning subagent for debugging tricky problems and nuanced planning.",
-  promptSnippet: "Use oracle when you need deep reasoning for debugging, root-cause analysis, or trade-off-aware planning.",
+  promptSnippet: "Use oracle for debugging, root-cause analysis, and trade-off planning.",
   promptGuidelines: [
-    "Use oracle when the main agent is stuck between multiple explanations and needs evidence-backed reasoning.",
-    "The oracle subagent excels at debugging tricky failures, ranking hypotheses, and recommending the best next probe.",
+    "Use oracle when evidence must rank competing explanations.",
+    "Oracle returns a recommendation, risks, verification, and worker handoff context.",
   ],
   parameters: oracleSchema,
   renderCall(args, _theme, context) {

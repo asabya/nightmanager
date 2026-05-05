@@ -33,10 +33,10 @@ export const workerTool = defineTool({
   name: "worker",
   label: "Worker",
   description: "Launch a focused implementation subagent that makes small code changes and verifies them.",
-  promptSnippet: "Use worker for focused implementation tasks that need code edits and verification.",
+  promptSnippet: "Use worker for small verified code edits.",
   promptGuidelines: [
-    "Use worker for direct implementation work with minimal diffs and concrete verification.",
-    "Worker may use finder once when blocked by codebase uncertainty, but does not use oracle or recursively delegate.",
+    "Use worker when files/goal/verification are clear.",
+    "Worker can use finder once if blocked; it cannot use oracle or delegate recursively.",
   ],
   parameters: workerSchema,
   renderCall(args, _theme, context) {

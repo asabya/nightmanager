@@ -183,8 +183,6 @@ add_context_file "prompts/agents.md"
 add_context_file "prompts/agent-loop.md"
 add_context_file "TODOs.md"
 add_context_file "prompts/review-personas.md"
-add_context_file "README.md"
-add_context_file "package.json"
 
 if [[ -n "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then
   if [[ ! -f "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then

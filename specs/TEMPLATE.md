@@ -6,7 +6,7 @@ Created: <yyyy-mm-dd>
 
 ## Problem
 
-What user or maintainer problem are we solving? Why now?
+What problem are we solving, and why now?
 
 ## Goals
 
@@ -18,11 +18,11 @@ What user or maintainer problem are we solving? Why now?
 
 ## Current Behavior
 
-Describe the relevant current behavior and files/modules if known.
+Relevant current behavior and likely files/modules, if known.
 
 ## Desired Behavior
 
-Describe the target behavior in enough detail that an agent can test it.
+Target behavior in enough detail that an agent can test it.
 
 ## Acceptance Criteria
 
@@ -36,7 +36,7 @@ Describe the target behavior in enough detail that an agent can test it.
 
 ## Suggested Approach
 
-Optional. Include architectural guidance, likely files, trade-offs, and rejected alternatives.
+Optional guidance: likely files, architecture, trade-offs, rejected alternatives.
 
 ## Testing Plan
 
@@ -48,11 +48,11 @@ npm test
 npm run build  # alias for typecheck; no dist output
 ```
 
-Add narrower tests or manual checks here. This section is the single source of truth for Nightmanager validation in specs created for this repository.
+Add narrower tests or manual checks here. This section is Nightmanager's single validation source for this spec.
 
 ## Documentation Updates
 
-List docs, README sections, examples, or comments that should change.
+Docs, README sections, examples, or comments that should change.
 
 ## Risks / Open Questions
 
