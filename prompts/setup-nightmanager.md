@@ -1,69 +1,51 @@
 # Setup Nightmanager Project Files
 
-Use this prompt to initialize a repository for the Nightmanager workflow.
-
-## Goal
-
-Create or update the local planning files needed for autonomous, reviewable implementation:
-
-- `specs/`
-- `specs/README.md`
-- `specs/TEMPLATE.md`
-- `TODOs.md`
-
-Do not implement product code while running this setup prompt.
+Initialize a repo for Nightmanager autonomous, reviewable implementation. Create/update only planning files: `specs/`, `specs/README.md`, `specs/TEMPLATE.md`, `TODOs.md`. Do not implement product code.
 
 ## Instructions
 
-1. Inspect the repository enough to understand its language, package manager, task runners, CI validation commands, and documentation layout.
-2. Determine the repository default Testing Plan once during setup:
-   - Prefer explicit project commands that already exist in repo-local task runners, manifests, or CI configuration.
-   - Prefer safe validation commands such as test, typecheck, lint, vet, check, build, or format-check commands.
-   - Avoid destructive, deploy, publish, release, migration, or external-service commands.
-   - If multiple plausible command sets exist or the right command is unclear, ask the user to confirm or edit the Testing Plan before writing it.
-   - If no automated validation command is configured or safely inferable, use the explicit no-validation marker shown in the template.
-3. Create `specs/` if it does not exist.
-4. Create `specs/README.md` if it does not exist, using the guide below.
-5. Create `specs/TEMPLATE.md` if it does not exist, using the template below and replacing the Testing Plan placeholder with the setup-time repository default.
-6. If `specs/TEMPLATE.md` already exists and still contains the old hardcoded npm Testing Plan, replace only that old hardcoded block with the setup-time repository default.
-7. Do not change an existing custom `specs/TEMPLATE.md` Testing Plan.
-8. Create `TODOs.md` if it does not exist, using the queue template below.
-9. If files already exist, preserve existing work and only add missing Nightmanager sections after confirming the local format.
-10. End with a concise report listing files created/updated, whether the Testing Plan was created/replaced/preserved, and any follow-up setup needed.
+1. Inspect enough to identify language, package manager, task runners, CI validation, and docs layout.
+2. Determine the default `## Testing Plan` once:
+   - Prefer existing safe repo/CI commands: test, typecheck, lint, vet, check, build, format-check.
+   - Avoid deploy, publish, release, migrations, destructive/external-service commands.
+   - If ambiguous, ask the user to confirm/edit before writing.
+   - If none are safe/configured, use the no-validation marker in the template.
+3. Create `specs/` if missing.
+4. Create `specs/README.md` if missing, using the guide below.
+5. Create `specs/TEMPLATE.md` if missing, replacing the Testing Plan placeholder with the default.
+6. If `specs/TEMPLATE.md` still has the old hardcoded npm Testing Plan, replace only that block with the default.
+7. Preserve existing custom Testing Plans.
+8. Create `TODOs.md` if missing, using the queue template below.
+9. If files exist, preserve work and add only missing Nightmanager sections after confirming local format.
+10. Report files changed, whether Testing Plan was created/replaced/preserved, and follow-up setup.
 
 ## `specs/README.md`
 
 ```md
 # specs
 
-This directory contains Day Shift planning documents for Nightmanager implementation.
+Day Shift planning documents for Nightmanager.
 
 Rules:
-
 - Use `TEMPLATE.md` for new specs.
-- Prefix unfinished specs with `draft-`; autonomous runs must ignore them.
-- Only promote a TODO to `[ready]` when the linked spec is complete enough to implement without live human steering; use `to-ready` after review to promote draft specs and their associated draft TODOs.
-- Keep specs organized for human thinking first. Good specs reduce agent babysitting.
+- Prefix unfinished specs `draft-`; Nightmanager ignores them.
+- Promote TODOs to `[ready]` only when linked to a complete non-draft spec; `to-ready` can promote reviewed drafts.
+- Specs optimize human thinking first; good specs reduce agent babysitting.
 
 ## Draft specs
 
-Draft specs are created by Day Shift planning skills or human planning sessions:
-
-- Filename format: `draft-<title>.md`
-- Nightmanager ignores specs with `draft-` prefix
-- TODOs linked to draft specs should be tagged `[draft]`
-- Human must review and then run `to-ready` to promote: remove `draft-` from filename, set `Status: active`, change associated TODOs to `[ready]`, and create one clean promotion commit
+- Filename: `draft-<title>.md`
+- TODOs linked to drafts stay `[draft]`
+- Human review + `to-ready`: remove `draft-`, set `Status: active`, mark TODOs `[ready]`, make one promotion commit
 
 ## Readiness Checklist
 
-Before promoting a draft spec, human must confirm:
-
-- Problem and desired behavior are clear
-- Scope is small enough for one Nightmanager TODO
-- Acceptance criteria are testable
-- Edge cases and non-goals are documented
-- The linked spec includes a `## Testing Plan` section
-- Open questions are resolved or explicitly deferred
+- Problem/desired behavior clear
+- Scope small enough for one Nightmanager TODO
+- Acceptance criteria testable
+- Edge cases/non-goals documented
+- Includes `## Testing Plan`
+- Open questions resolved or deferred
 ```
 
 ## `specs/TEMPLATE.md`
@@ -77,7 +59,7 @@ Created: <yyyy-mm-dd>
 
 ## Problem
 
-What user or maintainer problem are we solving? Why now?
+What problem are we solving, and why now?
 
 ## Goals
 
@@ -89,11 +71,11 @@ What user or maintainer problem are we solving? Why now?
 
 ## Current Behavior
 
-Describe the relevant current behavior and files/modules if known.
+Relevant current behavior and likely files/modules, if known.
 
 ## Desired Behavior
 
-Describe the target behavior in enough detail that an agent can test it.
+Target behavior in enough detail that an agent can test it.
 
 ## Acceptance Criteria
 
@@ -107,20 +89,20 @@ Describe the target behavior in enough detail that an agent can test it.
 
 ## Suggested Approach
 
-Optional. Include architectural guidance, likely files, trade-offs, and rejected alternatives.
+Optional guidance, likely files, trade-offs, rejected alternatives.
 
 ## Testing Plan
 
-<!-- setup-nightmanager replaces this section with the repository default. If no automated validation is configured, use:
+<!-- setup-nightmanager replaces this with the repo default. If no automated validation is configured, use:
 
 No automated validation commands configured for this repository.
 
-Add manual checks or project-specific commands when this spec requires them.
+Add manual checks or spec-specific commands when needed.
 -->
 
 ## Documentation Updates
 
-List docs, README sections, examples, or comments that should change.
+Docs, README sections, examples, or comments that should change.
 
 ## Risks / Open Questions
 
@@ -136,31 +118,25 @@ Nightmanager implementation queue.
 
 ## Status Tags
 
-- `[bug]` — eligible; highest priority defect. May omit a linked spec; Nightmanager then uses `specs/TEMPLATE.md ## Testing Plan`.
-- `[ready]` — eligible for autonomous implementation only when linked to a non-draft spec.
-- `[draft]` — not eligible; still being planned. Created by Day Shift planner or human. Human must promote it to `[ready]` before Nightmanager can pick it up.
-- `[blocked]` — not eligible until the reason is resolved.
+- `[bug]` — eligible urgent defect; may omit spec and then uses `specs/TEMPLATE.md ## Testing Plan`.
+- `[ready]` — eligible only with a non-draft linked spec.
+- `[draft]` — not eligible until human-promoted.
+- `[blocked]` — not eligible until reason resolved.
 - `[in-progress]` — currently being worked.
-- `[done]` — complete; include commit hash once available. Include PR URL only when PR creation succeeds.
+- `[done]` — complete; include commit hash, and PR URL only if PR creation succeeds.
 
 ## Queue
 
 <!--
-Example:
-
-- [draft] Add concise feature title
-  - Spec: `specs/draft-feature-title.md`
-  - Scope: one independently reviewable vertical slice.
+- [draft] Add concise title
+  - Spec: `specs/draft-title.md`
+  - Scope: one reviewable vertical slice.
   - Acceptance:
     - Observable, testable behavior.
-  - Notes: risks, constraints, or follow-ups. Validation comes from the linked spec's Testing Plan.
+  - Notes: risks/constraints/follow-ups. Validation comes from the spec Testing Plan.
 -->
 ```
 
-## Nightmanager Compatibility
+## Compatibility
 
-- Keep unfinished specs as `specs/draft-*.md`.
-- Keep unapproved TODOs as `[draft]`.
-- Promote work to `[ready]` only after human review and after linking a non-draft spec.
-- Use `[bug]` only for urgent defects that are safe for autonomous implementation.
-- Keep each TODO small enough for one focused implementation and commit.
+Keep unfinished specs as `specs/draft-*.md`, unapproved TODOs as `[draft]`, and promoted work as small `[ready]` TODOs linked to non-draft specs. Use `[bug]` only for urgent safe defects. Keep each TODO one focused commit.

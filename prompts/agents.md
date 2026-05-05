@@ -1,39 +1,30 @@
 # Project Agent Router
 
-This repository uses a Nightmanager workflow for autonomous, reviewable implementation with Pi nightmanager.
+Nightmanager workflow for autonomous, reviewable implementation in Pi.
 
-## Start Here
+## Read first
 
-When asked to do autonomous work, read these files in order:
+1. `prompts/agent-loop.md`
+2. `TODOs.md`
+3. Runner-selected active spec only, or `specs/TEMPLATE.md` for a spec-less `[bug]`
+4. `prompts/review-personas.md`
+5. `README.md`/manifests only as needed
 
-1. `prompts/agent-loop.md` — operating procedure for Day Shift planning and Nightmanager execution.
-2. `TODOs.md` — the implementation queue. Only items marked `[ready]` or `[bug]` are eligible for autonomous implementation.
-3. The runner-selected active spec only, or `specs/TEMPLATE.md` for a `[bug]` TODO without a linked spec. Do not load unrelated specs.
-4. `prompts/review-personas.md` — review lenses to apply before and after implementation.
-5. `README.md` and repo manifests — repository overview, commands, and conventions.
+Do not load unrelated specs.
 
-## Subagent Routing
+## Route
 
-Use the installed subagent tools this way:
+- `finder`: discover files, usages, relationships.
+- `oracle`: diagnose failures, ambiguity, trade-offs.
+- `worker`: focused edits when files/verification are clear.
+- `manager`: broad TODO/spec work needing discovery + reasoning + implementation.
 
-- `finder`: codebase discovery, feature tracing, usage search.
-- `oracle`: root-cause analysis, ambiguous failures, trade-off decisions.
-- `worker`: focused edits when target files and verification are already clear.
-- `manager`: broad TODO/spec implementation that may need discovery, reasoning, implementation, and verification.
+For Nightmanager execution, delegate the selected TODO to `manager` unless the human explicitly says otherwise.
 
-For Nightmanager execution, the outer Pi session should delegate the selected TODO to `manager`. Do not bypass `manager` for implementation unless the human explicitly asks.
+## Validation
 
-## Testing Plan Source of Truth
+Use only the active spec's `## Testing Plan`; for spec-less `[bug]`, use `specs/TEMPLATE.md ## Testing Plan`. Do not duplicate or infer commands. Run narrow listed checks before the full listed set. If the plan says no automated validation, run none and report it.
 
-Use the selected active batch's linked spec `## Testing Plan` as the single source of truth for validation. Do not duplicate or infer repository validation commands here.
+## Commits
 
-For `[bug]` TODOs without a linked spec, use `specs/TEMPLATE.md ## Testing Plan` as the repository default. If the selected Testing Plan says no automated validation commands are configured, run no test/typecheck/build commands and report that limitation.
-
-Run the narrowest relevant checks from the selected Testing Plan first, then the full listed validation set before committing.
-
-## Commit Discipline
-
-- Keep each completed TODO in its own commit.
-- Commit messages must explain intent, important design choices, tests run, and any follow-up notes.
-- Do not mix unrelated TODOs in one commit.
-- If a TODO is ambiguous or unsafe, update `TODOs.md` with `[blocked]` and a concise reason instead of guessing.
+One coherent commit per completed TODO. Message should cover intent, design choices, tests, and follow-ups. Do not mix unrelated TODOs. If unsafe/ambiguous, mark `[blocked]` in `TODOs.md` with a concise reason.
