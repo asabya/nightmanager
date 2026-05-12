@@ -4,7 +4,8 @@ set -euo pipefail
 # Run one autonomous Nightmanager cycle for this repository.
 # Intended for cron/launchd. Configure with env vars below.
 
-ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+NIGHTMANAGER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="${PROJECT_ROOT:-$NIGHTMANAGER_ROOT}"
 PI_BIN="${PI_BIN:-pi}"
 NIGHTSHIFT_THINKING="${NIGHTSHIFT_THINKING:-high}"
 LOG_DIR="${NIGHTSHIFT_LOG_DIR:-$ROOT/.pi/nightmanager/logs}"
@@ -31,7 +32,7 @@ fi
 
 SUBAGENTS_EXTENSION="${SUBAGENTS_EXTENSION:-}"
 if [[ -z "$SUBAGENTS_EXTENSION" ]]; then
-  SUBAGENTS_EXTENSION="$ROOT/src/index.ts"
+  SUBAGENTS_EXTENSION="$NIGHTMANAGER_ROOT/src/index.ts"
 fi
 
 if [[ ! -f "$SUBAGENTS_EXTENSION" ]]; then
@@ -179,10 +180,10 @@ add_context_file() {
   fi
 }
 
-add_context_file "prompts/agents.md"
-add_context_file "prompts/agent-loop.md"
+add_context_file "$NIGHTMANAGER_ROOT/prompts/agents.md"
+add_context_file "$NIGHTMANAGER_ROOT/prompts/agent-loop.md"
 add_context_file "TODOs.md"
-add_context_file "prompts/review-personas.md"
+add_context_file "$NIGHTMANAGER_ROOT/prompts/review-personas.md"
 
 if [[ -n "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then
   if [[ ! -f "$NIGHTMANAGER_ACTIVE_SPEC" ]]; then
@@ -194,11 +195,12 @@ else
   add_context_file "specs/TEMPLATE.md"
 fi
 
-add_context_file "prompts/nightmanager.md"
+add_context_file "$NIGHTMANAGER_ROOT/prompts/nightmanager.md"
 
 {
   echo "Nightmanager started at $stamp"
   echo "Root: $ROOT"
+  echo "Nightmanager root: $NIGHTMANAGER_ROOT"
   echo "Extension: $SUBAGENTS_EXTENSION"
   echo "Session dir: $SESSION_DIR"
   echo "Selected TODO: [$NIGHTMANAGER_TODO_STATUS] $NIGHTMANAGER_TODO_TITLE"

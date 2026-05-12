@@ -4,8 +4,8 @@ set -euo pipefail
 # Deprecated compatibility shim.
 # Prefer scripts/nightmanager.sh.
 
-ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-CANONICAL="$ROOT/scripts/nightmanager.sh"
+NIGHTMANAGER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CANONICAL="$NIGHTMANAGER_ROOT/scripts/nightmanager.sh"
 
 if [[ ! -x "$CANONICAL" ]]; then
   echo "Missing canonical Nightmanager runner: $CANONICAL" >&2
