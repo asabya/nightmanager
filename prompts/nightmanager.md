@@ -63,7 +63,7 @@ Nightmanager turns human-approved specs/TODOs into small, reviewable autonomous 
 - Unfinished specs are prefixed `draft-`; Nightmanager ignores them.
 - `[ready]` TODOs are human-approved and linked to non-draft specs.
 - `[bug]` TODOs are urgent safe defects and may omit a spec.
-- Planning skills (`to-prd`, `to-issues`, `grill-me`, `to-ready`) are advisory before this run.
+- Planning skills (`grill-me`, `wayfinder`, `research`, `to-spec`, `to-tickets`, `to-ready`) are advisory before this run. Interactive `/implement` may also work the same queue; skip any TODO marked `[in-progress]`, since that is its claim lock.
 
 ### Implementation loop
 
@@ -77,11 +77,15 @@ Nightmanager turns human-approved specs/TODOs into small, reviewable autonomous 
 
 ## Embedded review lenses
 
-Use these lightweight lenses before commit and in final review; note blockers, suggestions, and docs/workflow gaps.
+Mirror of `prompts/review-personas.md` (canonical); apply before commit and in final review along two independent axes. A change can pass one and fail the other, so keep them separate.
+
+**Axis 1 — Standards** (does it follow how this repo writes code?):
 
 - **Designer / API:** clear names/messages/flags/docs, discoverable behavior, no surprises.
 - **Architect:** fits module boundaries, minimal but not brittle, justified abstractions, preserves extension points.
-- **Domain expert:** satisfies spec/acceptance, covers edge cases, surfaces ambiguity instead of guessing.
 - **Code expert:** meaningful tests, error paths covered, type/build/test/format checks pass.
 - **Performance/cost:** avoids needless scans, subprocesses, context, token use, and scalability regressions.
 - **Human advocate:** small reviewable diff, useful commit message, docs/TODOs updated, risks/follow-ups explicit.
+- **Code-smell baseline** (Fowler; judgement calls, and a documented repo standard overrides them): Mysterious Name, Duplicated Code, Feature Envy, Data Clumps, Primitive Obsession, Repeated Switches, Shotgun Surgery, Divergent Change, Speculative Generality, Message Chains, Middle Man, Refused Bequest. Name the smell and quote the hunk; skip anything tooling enforces.
+
+**Axis 2 — Spec** (does it implement what the active spec/TODO asked?): requirements satisfied vs. missing/partial, behaviour not asked for (scope creep), and requirements implemented wrong. Quote the spec/acceptance line for each finding. For a spec-less `[bug]`, skip this axis.

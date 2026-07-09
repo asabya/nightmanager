@@ -8,7 +8,8 @@ Nightmanager turns human-approved specs/TODOs into small, reviewable autonomous 
 - Prefix unfinished specs `draft-`; Nightmanager ignores them.
 - Add `TODOs.md` items: `[ready]` only for non-draft linked specs; `[bug]` for urgent safe defects (may omit spec and then uses `specs/TEMPLATE.md ## Testing Plan`); `[draft]`/`[blocked]` otherwise.
 - Strengthen docs, acceptance criteria, and validation before autonomous runs.
-- Optional planning skills: `to-prd`, `to-issues`, `grill-me`. Their output is advisory until human-promoted, e.g. with `to-ready`.
+- Optional planning skills: `grill-me`, `wayfinder` (large foggy efforts), `research`, `to-spec`, `to-tickets`. Their output is advisory until human-promoted, e.g. with `to-ready`.
+- Optional attended implementation: `/implement` works one ready ticket in the foreground (TDD → `/code-review` → commit), claiming it with `[in-progress]` so this run skips it.
 
 ## Nightmanager run
 

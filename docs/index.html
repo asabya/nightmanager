@@ -536,23 +536,23 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title fade-in">The Nightmanager Loop</h2>
-          <p class="section-subtitle fade-in fade-in-delay-1">grill-me → to-prd → to-issues → to-ready → /nightmanager</p>
+          <p class="section-subtitle fade-in fade-in-delay-1">grill-me / wayfinder → to-spec → to-tickets → to-ready → /implement or /nightmanager → /code-review</p>
         </div>
         <div class="card-grid card-grid-5">
           <div class="card fade-in fade-in-delay-1">
             <div class="card-icon">❓</div>
             <div class="card-title">Grill the intent</div>
-            <p class="card-description">Use grill-me to interrogate a feature, bug, or plan until hidden requirements, risks, and trade-offs are surfaced.</p>
+            <p class="card-description">Use grill-me to interrogate a feature, bug, or plan one question at a time until hidden requirements, risks, and trade-offs surface. For efforts too big for one session, wayfinder charts a local map of investigation tickets first.</p>
           </div>
           <div class="card fade-in fade-in-delay-2">
             <div class="card-icon">📝</div>
-            <div class="card-title">Generate the spec</div>
-            <p class="card-description">Use to-prd to turn the clarified conversation into a concrete local spec with goals, acceptance criteria, tests, and risks.</p>
+            <div class="card-title">Synthesise the spec</div>
+            <p class="card-description">Use to-spec to turn the clarified conversation into a concrete local spec with goals, acceptance criteria, tests, and risks — no second interview.</p>
           </div>
           <div class="card fade-in fade-in-delay-3">
             <div class="card-icon">✂️</div>
-            <div class="card-title">Slice the work</div>
-            <p class="card-description">Use to-issues to break the spec into small, vertical local TODOs that are safe for one focused implementation pass.</p>
+            <div class="card-title">Slice into tickets</div>
+            <p class="card-description">Use to-tickets to break the spec into small, vertical local TODOs, each declaring its blocking edges and safe for one focused implementation pass.</p>
           </div>
           <div class="card fade-in fade-in-delay-4">
             <div class="card-icon">✅</div>
@@ -561,8 +561,8 @@
           </div>
           <div class="card fade-in fade-in-delay-5">
             <div class="card-icon">🌙</div>
-            <div class="card-title">Delegate AFK implementation</div>
-            <p class="card-description">Run /nightmanager to select the active ready/bug batch, delegate through subagents, validate, commit, and prepare a PR.</p>
+            <div class="card-title">Implement, attended or AFK</div>
+            <p class="card-description">Run /nightmanager to delegate the active batch through subagents, or /implement to work one ticket in the foreground (TDD → /code-review → commit). Both draw the same queue and end in a two-axis code review.</p>
           </div>
         </div>
       </div>
