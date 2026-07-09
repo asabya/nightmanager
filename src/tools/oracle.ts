@@ -50,7 +50,6 @@ const oracleCodeSearchSchema = Type.Object({
 type OracleCodeSearchInput = Static<typeof oracleCodeSearchSchema>;
 
 const PI_WEB_ACCESS_SEARCH_MODULE = "pi-web-access/gemini-search.ts";
-const PI_WEB_ACCESS_CODE_SEARCH_MODULE = "pi-web-access/code-search.ts";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
 
 const ORACLE_SYSTEM_PROMPT = `You are Oracle, a read-only debugging/planning specialist.
@@ -107,12 +106,8 @@ async function loadWebSearchModule(): Promise<WebSearchModule> {
 }
 
 async function loadCodeSearchModule(): Promise<CodeSearchModule> {
-  try {
-    const moduleName = PI_WEB_ACCESS_CODE_SEARCH_MODULE;
-    return await import(moduleName) as CodeSearchModule;
-  } catch {
-    return { executeCodeSearch: executePiWebAccessCodeSearchFallback };
-  }
+  // pi-web-access removed code-search.ts in 0.12+; use the Exa-MCP fallback directly.
+  return { executeCodeSearch: executePiWebAccessCodeSearchFallback };
 }
 
 type ExaMcpRpcResponse = {

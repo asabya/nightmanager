@@ -1,6 +1,6 @@
 {
   "name": "nightmanager",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": false,
   "type": "module",
   "description": "Finder, Oracle, Manager, and Worker tools for Pi's Nightmanager workflow",
@@ -30,7 +30,7 @@
     "test:e2e": "vitest run tests/e2e"
   },
   "dependencies": {
-    "pi-web-access": "^0.10.6"
+    "pi-web-access": "^0.13.0"
   },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
@@ -41,8 +41,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "^5.8.3",
-    "vitest": "^4.1.4"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "pi": {
     "extensions": [
