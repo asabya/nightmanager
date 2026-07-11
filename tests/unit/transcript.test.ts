@@ -6,6 +6,7 @@ import {
   appendToolCall,
   appendToolResult,
   setTranscriptUsage,
+  addTranscriptUsage,
   finalizeTranscriptDetails,
   SubagentName,
   TranscriptStatus,
@@ -161,6 +162,57 @@ describe("transcript", () => {
       
       // Verify finalText is derived from the last assistant_text entry
       expect(details.finalText).toBe("Derived final text");
+    });
+  });
+
+  describe("addTranscriptUsage - accumulation across turns", () => {
+    it("should treat the first turn as the base with turns=1", () => {
+      const usage = addTranscriptUsage(undefined, {
+        input: 100,
+        output: 20,
+        cost: 0.001,
+        totalTokens: 120,
+        contextWindow: 200000,
+      });
+      expect(usage).toEqual({
+        input: 100,
+        output: 20,
+        cost: 0.001,
+        totalTokens: 120,
+        contextWindow: 200000,
+        turns: 1,
+      });
+    });
+
+    it("should sum billing fields, keep latest gauge fields, and count turns", () => {
+      const turn1 = addTranscriptUsage(undefined, {
+        input: 1000,
+        output: 250,
+        cacheRead: 50,
+        cacheWrite: 10,
+        cost: 0.012,
+        totalTokens: 1310,
+        contextWindow: 200000,
+      });
+      const turn2 = addTranscriptUsage(turn1, {
+        input: 2000,
+        output: 400,
+        cacheRead: 100,
+        cacheWrite: 5,
+        cost: 0.03,
+        totalTokens: 2505,
+        contextWindow: 200000,
+      });
+
+      expect(turn2.input).toBe(3000);
+      expect(turn2.output).toBe(650);
+      expect(turn2.cacheRead).toBe(150);
+      expect(turn2.cacheWrite).toBe(15);
+      expect(turn2.cost).toBeCloseTo(0.042, 10);
+      // gauge fields reflect the latest turn, not a sum
+      expect(turn2.totalTokens).toBe(2505);
+      expect(turn2.contextWindow).toBe(200000);
+      expect(turn2.turns).toBe(2);
     });
   });
 

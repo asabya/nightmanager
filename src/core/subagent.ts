@@ -8,11 +8,13 @@ import {
   type SubagentName,
   type ToolName,
   type SubagentTranscriptDetails,
+  type TranscriptUsage,
   createTranscriptState,
   appendAssistantText,
   appendToolCall,
   appendToolResult,
   setTranscriptUsage,
+  addTranscriptUsage,
   finalizeTranscriptDetails,
 } from "./transcript.js";
 
@@ -267,6 +269,7 @@ async function runIsolatedSubagentImpl(
 
     // Subscribe to agent events for transcript updates
     let hasStreamingText = false;
+    let completedUsage: TranscriptUsage | undefined;
 
     const collectTextBlocks = (content: Array<{ type: string; text?: string }>): string =>
       content
@@ -290,10 +293,16 @@ async function runIsolatedSubagentImpl(
       };
     };
 
-    const captureUsage = (message: unknown): boolean => {
+    const captureUsage = (message: unknown, final: boolean): boolean => {
       const usage = normalizeUsage((message as { usage?: unknown } | undefined)?.usage);
       if (!usage) return false;
-      transcriptState = setTranscriptUsage(transcriptState, usage);
+      if (final) {
+        completedUsage = addTranscriptUsage(completedUsage, usage);
+        transcriptState = setTranscriptUsage(transcriptState, completedUsage);
+      } else {
+        // Live overlay: committed turns + this in-progress turn; do NOT mutate committed.
+        transcriptState = setTranscriptUsage(transcriptState, addTranscriptUsage(completedUsage, usage));
+      }
       return true;
     };
 
@@ -328,7 +337,7 @@ async function runIsolatedSubagentImpl(
           const delta = assistantEvent?.delta;
 
           if (message.role === "assistant" && Array.isArray(message.content)) {
-            const usageChanged = captureUsage(message);
+            const usageChanged = captureUsage(message, false);
             const fallbackText = collectTextBlocks(message.content as Array<{ type: string; text?: string }>);
             const textToAppend = delta || fallbackText;
 
@@ -346,7 +355,7 @@ async function runIsolatedSubagentImpl(
         case "message_end": {
           const message = event.message;
           if (message.role === "assistant" && Array.isArray(message.content)) {
-            const usageChanged = captureUsage(message);
+            const usageChanged = captureUsage(message, true);
             const finalAssistantText = collectTextBlocks(message.content as Array<{ type: string; text?: string }>);
             if (finalAssistantText) {
               if (!hasStreamingText) {
