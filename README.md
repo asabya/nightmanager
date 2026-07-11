@@ -11,14 +11,18 @@ Borrowed/remixed with appreciation from https://github.com/mattpocock/skills.
 ## Loop
 
 ```text
-grill-me → to-prd → to-issues → to-ready → /nightmanager → PR review
+grill-me / wayfinder → to-spec → to-tickets → to-ready → ( /implement | /nightmanager ) → /code-review → PR review
 ```
 
-1. `grill-me`: interrogate unclear intent one question at a time.
-2. `to-prd`: create a local draft spec in `specs/draft-*.md`.
-3. `to-issues`: slice the spec into vertical draft `TODOs.md` entries.
-4. `to-ready`: promote reviewed specs/TODOs and create one promotion commit.
-5. `/nightmanager`: select the active ready/bug batch, implement through subagents, validate, commit, push, and open one PR when possible.
+1. `grill-me`: interrogate unclear intent one question at a time. For large, foggy efforts, `wayfinder` charts a local map of investigation tickets first.
+2. `to-spec`: synthesise a local draft spec in `specs/draft-*.md`.
+3. `to-tickets`: slice the spec into vertical draft `TODOs.md` tickets.
+4. `to-ready`: promote reviewed specs/tickets and create one promotion commit.
+5. Implement — two ways from the same queue:
+   - `/nightmanager` (AFK): select the active ready/bug batch, implement through subagents, validate, commit, push, and open one PR when possible.
+   - `/implement` (attended): work one ready ticket in the foreground — TDD where seams allow, then `/code-review`, then commit. Claims its ticket with `[in-progress]` so the night shift skips it.
+
+Both paths apply the two-axis review (`/code-review`); `research` gathers primary-source notes when a ticket needs them.
 
 Runtime context is intentionally lean: the runner preloads only shared Nightmanager prompts, `TODOs.md`, and the active spec/template. Agents read `README.md`, manifests, or unrelated docs only when needed.
 
@@ -56,12 +60,17 @@ Run this repo from source:
 pi -e ./src/index.ts
 ```
 
-## Planning skills
+## Planning and implementation skills
 
-- `grill-me`: ask one question at a time until goals, risks, and trade-offs are clear.
-- `to-prd`: write `specs/draft-<slug>.md` from the current idea/conversation.
-- `to-issues`: add draft local `TODOs.md` slices; no GitHub issues unless requested.
-- `to-ready`: promote reviewed draft specs/TODOs and commit only the promotion.
+- `grill-me`: ask one question at a time (facts looked up, decisions put to you) until goals, risks, and trade-offs are clear; a confirmation gate keeps it from jumping to a spec or implementation.
+- `wayfinder`: for efforts too big for one session — chart a local `specs/map-<slug>.md` of research/grilling/task tickets and resolve them one at a time until the way is clear.
+- `research`: dispatch the `librarian` to investigate a question against primary sources and save a note under `docs/research/`.
+- `to-spec`: synthesise `specs/draft-<slug>.md` from the current conversation (no interview).
+- `to-tickets`: add vertically-sliced draft `TODOs.md` tickets with blocking edges; no GitHub issues unless requested.
+- `to-ready`: promote reviewed draft specs/tickets and commit only the promotion.
+- `/implement`: attended implementation of one ready ticket (TDD → `/code-review` → commit); the foreground counterpart to `/nightmanager`.
+- `/code-review`: two-axis review of a diff — Standards (repo conventions + Fowler code smells) and Spec (matches the ticket) — run as parallel sub-agents. Also applied inline by the night shift.
+- `tdd`: reference material for the red → green loop used by `/implement` and the night-shift worker.
 
 ## Tool details
 

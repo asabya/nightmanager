@@ -430,9 +430,63 @@ describe("runIsolatedSubagent", () => {
         onUpdate,
       });
 
-      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003, totalTokens: 1350, contextWindow: 272000 });
+      expect(onUpdate.mock.calls[0][0].details.usage).toEqual({ input: 1200, output: 100, cacheRead: 50, cacheWrite: 0, cost: 0.003, totalTokens: 1350, contextWindow: 272000, turns: 1 });
       expect(onUpdate.mock.calls.length).toBeLessThan(events.length + 1);
-      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006, totalTokens: 1450, contextWindow: 272000 });
+      expect(result.details.usage).toEqual({ input: 1200, output: 200, cacheRead: 50, cacheWrite: 0, cost: 0.006, totalTokens: 1450, contextWindow: 272000, turns: 1 });
+    });
+
+    it("accumulates usage across turns separated by a tool call", async () => {
+      const onUpdate = vi.fn();
+      const ctx = createMockContext();
+      const model = createMockModel();
+
+      // Two assistant turns (two API calls) with a tool round-trip between them.
+      // Each message carries only its own per-turn usage — the bug was that the
+      // second turn's usage replaced the first, "resetting" the displayed totals.
+      const events: any[] = [
+        {
+          type: "message_end",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Let me search." }],
+            usage: { input: 1000, output: 200, cacheRead: 0, cacheWrite: 0, totalTokens: 1200, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.01 } },
+            timestamp: Date.now(),
+          },
+        },
+        { type: "tool_execution_start", toolCallId: "call_1", toolName: "finder", args: {} },
+        { type: "tool_execution_end", toolCallId: "call_1", toolName: "finder", result: { content: [{ type: "text", text: "Found files" }] }, isError: false },
+        {
+          type: "message_end",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Done." }],
+            usage: { input: 1500, output: 300, cacheRead: 0, cacheWrite: 0, totalTokens: 1800, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.02 } },
+            timestamp: Date.now(),
+          },
+        },
+      ];
+
+      if (setPendingEventsFn) {
+        setPendingEventsFn(events);
+      }
+
+      const result = await runIsolatedSubagent({
+        ctx,
+        model,
+        systemPrompt: "You are a helpful assistant",
+        tools: [],
+        task: "Test task",
+        timeoutMs: 30000,
+        subagentName: "worker",
+        onUpdate,
+      });
+
+      // Totals accumulate across both turns; gauge fields track the latest turn.
+      expect(result.details.usage?.input).toBe(2500);
+      expect(result.details.usage?.output).toBe(500);
+      expect(result.details.usage?.cost).toBeCloseTo(0.03, 10);
+      expect(result.details.usage?.totalTokens).toBe(1800);
+      expect(result.details.usage?.turns).toBe(2);
     });
 
     it("returns result with finalText extracted from final assistant message", async () => {

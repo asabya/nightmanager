@@ -183,6 +183,34 @@ export function setTranscriptUsage(
   return { ...state, usage };
 }
 
+// Sum billing fields across turns; keep latest gauge fields; count turns.
+export function addTranscriptUsage(
+  base: TranscriptUsage | undefined,
+  next: TranscriptUsage
+): TranscriptUsage {
+  if (!base) return { ...next, turns: 1 };
+  return {
+    input: base.input + next.input,
+    output: base.output + next.output,
+    ...(base.cacheRead ?? next.cacheRead
+      ? { cacheRead: (base.cacheRead ?? 0) + (next.cacheRead ?? 0) }
+      : {}),
+    ...(base.cacheWrite ?? next.cacheWrite
+      ? { cacheWrite: (base.cacheWrite ?? 0) + (next.cacheWrite ?? 0) }
+      : {}),
+    ...(base.cost ?? next.cost
+      ? { cost: (base.cost ?? 0) + (next.cost ?? 0) }
+      : {}),
+    // totalTokens & contextWindow drive the context-% gauge → latest, NOT summed
+    // (summing would inflate the gauge past 100%).
+    ...(next.totalTokens !== undefined ? { totalTokens: next.totalTokens } : {}),
+    ...(next.contextWindow ?? base.contextWindow
+      ? { contextWindow: next.contextWindow ?? base.contextWindow }
+      : {}),
+    turns: (base.turns ?? 1) + 1,
+  };
+}
+
 // Append a tool call entry to the transcript
 export function appendToolCall(
   state: TranscriptState,
