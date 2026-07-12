@@ -22,8 +22,10 @@
     "prompts"
   ],
   "scripts": {
-    "build": "npm run typecheck",
+    "build": "npm run check:generated && npm run typecheck",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "generate": "tsx scripts/generate-prompts.ts",
+    "check:generated": "npm run generate && git diff --exit-code -- src/shared/generated-prompts.ts integrations/claude-code/agents",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
@@ -33,14 +35,15 @@
     "pi-web-access": "^0.13.0"
   },
   "peerDependencies": {
-    "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-agent-core": "*",
+    "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-tui": "*",
     "@sinclair/typebox": "*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "tsx": "^4.23.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
