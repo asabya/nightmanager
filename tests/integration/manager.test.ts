@@ -30,6 +30,7 @@ describe("manager tool", () => {
     expect(source).toContain("handoff_to_worker");
     expect(source).toContain("invalid_worker_handoff");
     expect(source).toContain("trackDelegation(handoffToWorkerTool)");
+    expect(source).toContain("trackDelegation(librarianTool)");
     expect(source).toContain("delegateName = toolName === \"handoff_to_worker\" ? \"worker\" : toolName");
     expect(source).not.toContain("trackDelegation(workerTool)");
     expect(source).toContain("timeoutMs: 600_000");

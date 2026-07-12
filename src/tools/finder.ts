@@ -10,7 +10,8 @@ import {
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
-import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { composePiPrompt } from "../core/prompts.js";
+import { FINDER_CANONICAL } from "../shared/generated-prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 
@@ -20,19 +21,7 @@ const finderSchema = Type.Object({
 
 type FinderInput = Static<typeof finderSchema>;
 
-const FINDER_SYSTEM_PROMPT = `You are Finder, a read-only codebase search specialist.
-Find files, patterns, and relationships; never modify or write files. Final local paths must be absolute.
-Method: search broadly, narrow, cross-check key claims, read only needed ranges, and stop when enough evidence exists. Prefer grep/find; avoid full large-file reads.
-
-${LEAN_RESPONSE_INSTRUCTIONS}
-
-Final format:
-Summary: one sentence.
-Target files: paths for a later worker, or None.
-Evidence: /absolute/path:line — decisive detail.
-Relationships: one sentence, or None.
-Implementation handoff: context/caveats, or None.
-Next: one step.`;
+const FINDER_SYSTEM_PROMPT = composePiPrompt(FINDER_CANONICAL);
 
 export const finderTool = defineTool({
   name: "finder",
