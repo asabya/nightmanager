@@ -4,8 +4,10 @@ import type { ThinkingLevel } from "@mariozechner/pi-agent-core";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { DELEGATE_TOOLS } from "../types/shared.js";
 
-export type SubagentName = "finder" | "oracle" | "librarian" | "worker" | "manager";
+export const SUBAGENT_NAMES = [...DELEGATE_TOOLS, "manager"] as const;
+export type SubagentName = (typeof SUBAGENT_NAMES)[number];
 export type SubagentThinkingLevel = Exclude<ThinkingLevel, "off" | "minimal" | "low">;
 
 export interface SubagentConfig {
@@ -64,7 +66,7 @@ export function loadNightmanagerConfig(configPath = SUBAGENTS_CONFIG_PATH): Nigh
     if (!rawAgents || typeof rawAgents !== "object") return { agents: {} };
 
     const agents: NightmanagerConfig["agents"] = {};
-    for (const name of ["finder", "oracle", "librarian", "worker", "manager"] as const) {
+    for (const name of SUBAGENT_NAMES) {
       const normalized = normalizeSubagentConfig((rawAgents as Record<string, unknown>)[name]);
       if (normalized.model || normalized.thinking) agents[name] = normalized;
     }

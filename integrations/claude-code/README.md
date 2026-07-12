@@ -22,8 +22,10 @@ skills are available in every project. Flags:
 | `--dry-run` | Print what would be created/skipped without writing anything. |
 | `--force` | Overwrite existing files (by default existing files are skipped, never clobbered). |
 
-Existing files are never overwritten silently; re-running the installer skips files
-that already exist unless you pass `--force`.
+Unknown flags are rejected (`--user` and `--project` are mutually exclusive). Existing
+files are never overwritten silently: re-running the installer reports files that match
+the packaged version as *skipped (identical)* and files that differ — local edits or a
+newer package — as *out of date*, leaving both untouched unless you pass `--force`.
 
 ## What gets installed
 
@@ -52,7 +54,7 @@ copies by hand; edit the canonical prompt and re-run `npm run generate`.
 | **oracle** | Investigate root causes, weigh trade-offs, recommend the safest action. | No |
 | **librarian** | Research third-party libraries/upstream repos from primary sources. | No |
 | **worker** | Apply a well-scoped, already-diagnosed change and verify it. | Yes |
-| **manager** | Orchestrate the other four via nested subagents; assemble the handoff. | No |
+| **manager** | Orchestrate the other four via nested subagents (requires the `Agent` tool to be available inside a subagent context — see Limitations); assemble the handoff. | No |
 
 Claude auto-delegates based on each agent's `description`. You can also invoke one
 explicitly with `@agent-finder`, `@agent-worker`, etc.
@@ -92,6 +94,13 @@ files are generated, the authoritative source is always the canonical prompt.
 - **Manager delegation is prompt-enforced.** A subagent cannot restrict *which*
   named subagents it spawns via frontmatter, so Manager delegates to the five named
   roles by instruction.
+- **Nested delegation is unverified.** The manager's orchestration relies on the
+  `Agent` tool being available *inside* a subagent context, which Claude Code has
+  not historically exposed. If the host does not grant it, the manager cannot spawn
+  finder/oracle/librarian/worker and degrades to advisory output (a plan plus the
+  handoff content, with no delegated execution). Invoking `@agent-manager` from the
+  top level, or letting the `/nightmanager` skill drive the roles directly, avoids
+  the nesting requirement.
 - Behavior may differ slightly from the Pi runtime; the two transcript UIs are not
   identical.
 - TODO claiming is not atomic across concurrent sessions.

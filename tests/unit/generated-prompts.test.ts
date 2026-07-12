@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, cpSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   ROLES,
@@ -7,10 +8,11 @@ import {
   renderGeneratedTs,
   renderClaudeAgent,
   constName,
+  check,
+  type CheckPaths,
 } from "../../scripts/generate-prompts.js";
 import * as generated from "../../src/shared/generated-prompts.js";
-import { MANAGER_SYSTEM_PROMPT, WORKER_SYSTEM_PROMPT } from "../../src/core/prompts.js";
-import { LIBRARIAN_SYSTEM_PROMPT } from "../../src/tools/librarian.js";
+import { LIBRARIAN_SYSTEM_PROMPT, MANAGER_SYSTEM_PROMPT, WORKER_SYSTEM_PROMPT } from "../../src/core/prompts.js";
 
 const repoRoot = process.cwd();
 const agentsDir = join(repoRoot, "prompts", "agents");
@@ -60,5 +62,60 @@ describe("canonical prompt generation", () => {
     expect(MANAGER_SYSTEM_PROMPT).toContain(generated.MANAGER_CANONICAL);
     expect(WORKER_SYSTEM_PROMPT).toContain(generated.WORKER_CANONICAL);
     expect(LIBRARIAN_SYSTEM_PROMPT).toContain(generated.LIBRARIAN_CANONICAL);
+  });
+});
+
+describe("check (non-mutating drift gate)", () => {
+  /** Copy the real canonical + generated outputs into a temp tree so tests can mutate them. */
+  function withTempTree(fn: (paths: Required<CheckPaths>) => void): void {
+    const dir = mkdtempSync(join(tmpdir(), "nm-check-"));
+    const paths = {
+      agentsDir: join(dir, "prompts-agents"),
+      generatedTsPath: join(dir, "generated-prompts.ts"),
+      claudeAgentsDir: join(dir, "claude-agents"),
+    };
+    try {
+      cpSync(agentsDir, paths.agentsDir, { recursive: true });
+      cpSync(generatedTsPath, paths.generatedTsPath);
+      cpSync(claudeAgentsDir, paths.claudeAgentsDir, { recursive: true });
+      fn(paths);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("reports no drift on the committed tree", () => {
+    expect(check()).toEqual([]);
+  });
+
+  it("does not modify the working tree", () => {
+    const before = readFileSync(generatedTsPath, "utf-8");
+    check();
+    expect(readFileSync(generatedTsPath, "utf-8")).toBe(before);
+  });
+
+  it("reports a stale output after a canonical edit", () => {
+    withTempTree((paths) => {
+      const canonical = join(paths.agentsDir, "finder.md");
+      writeFileSync(canonical, `${readFileSync(canonical, "utf-8")}\nEXTRA LINE\n`, "utf-8");
+      const drift = check(paths);
+      expect(drift.some((d) => d.includes("stale"))).toBe(true);
+    });
+  });
+
+  it("reports a deleted agent file as missing", () => {
+    withTempTree((paths) => {
+      rmSync(join(paths.claudeAgentsDir, "oracle.md"));
+      const drift = check(paths);
+      expect(drift).toEqual([expect.stringContaining("oracle.md: missing")]);
+    });
+  });
+
+  it("reports an agent file with no canonical role as orphaned", () => {
+    withTempTree((paths) => {
+      writeFileSync(join(paths.claudeAgentsDir, "sixth-role.md"), "---\nname: sixth-role\n---\n", "utf-8");
+      const drift = check(paths);
+      expect(drift).toEqual([expect.stringContaining("sixth-role.md: orphaned")]);
+    });
   });
 });

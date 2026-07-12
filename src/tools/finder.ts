@@ -10,7 +10,7 @@ import {
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
-import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { composePiPrompt } from "../core/prompts.js";
 import { FINDER_CANONICAL } from "../shared/generated-prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
@@ -21,7 +21,7 @@ const finderSchema = Type.Object({
 
 type FinderInput = Static<typeof finderSchema>;
 
-const FINDER_SYSTEM_PROMPT = [FINDER_CANONICAL, LEAN_RESPONSE_INSTRUCTIONS].join("\n\n");
+const FINDER_SYSTEM_PROMPT = composePiPrompt(FINDER_CANONICAL);
 
 export const finderTool = defineTool({
   name: "finder",

@@ -20,7 +20,8 @@ import { finderTool } from "../../src/tools/finder.js";
 import { oracleTool } from "../../src/tools/oracle.js";
 import { workerTool } from "../../src/tools/worker.js";
 import { managerTool } from "../../src/tools/manager.js";
-import { librarianTool, LIBRARIAN_SYSTEM_PROMPT } from "../../src/tools/librarian.js";
+import { librarianTool } from "../../src/tools/librarian.js";
+import { LIBRARIAN_SYSTEM_PROMPT } from "../../src/core/prompts.js";
 
 const ctx = {
   cwd: process.cwd(),

@@ -12,8 +12,7 @@ import {
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
-import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
-import { LIBRARIAN_CANONICAL } from "../shared/generated-prompts.js";
+import { LIBRARIAN_SYSTEM_PROMPT } from "../core/prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { researchCodeSearchTool, researchWebSearchTool } from "./oracle.js";
@@ -266,14 +265,6 @@ function createTrackedGithubCloneTool(clonedPaths: Set<string>) {
 async function cleanupLibrarianClonePaths(clonedPaths: Set<string>) {
   await Promise.all([...clonedPaths].map(path => rm(path, { recursive: true, force: true }).catch(() => undefined)));
 }
-
-// Pi-specific tool mechanics composed around the canonical Librarian body. The
-// canonical body owns the host-neutral research methodology (primary sources,
-// permalink citation, ranking); this layer wires Pi's github/web research tools
-// and carries the substrings the librarian tests assert.
-const PI_LIBRARIAN_MECHANICS = `Pi tools: Use github_repo_discovery first for package-only names; stop on ambiguity. Clone every named/discovered GitHub repo before local analysis into /tmp; for user-specified refs, pass that ref to github_clone and stop if checkout fails. Use web_search/code_search for docs, release notes, examples, and secondary validation.`;
-
-export const LIBRARIAN_SYSTEM_PROMPT = [LIBRARIAN_CANONICAL, PI_LIBRARIAN_MECHANICS, LEAN_RESPONSE_INSTRUCTIONS].join("\n\n");
 
 export const librarianTool = defineTool({
   name: "librarian",

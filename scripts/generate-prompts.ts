@@ -10,12 +10,13 @@
  * Run `npm run generate` after editing any canonical prompt; `npm run check:generated`
  * (part of `npm run build`) fails if the committed outputs are stale.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "../src/shared/is-main-module.js";
+import { SUBAGENT_NAMES } from "../src/core/models.js";
 
-export const ROLES = ["finder", "oracle", "librarian", "worker", "manager"] as const;
+export const ROLES = SUBAGENT_NAMES;
 export type Role = (typeof ROLES)[number];
 
 // Frontmatter keys emitted into Claude agent files, in this fixed order (determinism).
@@ -94,10 +95,10 @@ export function renderClaudeAgent(prompt: CanonicalPrompt): string {
 export function generate(): void {
   const prompts = ROLES.map((role) => parseCanonical(role));
 
-  if (!existsSync(dirname(generatedTsPath))) mkdirSync(dirname(generatedTsPath), { recursive: true });
+  mkdirSync(dirname(generatedTsPath), { recursive: true });
   writeFileSync(generatedTsPath, renderGeneratedTs(prompts), "utf-8");
 
-  if (!existsSync(claudeAgentsDir)) mkdirSync(claudeAgentsDir, { recursive: true });
+  mkdirSync(claudeAgentsDir, { recursive: true });
   for (const prompt of prompts) {
     writeFileSync(join(claudeAgentsDir, `${prompt.role}.md`), renderClaudeAgent(prompt), "utf-8");
   }
@@ -107,4 +108,52 @@ export function generate(): void {
   );
 }
 
-if (isMainModule(import.meta.url)) generate();
+export interface CheckPaths {
+  agentsDir?: string;
+  generatedTsPath?: string;
+  claudeAgentsDir?: string;
+}
+
+/**
+ * Compare the committed generated outputs against a fresh in-memory render
+ * without writing anything. Returns one message per drifted file: stale or
+ * missing outputs, and orphaned agent files whose role no longer exists.
+ */
+export function check(paths: CheckPaths = {}): string[] {
+  const canonicalDir = paths.agentsDir ?? agentsDir;
+  const tsPath = paths.generatedTsPath ?? generatedTsPath;
+  const agentsOutDir = paths.claudeAgentsDir ?? claudeAgentsDir;
+
+  const prompts = ROLES.map((role) => parseCanonical(role, canonicalDir));
+  const drift: string[] = [];
+  const compare = (path: string, expected: string) => {
+    if (!existsSync(path)) drift.push(`${path}: missing`);
+    else if (readFileSync(path, "utf-8") !== expected) drift.push(`${path}: stale`);
+  };
+
+  compare(tsPath, renderGeneratedTs(prompts));
+  for (const prompt of prompts) {
+    compare(join(agentsOutDir, `${prompt.role}.md`), renderClaudeAgent(prompt));
+  }
+
+  const expected = new Set(ROLES.map((role) => `${role}.md`));
+  const actual = existsSync(agentsOutDir) ? readdirSync(agentsOutDir).filter((name) => name.endsWith(".md")) : [];
+  for (const name of actual) {
+    if (!expected.has(name)) drift.push(`${join(agentsOutDir, name)}: orphaned (no canonical prompt for this role)`);
+  }
+  return drift;
+}
+
+if (isMainModule(import.meta.url)) {
+  if (process.argv.includes("--check")) {
+    const drift = check();
+    if (drift.length > 0) {
+      console.error("Generated outputs are out of sync with prompts/agents/*.md — run `npm run generate`:");
+      for (const message of drift) console.error(`  ${message}`);
+      process.exit(1);
+    }
+    console.log("Generated outputs are up to date.");
+  } else {
+    generate();
+  }
+}

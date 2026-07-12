@@ -34,7 +34,10 @@ export interface InstallResult {
   scope: InstallScope;
   targetBase: string;
   created: string[];
+  /** Existing files identical to the packaged version (nothing to do). */
   skipped: string[];
+  /** Existing files that differ from the packaged version; need --force to update. */
+  stale: string[];
   updated: string[];
 }
 
@@ -45,6 +48,13 @@ interface FileOp {
 
 const CLAUDE_SKILLS_REL = join("integrations", "claude-code", "skills");
 const CLAUDE_AGENTS_REL = join("integrations", "claude-code", "agents");
+
+// Extra package files shipped into a skill's directory, keyed by skill name.
+// `src` is relative to the package root, `dest` to the installed skill dir.
+const SKILL_EXTRA_ASSETS: Record<string, { src: string; dest: string }[]> = {
+  // code-review ships the review rubric as a co-located asset (no prompts/ dir on Claude).
+  "code-review": [{ src: join("prompts", "review-personas.md"), dest: "review-personas.md" }],
+};
 
 function readIfExists(path: string): string | undefined {
   return existsSync(path) ? readFileSync(path, "utf-8") : undefined;
@@ -91,10 +101,9 @@ function collectSkillDirOps(srcDir: string, destDir: string, packageRoot: string
     }
     ops.push({ dest: join(destDir, entry.name), content });
   }
-  // code-review ships the review rubric as a co-located asset (no prompts/ dir on Claude).
-  if (skillName === "code-review") {
-    const personas = readIfExists(join(packageRoot, "prompts", "review-personas.md"));
-    if (personas) ops.push({ dest: join(destDir, "review-personas.md"), content: personas });
+  for (const asset of SKILL_EXTRA_ASSETS[skillName] ?? []) {
+    const content = readIfExists(join(packageRoot, asset.src));
+    if (content !== undefined) ops.push({ dest: join(destDir, asset.dest), content });
   }
   return ops;
 }
@@ -149,16 +158,17 @@ export function installClaude(options: InstallOptions = {}): InstallResult {
 
   const created: string[] = [];
   const skipped: string[] = [];
+  const stale: string[] = [];
   const updated: string[] = [];
   for (const op of ops) {
-    const exists = existsSync(op.dest);
-    if (exists && !force) {
-      skipped.push(op.dest);
+    const existing = readIfExists(op.dest);
+    if (existing !== undefined && !force) {
+      (existing === op.content ? skipped : stale).push(op.dest);
       continue;
     }
     if (!dryRun) atomicWrite(op.dest, op.content);
-    (exists ? updated : created).push(op.dest);
+    (existing !== undefined ? updated : created).push(op.dest);
   }
 
-  return { scope, targetBase, created, skipped, updated };
+  return { scope, targetBase, created, skipped, stale, updated };
 }

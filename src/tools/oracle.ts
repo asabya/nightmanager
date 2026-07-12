@@ -10,7 +10,7 @@ import {
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
-import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { composePiPrompt } from "../core/prompts.js";
 import { ORACLE_CANONICAL } from "../shared/generated-prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
@@ -53,7 +53,7 @@ type OracleCodeSearchInput = Static<typeof oracleCodeSearchSchema>;
 const PI_WEB_ACCESS_SEARCH_MODULE = "pi-web-access/gemini-search.ts";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
 
-const ORACLE_SYSTEM_PROMPT = [ORACLE_CANONICAL, LEAN_RESPONSE_INSTRUCTIONS].join("\n\n");
+const ORACLE_SYSTEM_PROMPT = composePiPrompt(ORACLE_CANONICAL);
 
 type WebSearchModule = {
   search: (query: string, options?: {

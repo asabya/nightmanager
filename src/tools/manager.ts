@@ -2,6 +2,7 @@ import { defineTool } from "@mariozechner/pi-coding-agent";
 import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
+import { isDelegateTool } from "../types/shared.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import type { ManagerDelegateUsageDetails, SubagentTranscriptDetails } from "../core/transcript.js";
@@ -162,9 +163,7 @@ export const managerTool = defineTool({
       async execute(toolCallId: string, toolParams: unknown, toolSignal: AbortSignal | undefined, toolOnUpdate: ((partial: any) => void) | undefined, toolCtx: typeof ctx) {
         const toolName = String(tool.name ?? "unknown");
         const delegateName = toolName === "handoff_to_worker" ? "worker" : toolName;
-        const delegateConfig = delegateName === "finder" || delegateName === "oracle" || delegateName === "librarian" || delegateName === "worker"
-          ? resolveSubagentConfig(toolCtx, delegateName)
-          : undefined;
+        const delegateConfig = isDelegateTool(delegateName) ? resolveSubagentConfig(toolCtx, delegateName) : undefined;
         const record: DelegateCallRecord = {
           tool: toolName,
           params: toolParams,

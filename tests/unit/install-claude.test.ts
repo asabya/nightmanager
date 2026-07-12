@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installClaude, findPackageRoot } from "../../scripts/install-claude.js";
@@ -20,12 +20,39 @@ function withTempDir(fn: (dir: string) => void, prefix?: string): void {
   }
 }
 
+function countDirFiles(dir: string): number {
+  let count = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    count += entry.isDirectory() ? countDirFiles(join(dir, entry.name)) : 1;
+  }
+  return count;
+}
+
+/** Mirror of the installer's op collection: every file it should install. */
+function expectedInstallCount(): number {
+  const agents = readdirSync(join(packageRoot, "integrations", "claude-code", "agents")).filter((name) =>
+    name.endsWith(".md"),
+  ).length;
+  let skillFiles = 0;
+  for (const root of [join(packageRoot, "skills"), join(packageRoot, "integrations", "claude-code", "skills")]) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() || !existsSync(join(root, entry.name, "SKILL.md"))) continue;
+      skillFiles += countDirFiles(join(root, entry.name));
+      // code-review additionally ships prompts/review-personas.md as a co-located asset.
+      if (entry.name === "code-review") skillFiles += 1;
+    }
+  }
+  return agents + skillFiles;
+}
+
 describe("installClaude", () => {
   it("fresh project install writes every agent and skill", () => {
     withTempDir((dir) => {
       const result = installClaude({ scope: "project", cwd: dir, packageRoot });
-      expect(result.created.length).toBeGreaterThanOrEqual(15);
+      expect(result.created.length).toBe(expectedInstallCount());
       expect(result.skipped).toEqual([]);
+      expect(result.stale).toEqual([]);
       for (const role of ROLES) {
         expect(existsSync(join(dir, ".claude", "agents", `${role}.md`)), role).toBe(true);
       }
@@ -40,7 +67,8 @@ describe("installClaude", () => {
       mkdirSync(join(dir, ".claude", "agents"), { recursive: true });
       writeFileSync(dest, "USER CONTENT", "utf-8");
       const result = installClaude({ scope: "project", cwd: dir, packageRoot });
-      expect(result.skipped).toContain(dest);
+      expect(result.stale).toContain(dest);
+      expect(result.skipped).not.toContain(dest);
       expect(readFileSync(dest, "utf-8")).toBe("USER CONTENT");
     });
   });
@@ -86,7 +114,20 @@ describe("installClaude", () => {
       const result = installClaude({ scope: "project", cwd: dir, packageRoot });
       expect(result.created).toEqual([]);
       expect(result.updated).toEqual([]);
-      expect(result.skipped.length).toBeGreaterThanOrEqual(15);
+      expect(result.stale).toEqual([]);
+      expect(result.skipped.length).toBe(expectedInstallCount());
+    });
+  });
+
+  it("reinstall distinguishes identical (skipped) from locally modified (stale) files", () => {
+    withTempDir((dir) => {
+      installClaude({ scope: "project", cwd: dir, packageRoot });
+      const mutated = join(dir, ".claude", "agents", "oracle.md");
+      writeFileSync(mutated, "LOCAL EDIT", "utf-8");
+      const result = installClaude({ scope: "project", cwd: dir, packageRoot });
+      expect(result.stale).toEqual([mutated]);
+      expect(result.skipped.length).toBe(expectedInstallCount() - 1);
+      expect(readFileSync(mutated, "utf-8")).toBe("LOCAL EDIT");
     });
   });
 
