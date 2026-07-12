@@ -26,6 +26,36 @@ Both paths apply the two-axis review (`/code-review`); `research` gathers primar
 
 Runtime context is intentionally lean: the runner preloads only shared Nightmanager prompts, `TODOs.md`, and the active spec/template. Agents read `README.md`, manifests, or unrelated docs only when needed.
 
+## Supported runtimes
+
+Nightmanager runs on two native runtimes from **one shared set of prompts and skills**. The workflow, the five role definitions (finder, oracle, librarian, worker, manager), and the skills are identical across both — each host owns agent execution. Role prompts have a single canonical source in `prompts/agents/*.md`; the Pi TS module and the Claude agent files are generated from it.
+
+### Pi
+
+```bash
+pi install npm:nightmanager
+```
+
+Pi uses the Nightmanager extension and its programmatic subagent runtime: five subagent tools, a model registry integration, `~/.pi/agent/nightmanager.json` config, custom transcript rendering, and **programmatically validated** Manager→Worker handoffs. Pi remains the stricter implementation.
+
+### Claude Code
+
+```bash
+npx nightmanager install claude
+```
+
+Claude Code uses **native Claude subagents and skills** — installed into `~/.claude/` by default (`--project` targets `./.claude/`). No separate Anthropic API key is required by Nightmanager: Claude Code owns authentication and model access. On Claude the handoff and orchestration rules are **prompt-enforced**. See [integrations/claude-code/README.md](integrations/claude-code/README.md).
+
+| Capability | Pi | Claude Code |
+| --- | --- | --- |
+| Agent runtime | Nightmanager/Pi runtime | Claude native |
+| Authentication | Pi provider configuration | Claude Code |
+| Structured handoff | Programmatically validated | Prompt-enforced |
+| Tool restrictions | Pi tool definitions | Claude agent configuration |
+| Transcript rendering | Nightmanager custom rendering | Claude native UI |
+| Workflow prompts | Shared | Shared |
+| Skills | Shared / Pi package | Claude-native installation |
+
 ## Tools
 
 | Tool | Role | Use for |
@@ -36,7 +66,7 @@ Runtime context is intentionally lean: the runner preloads only shared Nightmana
 | `worker` | Implementation | Small verified edits |
 | `manager` | Orchestration | Coordinating finder/oracle/worker phases |
 
-## Install and run
+## Running on Pi
 
 ```bash
 pi install npm:nightmanager
@@ -152,10 +182,14 @@ Keep `manager`/`finder` cheaper when possible; reserve stronger models for `work
 
 ```bash
 npm install
+npm run generate         # regenerate the Pi module + Claude agents from prompts/agents/*.md
+npm run check:generated  # fail if the committed generated files are stale
 npm run typecheck
 npm test
-npm run build      # alias for typecheck; no dist output
+npm run build            # check:generated + typecheck + compile the CLI to dist/
 ```
+
+Role prompts have a single canonical source in `prompts/agents/*.md`. After editing one, run `npm run generate`; the committed `src/shared/generated-prompts.ts` and `integrations/claude-code/agents/*.md` must stay in sync (CI enforces this via `check:generated`).
 
 Focused tests:
 
@@ -170,9 +204,14 @@ Package shape:
 ```text
 nightmanager/
   package.json
+  bin/                       # nightmanager CLI (compiled to dist/)
+  scripts/                   # generate-prompts, install-claude
   src/{core,tools,types}/
-  prompts/
-  skills/
+  src/shared/                # generated-prompts.ts (generated; committed)
+  prompts/agents/            # canonical role prompts (source of truth)
+  prompts/                   # Pi workflow prompts
+  skills/                    # shared workflow skills
+  integrations/claude-code/  # native Claude agents, skills, README
   specs/
   tests/{unit,integration,e2e}/
 ```
