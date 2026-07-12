@@ -11,6 +11,7 @@ import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
 import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { ORACLE_CANONICAL } from "../shared/generated-prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 
@@ -52,19 +53,7 @@ type OracleCodeSearchInput = Static<typeof oracleCodeSearchSchema>;
 const PI_WEB_ACCESS_SEARCH_MODULE = "pi-web-access/gemini-search.ts";
 const EXA_MCP_URL = "https://mcp.exa.ai/mcp";
 
-const ORACLE_SYSTEM_PROMPT = `You are Oracle, a read-only debugging/planning specialist.
-Inspect code, run safe checks, and use web/code search only for external or dependency facts. Do not modify files. Final local paths must be absolute; external claims need URLs.
-Method: state observation, compare 2-3 hypotheses when needed, gather pro/con evidence, rank confidence, then give the best explanation or one discriminating probe.
-
-${LEAN_RESPONSE_INSTRUCTIONS}
-
-Final format:
-Assessment: one sentence.
-Evidence: /absolute/path:line, command, or URL — decisive detail.
-Hypotheses: ranked with confidence.
-Recommendation: concrete action.
-Implementation handoff: root cause/fix/risks/constraints/verification, or None.
-Next probe: one probe, or None.`;
+const ORACLE_SYSTEM_PROMPT = [ORACLE_CANONICAL, LEAN_RESPONSE_INSTRUCTIONS].join("\n\n");
 
 type WebSearchModule = {
   search: (query: string, options?: {

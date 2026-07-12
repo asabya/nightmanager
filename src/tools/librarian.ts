@@ -13,6 +13,7 @@ import { Type, type Static } from "@sinclair/typebox";
 import { Text } from "@mariozechner/pi-tui";
 import { resolveSubagentConfig } from "../core/models.js";
 import { LEAN_RESPONSE_INSTRUCTIONS } from "../core/prompts.js";
+import { LIBRARIAN_CANONICAL } from "../shared/generated-prompts.js";
 import { renderSubagentCall, renderSubagentResult } from "../core/subagent-rendering.js";
 import { runIsolatedSubagent } from "../core/subagent.js";
 import { researchCodeSearchTool, researchWebSearchTool } from "./oracle.js";
@@ -266,22 +267,13 @@ async function cleanupLibrarianClonePaths(clonedPaths: Set<string>) {
   await Promise.all([...clonedPaths].map(path => rm(path, { recursive: true, force: true }).catch(() => undefined)));
 }
 
-export const LIBRARIAN_SYSTEM_PROMPT = `You are Librarian, a read-only OSS research specialist.
-Answer library/framework/SDK questions with upstream evidence, not guesses. Do not modify the user repo; clone public repos only into /tmp. Final code claims must use strict GitHub permalinks pinned to the cloned commit, never branch or local-only paths.
+// Pi-specific tool mechanics composed around the canonical Librarian body. The
+// canonical body owns the host-neutral research methodology (primary sources,
+// permalink citation, ranking); this layer wires Pi's github/web research tools
+// and carries the substrings the librarian tests assert.
+const PI_LIBRARIAN_MECHANICS = `Pi tools: Use github_repo_discovery first for package-only names; stop on ambiguity. Clone every named/discovered GitHub repo before local analysis into /tmp; for user-specified refs, pass that ref to github_clone and stop if checkout fails. Use web_search/code_search for docs, release notes, examples, and secondary validation.`;
 
-Tools: Use github_repo_discovery first for package-only names; stop on ambiguity. Clone every named/discovered GitHub repo before local analysis; for user-specified refs, pass that ref to github_clone and stop if checkout fails. Use web_search/code_search for docs, release notes, examples, and secondary validation.
-
-Evidence: source/tests/examples before docs; source wins conflicts. Cite every code claim as https://github.com/<owner>/<repo>/blob/<commit>/<path>#L<start>-L<end>. If decisive source/code evidence remains weak, ambiguous, or missing, say so and stop.
-Comparisons: default 2-3 repos. Compare 4-5 only when the user explicitly provides them; split 6+ into batches. Rank findings in this order: API correctness, closest fit to the user's question, recency/current implementation, then documentation/example quality.
-
-${LEAN_RESPONSE_INSTRUCTIONS}
-
-Final format:
-Summary: one sentence.
-Evidence: commit-pinned GitHub permalink or official URL — quote/snippet + decisive detail.
-Findings: concise bullets/table suited to question.
-Uncertainty: weak/ambiguous evidence, or None.
-Next: one follow-up, or None.`;
+export const LIBRARIAN_SYSTEM_PROMPT = [LIBRARIAN_CANONICAL, PI_LIBRARIAN_MECHANICS, LEAN_RESPONSE_INSTRUCTIONS].join("\n\n");
 
 export const librarianTool = defineTool({
   name: "librarian",

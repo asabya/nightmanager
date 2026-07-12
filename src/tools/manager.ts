@@ -9,6 +9,7 @@ import { MANAGER_SYSTEM_PROMPT } from "../core/prompts.js";
 import { handoffEvidenceSchema, handoffVerificationSchema, nonEmptyStringArraySchema } from "../core/handoff.js";
 import { finderTool } from "./finder.js";
 import { oracleTool } from "./oracle.js";
+import { librarianTool } from "./librarian.js";
 import { workerTool } from "./worker.js";
 
 const managerSchema = Type.Object({
@@ -102,11 +103,11 @@ const handoffToWorkerTool = defineTool({
 export const managerTool = defineTool({
   name: "manager",
   label: "Manager",
-  description: "Launch an orchestration subagent that plans and coordinates finder, oracle, and worker workflows.",
-  promptSnippet: "Use manager for tasks spanning discovery, reasoning, and implementation.",
+  description: "Launch an orchestration subagent that plans and coordinates finder, oracle, librarian, and worker workflows.",
+  promptSnippet: "Use manager for tasks spanning discovery, reasoning, research, and implementation.",
   promptGuidelines: [
-    "Manager coordinates finder/oracle/worker phases.",
-    "Manager delegates all inspection/editing and implements only through handoff_to_worker.",
+    "Manager coordinates finder/oracle/librarian/worker phases.",
+    "Manager delegates all inspection/editing/research and implements only through handoff_to_worker.",
   ],
   parameters: managerSchema,
   renderCall(args, _theme, context) {
@@ -161,7 +162,7 @@ export const managerTool = defineTool({
       async execute(toolCallId: string, toolParams: unknown, toolSignal: AbortSignal | undefined, toolOnUpdate: ((partial: any) => void) | undefined, toolCtx: typeof ctx) {
         const toolName = String(tool.name ?? "unknown");
         const delegateName = toolName === "handoff_to_worker" ? "worker" : toolName;
-        const delegateConfig = delegateName === "finder" || delegateName === "oracle" || delegateName === "worker"
+        const delegateConfig = delegateName === "finder" || delegateName === "oracle" || delegateName === "librarian" || delegateName === "worker"
           ? resolveSubagentConfig(toolCtx, delegateName)
           : undefined;
         const record: DelegateCallRecord = {
@@ -211,7 +212,7 @@ export const managerTool = defineTool({
       model,
       thinkingLevel: subagentConfig.thinkingLevel,
       systemPrompt: MANAGER_SYSTEM_PROMPT,
-      tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(handoffToWorkerTool)],
+      tools: [trackDelegation(finderTool), trackDelegation(oracleTool), trackDelegation(librarianTool), trackDelegation(handoffToWorkerTool)],
       task: params.query,
       signal,
       timeoutMs: 600_000,
