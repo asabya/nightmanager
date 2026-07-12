@@ -81,6 +81,11 @@ files are generated, the authoritative source is always the canonical prompt.
 
 - **Handoffs are prompt-enforced.** Claude follows the Manager→Worker handoff
   contract by instruction; the Pi runtime validates it programmatically.
+- **Read-only roles are prompt-enforced, not tool-locked.** `finder`, `oracle`, and
+  `librarian` are withheld `Edit`/`Write`, but they carry `Bash` (for search, `git log`,
+  running read-only commands), so their "never modifies files" contract holds by
+  instruction, not by capability — `Bash` can still write. Drop `Bash` from their
+  `tools` frontmatter if you need a hard guarantee.
 - **Worker git-safety is prompt-enforced.** The Worker agent is told not to commit,
   push, reset, stash, or merge without authorization, but has `Bash` access; there is
   no hard block.

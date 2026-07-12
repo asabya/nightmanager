@@ -8,11 +8,12 @@
  *
  * The canonical Markdown files are the single source of truth for each role prompt body.
  * Run `npm run generate` after editing any canonical prompt; `npm run check:generated`
- * fails CI if the committed outputs are stale.
+ * (part of `npm run build`) fails if the committed outputs are stale.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isMainModule } from "../src/shared/is-main-module.js";
 
 export const ROLES = ["finder", "oracle", "librarian", "worker", "manager"] as const;
 export type Role = (typeof ROLES)[number];
@@ -32,24 +33,37 @@ const agentsDir = join(repoRoot, "prompts", "agents");
 const generatedTsPath = join(repoRoot, "src", "shared", "generated-prompts.ts");
 const claudeAgentsDir = join(repoRoot, "integrations", "claude-code", "agents");
 
-export function parseCanonical(role: Role, baseDir: string = agentsDir): CanonicalPrompt {
-  const raw = readFileSync(join(baseDir, `${role}.md`), "utf-8").replace(/\r\n/g, "\n");
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) {
-    throw new Error(`prompts/agents/${role}.md is missing a YAML frontmatter block`);
-  }
+export interface Frontmatter {
+  frontmatter: Record<string, string>;
+  body: string;
+}
+
+/**
+ * Parse a `---`-delimited frontmatter block (flat `key: value` pairs) plus the
+ * Markdown body that follows. `label` names the source in error messages. Shared
+ * by the generator and its tests so both read frontmatter the same way.
+ */
+export function parseFrontmatter(raw: string, label: string): Frontmatter {
+  const match = raw.replace(/\r\n/g, "\n").match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!match) throw new Error(`${label} is missing a YAML frontmatter block`);
   const [, fmBlock, rest] = match;
   const frontmatter: Record<string, string> = {};
   for (const line of fmBlock.split("\n")) {
     if (!line.trim()) continue;
     const idx = line.indexOf(":");
-    if (idx === -1) throw new Error(`Malformed frontmatter line in ${role}.md: ${line}`);
+    if (idx === -1) throw new Error(`Malformed frontmatter line in ${label}: ${line}`);
     frontmatter[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
   }
+  return { frontmatter, body: rest };
+}
+
+export function parseCanonical(role: Role, baseDir: string = agentsDir): CanonicalPrompt {
+  const raw = readFileSync(join(baseDir, `${role}.md`), "utf-8");
+  const { frontmatter, body } = parseFrontmatter(raw, `prompts/agents/${role}.md`);
   if (frontmatter.name !== role) {
     throw new Error(`prompts/agents/${role}.md declares name "${frontmatter.name}", expected "${role}"`);
   }
-  return { role, frontmatter, body: rest.trim() };
+  return { role, frontmatter, body: body.trim() };
 }
 
 export function constName(role: Role): string {
@@ -88,20 +102,9 @@ export function generate(): void {
     writeFileSync(join(claudeAgentsDir, `${prompt.role}.md`), renderClaudeAgent(prompt), "utf-8");
   }
 
-  // eslint-disable-next-line no-console
   console.log(
     `Generated ${generatedTsPath} and ${prompts.length} Claude agent files in ${claudeAgentsDir}`,
   );
 }
 
-function isMainModule(): boolean {
-  const arg = process.argv[1];
-  if (!arg) return false;
-  try {
-    return realpathSync(arg) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) generate();
+if (isMainModule(import.meta.url)) generate();

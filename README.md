@@ -189,7 +189,7 @@ npm test
 npm run build            # check:generated + typecheck + compile the CLI to dist/
 ```
 
-Role prompts have a single canonical source in `prompts/agents/*.md`. After editing one, run `npm run generate`; the committed `src/shared/generated-prompts.ts` and `integrations/claude-code/agents/*.md` must stay in sync (CI enforces this via `check:generated`).
+Role prompts have a single canonical source in `prompts/agents/*.md`. After editing one, run `npm run generate`; the committed `src/shared/generated-prompts.ts` and `integrations/claude-code/agents/*.md` must stay in sync. `npm run check:generated` (part of `npm run build` and `prepublishOnly`) fails if they drift — run it before publishing, and wire it into CI if you add a pipeline.
 
 Focused tests:
 

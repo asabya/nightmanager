@@ -11,7 +11,7 @@
  *   integrations/claude-code/skills/<name>.addendum.md  appended to that skill's SKILL.md
  *   prompts/review-personas.md                  -> <base>/skills/code-review/review-personas.md
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, renameSync, unlinkSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -119,8 +119,18 @@ function atomicWrite(dest: string, content: string): void {
   const dir = dirname(dest);
   mkdirSync(dir, { recursive: true });
   const tmp = join(dir, `.${basename(dest)}.tmp-${process.pid}`);
-  writeFileSync(tmp, content, "utf-8");
-  renameSync(tmp, dest);
+  try {
+    writeFileSync(tmp, content, "utf-8");
+    renameSync(tmp, dest);
+  } catch (error) {
+    // Don't leave the temp file behind if the write or rename failed.
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* nothing to clean up */
+    }
+    throw error;
+  }
 }
 
 export function installClaude(options: InstallOptions = {}): InstallResult {

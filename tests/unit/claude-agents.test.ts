@@ -1,24 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { ROLES, parseFrontmatter, type Frontmatter } from "../../scripts/generate-prompts.js";
 
 const AGENTS_DIR = join(process.cwd(), "integrations", "claude-code", "agents");
-const ROLES = ["finder", "oracle", "librarian", "worker", "manager"] as const;
 
-function parseFrontmatter(md: string): { frontmatter: Record<string, string>; body: string } {
-  const match = md.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) throw new Error("missing frontmatter");
-  const frontmatter: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
-    if (!line.trim()) continue;
-    const idx = line.indexOf(":");
-    frontmatter[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-  }
-  return { frontmatter, body: match[2] };
-}
-
-function loadAgent(role: string): { frontmatter: Record<string, string>; body: string } {
-  return parseFrontmatter(readFileSync(join(AGENTS_DIR, `${role}.md`), "utf-8"));
+function loadAgent(role: string): Frontmatter {
+  return parseFrontmatter(readFileSync(join(AGENTS_DIR, `${role}.md`), "utf-8"), `${role}.md`);
 }
 
 function toolList(frontmatter: Record<string, string>): string[] {

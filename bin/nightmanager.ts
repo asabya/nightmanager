@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-import { realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { installClaude, type InstallResult, type InstallScope } from "../scripts/install-claude.js";
+import { isMainModule } from "../src/shared/is-main-module.js";
 
 const USAGE = `nightmanager — Nightmanager CLI
 
@@ -63,14 +62,4 @@ export function run(argv: string[]): number {
   return 1;
 }
 
-function isMainModule(): boolean {
-  const arg = process.argv[1];
-  if (!arg) return false;
-  try {
-    return realpathSync(arg) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) process.exit(run(process.argv));
+if (isMainModule(import.meta.url)) process.exit(run(process.argv));

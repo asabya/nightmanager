@@ -3,9 +3,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installClaude, findPackageRoot } from "../../scripts/install-claude.js";
+import { ROLES } from "../../scripts/generate-prompts.js";
 
 const packageRoot = process.cwd();
-const AGENT_ROLES = ["finder", "oracle", "librarian", "worker", "manager"];
 
 function tempDir(prefix = "nm-install-"): string {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -26,7 +26,7 @@ describe("installClaude", () => {
       const result = installClaude({ scope: "project", cwd: dir, packageRoot });
       expect(result.created.length).toBeGreaterThanOrEqual(15);
       expect(result.skipped).toEqual([]);
-      for (const role of AGENT_ROLES) {
+      for (const role of ROLES) {
         expect(existsSync(join(dir, ".claude", "agents", `${role}.md`)), role).toBe(true);
       }
       expect(existsSync(join(dir, ".claude", "skills", "nightmanager", "SKILL.md"))).toBe(true);
