@@ -7,36 +7,45 @@
   <meta name="description" content="The Nightmanager Loop turns vague intent into shared understanding, vertical TODOs, and reviewable AFK implementation.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* CSS Custom Properties - X Dark Theme */
+    /* ============================================================
+       Nightmanager — "night shift → dawn" theme
+       Midnight blue base, warm dawn-amber accent, moonlight blue.
+       ============================================================ */
     :root {
-      /* Background - dark charcoal (hex defaults) */
-      --color-bg: #1a1a1a;
-      --color-bg-elevated: #252525;
-      
-      /* Surface */
-      --color-surface: oklch(0.97 0.008 264);
-      --color-surface-muted: oklch(0.85 0.008 264);
-      
+      /* Base — deep midnight (hex fallbacks) */
+      --color-bg: #0e1220;
+      --color-bg-elevated: #151b2e;
+      --color-surface: #1a2038;
+      --color-surface-hover: #1f2645;
+
       /* Text */
-      --color-text-primary: oklch(0.97 0.008 264);
-      --color-text-secondary: oklch(0.7 0.008 264);
-      --color-text-muted: oklch(0.5 0.008 264);
-      
-      /* Accent - blue/violet CTA */
-      --color-accent: oklch(0.6 0.2 270);
-      --color-accent-hover: oklch(0.7 0.2 270);
-      
-      /* Borders (hex defaults) */
-      --color-border: #4d4d4d;
-      --color-border-subtle: #333333;
-      
+      --color-text-primary: #f4f2ee;   /* warm white */
+      --color-text-secondary: #aab2ca;
+      --color-text-muted: #737b98;
+
+      /* Accents */
+      --color-accent: #f6b64b;          /* dawn amber */
+      --color-accent-hover: #ffca6b;
+      --color-accent-soft: rgba(246, 182, 75, 0.12);
+      --color-moon: #8fa2e0;            /* moonlight blue (secondary) */
+      --color-moon-soft: rgba(143, 162, 224, 0.12);
+
+      /* Borders */
+      --color-border: #2c3350;
+      --color-border-subtle: #212842;
+
+      /* Code */
+      --color-code-bg: rgba(246, 182, 75, 0.10);
+      --color-code-text: #ffd58f;
+
       /* Typography */
-      --font-display: "Cal Sans", "Inter", system-ui, sans-serif;
+      --font-display: "Space Grotesk", system-ui, sans-serif;
       --font-body: "Inter", system-ui, sans-serif;
-      
-      /* Sizing */
+      --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+      /* Type scale */
       --text-xs: 0.75rem;
       --text-sm: 0.875rem;
       --text-base: 1rem;
@@ -44,180 +53,243 @@
       --text-xl: 1.25rem;
       --text-2xl: 1.5rem;
       --text-3xl: 1.875rem;
-      --text-4xl: 2.25rem;
-      --text-5xl: 3rem;
-      
+      --text-4xl: 2.5rem;
+      --text-5xl: 3.5rem;
+
       /* Spacing */
       --space-1: 0.25rem;
       --space-2: 0.5rem;
       --space-3: 0.75rem;
       --space-4: 1rem;
+      --space-5: 1.25rem;
       --space-6: 1.5rem;
       --space-8: 2rem;
+      --space-10: 2.5rem;
       --space-12: 3rem;
       --space-16: 4rem;
+      --space-20: 5rem;
       --space-24: 6rem;
-      
-      /* Effects */
-      --radius-sm: 0.25rem;
-      --radius-md: 0.5rem;
-      --radius-lg: 0.75rem;
+
+      /* Radius */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.625rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.5rem;
       --radius-full: 9999px;
-      
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-      
+
+      /* Shadow — subtle, used sparingly */
+      --shadow-glow: 0 0 0 1px rgba(246, 182, 75, 0.25), 0 8px 30px rgba(246, 182, 75, 0.08);
+      --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35);
+
       /* Transitions */
-      --transition-fast: 150ms ease;
-      --transition-normal: 250ms ease;
-      --transition-slow: 350ms ease;
+      --transition-fast: 140ms ease;
+      --transition-normal: 240ms cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    /* OKLCH overrides for modern browsers */
+
+    /* OKLCH refinement for capable browsers */
     @supports (color: oklch(0 0 0)) {
       :root {
-        --color-bg: oklch(0.19 0.008 264);
-        --color-bg-elevated: oklch(0.22 0.008 264);
-        --color-border: oklch(0.3 0.008 264);
-        --color-border-subtle: oklch(0.25 0.008 264);
+        --color-bg: oklch(0.17 0.03 265);
+        --color-bg-elevated: oklch(0.21 0.03 265);
+        --color-surface: oklch(0.24 0.03 266);
+        --color-surface-hover: oklch(0.28 0.035 266);
+        --color-border: oklch(0.34 0.03 266);
+        --color-border-subtle: oklch(0.27 0.03 266);
+        --color-text-secondary: oklch(0.78 0.02 266);
+        --color-text-muted: oklch(0.6 0.02 266);
+        --color-accent: oklch(0.82 0.14 72);
+        --color-accent-hover: oklch(0.88 0.13 76);
+        --color-moon: oklch(0.75 0.09 265);
       }
     }
-    
+
     /* Reset */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html {
-      scroll-behavior: smooth;
-    }
-    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
     body {
       font-family: var(--font-body);
       font-size: var(--text-base);
-      line-height: 1.5;
+      line-height: 1.6;
       color: var(--color-text-primary);
       background-color: var(--color-bg);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
-    
-    /* Utility */
+
+    a { color: var(--color-accent); text-decoration: none; transition: color var(--transition-fast); }
+    a:hover { color: var(--color-accent-hover); }
+
+    code, .mono {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+    }
+
+    /* inline code token */
+    .tok {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--color-code-bg);
+      color: var(--color-code-text);
+      padding: 0.1em 0.4em;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
+    }
+
     .container {
-      max-width: 1200px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 0 var(--space-4);
+      padding: 0 var(--space-6);
     }
-    
-    a {
-      color: var(--color-accent);
-      text-decoration: none;
-      transition: color var(--transition-fast);
-    }
-    
-    a:hover {
-      color: var(--color-accent-hover);
-    }
-    
-    /* Header */
+
+    section { scroll-margin-top: 80px; }
+
+    /* ---------------- Header ---------------- */
     .header {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(30, 30, 30, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: color-mix(in oklab, var(--color-bg) 78%, transparent);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
       border-bottom: 1px solid var(--color-border-subtle);
     }
-    
     .header-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 64px;
+      height: 68px;
     }
-    
     .logo {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
-      color: var(--color-text-primary);
-    }
-    
-    .logo:hover {
-      color: var(--color-text-primary);
-    }
-    
-    .nav {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: var(--space-6);
+      gap: var(--space-2);
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--color-text-primary);
     }
-    
+    .logo:hover { color: var(--color-text-primary); }
+    .logo-moon {
+      font-size: 1.1em;
+      filter: drop-shadow(0 0 8px rgba(246, 182, 75, 0.5));
+    }
+    .nav { display: flex; align-items: center; gap: var(--space-6); }
     .nav-link {
       font-size: var(--text-sm);
+      font-weight: 500;
       color: var(--color-text-secondary);
       transition: color var(--transition-fast);
     }
-    
-    .nav-link:hover {
-      color: var(--color-text-primary);
-    }
-    
+    .nav-link:hover { color: var(--color-text-primary); }
     .github-link {
       display: inline-flex;
       align-items: center;
       gap: var(--space-2);
       font-size: var(--text-sm);
+      font-weight: 500;
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
       color: var(--color-text-secondary);
+      transition: all var(--transition-fast);
     }
-    
     .github-link:hover {
       color: var(--color-text-primary);
+      border-color: var(--color-text-muted);
+      background: var(--color-surface);
     }
-    
-    /* Hero Section */
+
+    /* ---------------- Hero ---------------- */
     .hero {
-      padding: var(--space-24) 0;
-      text-align: center;
+      position: relative;
+      padding: var(--space-24) 0 var(--space-20);
+      overflow: hidden;
       border-bottom: 1px solid var(--color-border-subtle);
     }
-    
-    .hero-content {
-      max-width: 800px;
-      margin: 0 auto;
+    /* moonrise glow + faint starfield */
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(60% 55% at 78% 12%, rgba(246, 182, 75, 0.16), transparent 60%),
+        radial-gradient(50% 50% at 20% 90%, rgba(143, 162, 224, 0.10), transparent 60%);
+      pointer-events: none;
     }
-    
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,0.7), transparent),
+        radial-gradient(1px 1px at 34% 68%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 58% 18%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1.5px 1.5px at 72% 52%, rgba(255,255,255,0.55), transparent),
+        radial-gradient(1px 1px at 88% 76%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 46% 40%, rgba(255,255,255,0.4), transparent);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .hero .container { position: relative; z-index: 1; }
+    .hero-content { max-width: 760px; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border: 1px solid rgba(246, 182, 75, 0.25);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-6);
+    }
+    .eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--color-accent);
+      box-shadow: 0 0 8px var(--color-accent);
+    }
     .hero-title {
       font-family: var(--font-display);
       font-size: var(--text-5xl);
       font-weight: 700;
-      line-height: 1.1;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
       margin-bottom: var(--space-6);
-      background: linear-gradient(135deg, var(--color-text-primary), var(--color-accent));
+    }
+    .hero-title .accent {
+      background: linear-gradient(120deg, var(--color-accent), var(--color-accent-hover));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    
     .hero-subtitle {
       font-size: var(--text-xl);
       color: var(--color-text-secondary);
       margin-bottom: var(--space-8);
-      line-height: 1.6;
+      max-width: 640px;
     }
-    
     .hero-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: var(--space-4);
       flex-wrap: wrap;
+      margin-bottom: var(--space-8);
     }
-    
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -225,125 +297,184 @@
       padding: var(--space-3) var(--space-6);
       font-family: var(--font-body);
       font-size: var(--text-base);
-      font-weight: 500;
-      border-radius: var(--radius-md);
+      font-weight: 600;
+      border-radius: var(--radius-full);
       cursor: pointer;
       transition: all var(--transition-fast);
-      border: none;
+      border: 1px solid transparent;
     }
-    
     .btn-primary {
       background: var(--color-accent);
-      color: var(--color-bg);
+      color: #1a1204;
     }
-    
     .btn-primary:hover {
       background: var(--color-accent-hover);
-      color: var(--color-bg);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
+      color: #1a1204;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(246, 182, 75, 0.28);
     }
-    
     .btn-secondary {
       background: transparent;
-      color: var(--color-text-secondary);
-      border: 1px solid var(--color-border);
-    }
-    
-    .btn-secondary:hover {
       color: var(--color-text-primary);
-      border-color: var(--color-text-secondary);
-      transform: translateY(-1px);
+      border-color: var(--color-border);
     }
-    
-    /* Section Styles */
-    section {
-      padding: var(--space-16) 0;
-      border-bottom: 1px solid var(--color-border-subtle);
+    .btn-secondary:hover {
+      border-color: var(--color-text-muted);
+      background: var(--color-surface);
+      transform: translateY(-2px);
     }
-    
-    .section-header {
-      text-align: center;
-      margin-bottom: var(--space-12);
+
+    /* install command chip */
+    .install {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
     }
-    
+    .install .prompt { color: var(--color-accent); font-weight: 600; }
+    .install .cmd { color: var(--color-text-primary); }
+
+    /* ---------------- Section shells ---------------- */
+    .section { padding: var(--space-24) 0; border-bottom: 1px solid var(--color-border-subtle); }
+    .section-header { max-width: 720px; margin-bottom: var(--space-12); }
+    .section-header.center { margin-left: auto; margin-right: auto; text-align: center; }
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-moon);
+      margin-bottom: var(--space-3);
+    }
     .section-title {
       font-family: var(--font-display);
       font-size: var(--text-3xl);
       font-weight: 700;
-      margin-bottom: var(--space-3);
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
     }
-    
     .section-subtitle {
       font-size: var(--text-lg);
       color: var(--color-text-secondary);
-      max-width: 600px;
-      margin: 0 auto;
     }
-    
-    /* Card Grid */
-    .card-grid {
-      display: grid;
-      gap: var(--space-6);
-    }
-    
-    .card-grid-4,
-    .card-grid-5 {
-      grid-template-columns: 1fr;
-    }
-    
-    .card-grid-3 {
-      grid-template-columns: 1fr;
-    }
-    
-    .card {
+
+    /* ---------------- The Loop: pipeline + steps ---------------- */
+    .pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-5);
+      margin-bottom: var(--space-12);
       background: var(--color-bg-elevated);
       border: 1px solid var(--color-border-subtle);
       border-radius: var(--radius-lg);
+    }
+    .pchip {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-primary);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+    }
+    .pchip.cmd { color: var(--color-accent); border-color: rgba(246,182,75,0.3); background: var(--color-accent-soft); }
+    .pchip.terminal { color: var(--color-moon); border-color: rgba(143,162,224,0.3); background: var(--color-moon-soft); }
+    .parrow { color: var(--color-text-muted); font-size: var(--text-sm); }
+    .por { font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; padding: 0 var(--space-1); }
+
+    .steps {
+      display: grid;
+      gap: var(--space-5);
+      grid-template-columns: 1fr;
+      counter-reset: step;
+    }
+    .step {
+      position: relative;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
       padding: var(--space-6);
-      transition: all var(--transition-normal);
+      transition: border-color var(--transition-normal), transform var(--transition-normal);
     }
-    
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--color-border);
-    }
-    
-    .card-icon {
-      width: 48px;
-      height: 48px;
-      display: flex;
+    .step:hover { border-color: var(--color-border); transform: translateY(-3px); }
+    .step-num {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: var(--color-accent);
+      width: 34px; height: 34px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--text-base);
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border: 1px solid rgba(246, 182, 75, 0.3);
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-4);
+    }
+    .step-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    .step-desc { font-size: var(--text-sm); color: var(--color-text-secondary); line-height: 1.65; }
+
+    /* ---------------- Cards (tools / skills / docs) ---------------- */
+    .card-grid { display: grid; gap: var(--space-5); grid-template-columns: 1fr; }
+
+    .card {
+      position: relative;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      transition: border-color var(--transition-normal), transform var(--transition-normal), background var(--transition-normal);
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--color-border);
+      background: var(--color-surface-hover);
+    }
+    .card-role {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--color-moon);
+      background: var(--color-moon-soft);
+      border: 1px solid rgba(143, 162, 224, 0.25);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-3);
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--text-xl);
+      background: var(--color-accent-soft);
+      border: 1px solid rgba(246, 182, 75, 0.2);
       border-radius: var(--radius-md);
       margin-bottom: var(--space-4);
-      font-size: var(--text-xl);
     }
-    
     .card-title {
       font-family: var(--font-display);
       font-size: var(--text-lg);
       font-weight: 600;
       margin-bottom: var(--space-2);
     }
-    
-    .card-description {
-      font-size: var(--text-sm);
-      color: var(--color-text-secondary);
-      line-height: 1.6;
-    }
-    
-    .card-role {
-      font-size: var(--text-xs);
-      color: var(--color-accent);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: var(--space-2);
-    }
-    
+    .card-title.mono { font-family: var(--font-mono); font-size: var(--text-base); color: var(--color-accent); }
+    .card-description { font-size: var(--text-sm); color: var(--color-text-secondary); line-height: 1.65; }
     .card-best-for {
       margin-top: var(--space-4);
       padding-top: var(--space-4);
@@ -351,146 +482,88 @@
       font-size: var(--text-sm);
       color: var(--color-text-muted);
     }
-    
-    .card-best-for strong {
-      color: var(--color-text-secondary);
-    }
-    
-    /* Tools Section */
-    .tools-grid {
-      display: grid;
-      gap: var(--space-6);
-      grid-template-columns: 1fr;
-    }
-    
-    /* Nightmanager Section */
+    .card-best-for strong { color: var(--color-text-secondary); font-weight: 600; }
+
+    /* doc cards are links */
+    a.card { color: inherit; display: block; }
+    a.card:hover { color: inherit; }
+    a.card .card-arrow { color: var(--color-accent); font-family: var(--font-mono); }
+
+    /* ---------------- Nightmanager CTA ---------------- */
     .night-shift {
+      position: relative;
       text-align: center;
       padding: var(--space-24) 0;
-      background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
+      overflow: hidden;
+      background:
+        radial-gradient(70% 120% at 50% 0%, rgba(246, 182, 75, 0.10), transparent 55%),
+        linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 100%);
     }
-    
+    .night-shift .container { position: relative; z-index: 1; }
     .night-shift-title {
       font-family: var(--font-display);
       font-size: var(--text-3xl);
       font-weight: 700;
+      letter-spacing: -0.02em;
       margin-bottom: var(--space-4);
     }
-    
     .night-shift-text {
       font-size: var(--text-lg);
       color: var(--color-text-secondary);
-      max-width: 600px;
+      max-width: 620px;
       margin: 0 auto var(--space-8);
-      line-height: 1.7;
     }
-    
-    /* Footer */
-    .footer {
-      padding: var(--space-12) 0;
-      text-align: center;
+
+    /* ---------------- Footer ---------------- */
+    .footer { padding: var(--space-16) 0; text-align: center; }
+    .footer-brand {
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-4);
+      display: inline-flex; align-items: center; gap: var(--space-2);
     }
-    
     .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: var(--space-6);
-      margin-bottom: var(--space-6);
-      flex-wrap: wrap;
+      display: flex; justify-content: center; gap: var(--space-6);
+      margin-bottom: var(--space-6); flex-wrap: wrap;
     }
-    
-    .footer-link {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-    }
-    
-    .footer-link:hover {
-      color: var(--color-text-secondary);
-    }
-    
-    .footer-copy {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-    }
-    
-    /* Animations */
-    .fade-in {
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-    
-    .fade-in.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    
-    .fade-in-delay-1 { transition-delay: 100ms; }
-    .fade-in-delay-2 { transition-delay: 200ms; }
-    .fade-in-delay-3 { transition-delay: 300ms; }
-    .fade-in-delay-4 { transition-delay: 400ms; }
-    .fade-in-delay-5 { transition-delay: 500ms; }
-    
-    /* Responsive - Tablet */
+    .footer-link { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .footer-link:hover { color: var(--color-text-secondary); }
+    .footer-copy { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+    /* ---------------- Reveal animation ---------------- */
+    .fade-in { opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .fade-in-delay-1 { transition-delay: 80ms; }
+    .fade-in-delay-2 { transition-delay: 160ms; }
+    .fade-in-delay-3 { transition-delay: 240ms; }
+    .fade-in-delay-4 { transition-delay: 320ms; }
+    .fade-in-delay-5 { transition-delay: 400ms; }
+
+    /* ---------------- Responsive ---------------- */
     @media (min-width: 640px) {
-      .card-grid-4,
-      .card-grid-5 {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .card-grid-3 {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .tools-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .card-grid-3 { grid-template-columns: repeat(2, 1fr); }
+      .steps { grid-template-columns: repeat(2, 1fr); }
     }
-    
-    /* Responsive - Desktop */
     @media (min-width: 1024px) {
-      .hero {
-        text-align: left;
-      }
-      
-      .hero-content {
-        margin: 0;
-      }
-      
-      .hero-actions {
-        justify-content: flex-start;
-      }
-      
-      .card-grid-4 {
-        grid-template-columns: repeat(4, 1fr);
-      }
-      
-      .card-grid-5 {
-        grid-template-columns: repeat(5, 1fr);
-      }
-      
-      .card-grid-3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      
-      .tools-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .card-grid-tools { grid-template-columns: repeat(3, 1fr); }
+      .steps { grid-template-columns: repeat(5, 1fr); }
+      .steps .step-desc { font-size: var(--text-xs); }
     }
-    
-    /* Mobile Navigation */
-    @media (max-width: 640px) {
-      .nav {
-        display: none;
-      }
-      
-      .hero-title {
-        font-size: var(--text-4xl);
-      }
-      
-      .hero-subtitle {
-        font-size: var(--text-lg);
-      }
+
+    @media (max-width: 768px) {
+      .nav-link { display: none; }
+      .hero-title { font-size: var(--text-4xl); }
+      .hero-subtitle { font-size: var(--text-lg); }
+      .section { padding: var(--space-16) 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .fade-in { opacity: 1; transform: none; transition: none; }
+      * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
     }
   </style>
 </head>
@@ -498,14 +571,14 @@
   <!-- Header -->
   <header class="header">
     <div class="container header-inner">
-      <a href="/" class="logo">The Nightmanager</a>
-      <nav class="nav">
-        <a href="#features" class="nav-link">Features</a>
-        <a href="#tools" class="nav-link">Tools</a>
+      <a href="#top" class="logo"><span class="logo-moon" aria-hidden="true">🌙</span> Nightmanager</a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#loop" class="nav-link">The Loop</a>
+        <a href="#tools" class="nav-link">Subagents</a>
+        <a href="#supporting" class="nav-link">Skills</a>
         <a href="#docs" class="nav-link">Docs</a>
-        <a href="#night-shift" class="nav-link">Nightmanager</a>
         <a href="https://github.com/asabya/nightmanager" class="github-link" target="_blank" rel="noopener">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
           GitHub
@@ -514,127 +587,185 @@
     </div>
   </header>
 
-  <main>
-    <!-- Hero Section -->
+  <main id="top">
+    <!-- Hero -->
     <section class="hero">
       <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title fade-in">Stop babysitting agents. Give them shared understanding.</h1>
-          <p class="hero-subtitle fade-in fade-in-delay-1">
-            The Nightmanager Loop clarifies intent, turns it into local specs and vertical TODOs, then delegates one lean active batch for AFK implementation. You come back to validated work and, when possible, a PR for human review.
+          <span class="eyebrow fade-in"><span class="dot" aria-hidden="true"></span> A spec-driven Pi workflow</span>
+          <h1 class="hero-title fade-in fade-in-delay-1">Stop babysitting agents.<br><span class="accent">Give them shared understanding.</span></h1>
+          <p class="hero-subtitle fade-in fade-in-delay-2">
+            The Nightmanager Loop clarifies intent, turns it into local specs and vertical TODOs, then delegates one lean batch for AFK implementation. You come back to validated work &mdash; and, when possible, a PR ready for human review.
           </p>
-          <div class="hero-actions fade-in fade-in-delay-2">
-            <a href="https://github.com/asabya/nightmanager" class="btn btn-primary">Run the Loop</a>
+          <div class="hero-actions fade-in fade-in-delay-3">
+            <a href="#loop" class="btn btn-primary">Run the Loop</a>
             <a href="https://github.com/asabya/nightmanager" class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title fade-in">The Nightmanager Loop</h2>
-          <p class="section-subtitle fade-in fade-in-delay-1">grill-me / wayfinder → to-spec → to-tickets → to-ready → /implement or /nightmanager → /code-review</p>
-        </div>
-        <div class="card-grid card-grid-5">
-          <div class="card fade-in fade-in-delay-1">
-            <div class="card-icon">❓</div>
-            <div class="card-title">Grill the intent</div>
-            <p class="card-description">Use grill-me to interrogate a feature, bug, or plan one question at a time until hidden requirements, risks, and trade-offs surface. For efforts too big for one session, wayfinder charts a local map of investigation tickets first.</p>
-          </div>
-          <div class="card fade-in fade-in-delay-2">
-            <div class="card-icon">📝</div>
-            <div class="card-title">Synthesise the spec</div>
-            <p class="card-description">Use to-spec to turn the clarified conversation into a concrete local spec with goals, acceptance criteria, tests, and risks — no second interview.</p>
-          </div>
-          <div class="card fade-in fade-in-delay-3">
-            <div class="card-icon">✂️</div>
-            <div class="card-title">Slice into tickets</div>
-            <p class="card-description">Use to-tickets to break the spec into small, vertical local TODOs, each declaring its blocking edges and safe for one focused implementation pass.</p>
-          </div>
-          <div class="card fade-in fade-in-delay-4">
-            <div class="card-icon">✅</div>
-            <div class="card-title">Promote reviewed work</div>
-            <p class="card-description">Use to-ready to activate reviewed specs, flip associated draft TODOs to ready, and make one clean promotion commit.</p>
-          </div>
-          <div class="card fade-in fade-in-delay-5">
-            <div class="card-icon">🌙</div>
-            <div class="card-title">Implement, attended or AFK</div>
-            <p class="card-description">Run /nightmanager to delegate the active batch through subagents, or /implement to work one ticket in the foreground (TDD → /code-review → commit). Both draw the same queue and end in a two-axis code review.</p>
+          <div class="install fade-in fade-in-delay-4">
+            <span class="prompt" aria-hidden="true">$</span>
+            <span class="cmd">pi install npm:nightmanager</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Tools Section -->
-    <section id="tools">
+    <!-- The Loop -->
+    <section id="loop" class="section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title fade-in">Subagents inside the loop</h2>
-          <p class="section-subtitle fade-in fade-in-delay-1">Focused execution roles preserve main-session context after the spec is clear</p>
+          <p class="section-kicker fade-in">The Nightmanager Loop</p>
+          <h2 class="section-title fade-in fade-in-delay-1">From vague intent to a reviewable PR</h2>
+          <p class="section-subtitle fade-in fade-in-delay-2">Five stages, each leaving a durable local artifact behind &mdash; so nothing lives only in a chat window.</p>
         </div>
-        <div class="tools-grid">
+
+        <!-- pipeline strip -->
+        <div class="pipeline fade-in" aria-label="Loop pipeline">
+          <span class="pchip">grill-me</span>
+          <span class="por">/</span>
+          <span class="pchip">wayfinder</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip">to-spec</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip">to-tickets</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip">to-ready</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip cmd">/implement</span>
+          <span class="por">or</span>
+          <span class="pchip cmd">/nightmanager</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip cmd">/code-review</span>
+          <span class="parrow" aria-hidden="true">→</span>
+          <span class="pchip terminal">PR review</span>
+        </div>
+
+        <div class="steps">
+          <div class="step fade-in fade-in-delay-1">
+            <span class="step-num">1</span>
+            <h3 class="step-title">Grill the intent</h3>
+            <p class="step-desc"><span class="tok">grill-me</span> interrogates a feature, bug, or plan one question at a time until hidden requirements and trade-offs surface. Too big for one session? <span class="tok">wayfinder</span> charts a map of investigation tickets first.</p>
+          </div>
+          <div class="step fade-in fade-in-delay-2">
+            <span class="step-num">2</span>
+            <h3 class="step-title">Synthesise the spec</h3>
+            <p class="step-desc"><span class="tok">to-spec</span> turns the clarified conversation into a concrete local spec &mdash; goals, acceptance criteria, tests, and risks &mdash; with no second interview.</p>
+          </div>
+          <div class="step fade-in fade-in-delay-3">
+            <span class="step-num">3</span>
+            <h3 class="step-title">Slice into tickets</h3>
+            <p class="step-desc"><span class="tok">to-tickets</span> breaks the spec into small, vertical local TODOs, each declaring its blocking edges and safe for one focused implementation pass.</p>
+          </div>
+          <div class="step fade-in fade-in-delay-4">
+            <span class="step-num">4</span>
+            <h3 class="step-title">Promote reviewed work</h3>
+            <p class="step-desc"><span class="tok">to-ready</span> activates reviewed specs, flips associated draft TODOs to ready, and makes one clean promotion commit.</p>
+          </div>
+          <div class="step fade-in fade-in-delay-5">
+            <span class="step-num">5</span>
+            <h3 class="step-title">Implement — attended or AFK</h3>
+            <p class="step-desc"><span class="tok">/nightmanager</span> delegates the batch through subagents; <span class="tok">/implement</span> works one ticket in the foreground. Both draw the same queue and end in a two-axis <span class="tok">/code-review</span>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subagents -->
+    <section id="tools" class="section">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-kicker fade-in">Subagents</p>
+          <h2 class="section-title fade-in fade-in-delay-1">Focused roles inside the loop</h2>
+          <p class="section-subtitle fade-in fade-in-delay-2">Once the spec is clear, execution is delegated to narrow subagents &mdash; so the main session keeps its context.</p>
+        </div>
+        <div class="card-grid card-grid-tools card-grid-3">
           <div class="card fade-in fade-in-delay-1">
-            <div class="card-role">finder</div>
-            <div class="card-title">Codebase Search</div>
+            <span class="card-role">finder</span>
+            <h3 class="card-title">Codebase Search</h3>
             <p class="card-description">Maps the codebase for a ready slice so implementation starts from shared context instead of guesswork.</p>
-            <div class="card-best-for"><strong>Loop role:</strong> discovery before AFK implementation</div>
+            <div class="card-best-for"><strong>Loop role:</strong> discovery before implementation</div>
           </div>
           <div class="card fade-in fade-in-delay-2">
-            <div class="card-role">oracle</div>
-            <div class="card-title">Reasoning & Debugging</div>
+            <span class="card-role">oracle</span>
+            <h3 class="card-title">Reasoning &amp; Debugging</h3>
             <p class="card-description">Analyzes ambiguity, risks, and trade-offs when the slice needs deeper reasoning before code changes.</p>
             <div class="card-best-for"><strong>Loop role:</strong> reasoning before a safe plan</div>
           </div>
           <div class="card fade-in fade-in-delay-3">
-            <div class="card-role">worker</div>
-            <div class="card-title">Implementation</div>
+            <span class="card-role">librarian</span>
+            <h3 class="card-title">OSS Research</h3>
+            <p class="card-description">Reads upstream source, tests, and examples for a dependency and cites commit-pinned GitHub permalinks &mdash; primary-source evidence, not write-ups.</p>
+            <div class="card-best-for"><strong>Loop role:</strong> external research on demand</div>
+          </div>
+          <div class="card fade-in fade-in-delay-4">
+            <span class="card-role">worker</span>
+            <h3 class="card-title">Implementation</h3>
             <p class="card-description">Makes the smallest viable change for one ready TODO and reports concrete verification evidence.</p>
             <div class="card-best-for"><strong>Loop role:</strong> focused implementation</div>
           </div>
-          <div class="card fade-in fade-in-delay-4">
-            <div class="card-role">manager</div>
-            <div class="card-title">Orchestration</div>
-            <p class="card-description">Coordinates finder, oracle, and worker with handoff artifacts so each step stays auditable.</p>
+          <div class="card fade-in fade-in-delay-5">
+            <span class="card-role">manager</span>
+            <h3 class="card-title">Orchestration</h3>
+            <p class="card-description">Coordinates finder, oracle, librarian, and worker with handoff artifacts so each step stays auditable.</p>
             <div class="card-best-for"><strong>Loop role:</strong> orchestration and handoffs</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Nightmanager Section -->
+    <!-- Supporting Skills -->
+    <section id="supporting" class="section">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-kicker fade-in">Supporting skills</p>
+          <h2 class="section-title fade-in fade-in-delay-1">Pulled in when a ticket needs them</h2>
+          <p class="section-subtitle fade-in fade-in-delay-2">These feed the loop rather than drive it &mdash; reach for them mid-flow, not as a stage of their own.</p>
+        </div>
+        <div class="card-grid card-grid-2">
+          <div class="card fade-in fade-in-delay-1">
+            <div class="card-icon" aria-hidden="true">📚</div>
+            <h3 class="card-title mono">research</h3>
+            <p class="card-description">Dispatches the <span class="tok">librarian</span> to investigate a question against primary sources and lands the findings as a cited Markdown note under <span class="tok">docs/research/</span> &mdash; so the main session keeps working while it reads.</p>
+          </div>
+          <div class="card fade-in fade-in-delay-2">
+            <div class="card-icon" aria-hidden="true">🧪</div>
+            <h3 class="card-title mono">tdd</h3>
+            <p class="card-description">The red&nbsp;→&nbsp;green reference: what a good test is, where seams go, and the anti-patterns to avoid. Consulted by <span class="tok">/implement</span> and the night-shift worker rather than run on its own.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nightmanager CTA -->
     <section id="night-shift" class="night-shift">
       <div class="container">
         <h2 class="night-shift-title fade-in">Reviewable AFK implementation</h2>
         <p class="night-shift-text fade-in fade-in-delay-1">
-          Nightmanager works from local specs and ready TODOs with lean preload context: shared prompts, TODOs, and the active spec/template. Humans review PRs; Nightmanager does not merge or deploy automatically.
+          Nightmanager works from local specs and ready TODOs with lean preload context: shared prompts, TODOs, and the active spec/template. Humans review PRs &mdash; Nightmanager never merges or deploys on its own.
         </p>
         <a href="https://github.com/asabya/nightmanager/blob/main/README.md#loop" class="btn btn-primary fade-in fade-in-delay-2" target="_blank" rel="noopener">
-          Learn More
+          Learn how the night shift works
         </a>
       </div>
     </section>
 
-    <!-- Docs Section -->
-    <section id="docs">
+    <!-- Docs -->
+    <section id="docs" class="section">
       <div class="container">
-        <div class="section-header">
-          <h2 class="section-title fade-in">Documentation</h2>
-          <p class="section-subtitle fade-in fade-in-delay-1">Full guides and API reference</p>
+        <div class="section-header center">
+          <p class="section-kicker fade-in">Documentation</p>
+          <h2 class="section-title fade-in fade-in-delay-1">Everything to get started</h2>
         </div>
         <div class="card-grid card-grid-3">
           <a href="https://github.com/asabya/nightmanager/blob/main/README.md#install-and-run" class="card fade-in fade-in-delay-1" target="_blank" rel="noopener">
-            <div class="card-title">Getting Started</div>
-            <p class="card-description">Installation, quick start, and loop overview.</p>
+            <h3 class="card-title">Getting Started <span class="card-arrow" aria-hidden="true">↗</span></h3>
+            <p class="card-description">Installation, quick start, and a walkthrough of the loop.</p>
           </a>
           <a href="https://github.com/asabya/nightmanager/blob/main/README.md#loop" class="card fade-in fade-in-delay-2" target="_blank" rel="noopener">
-            <div class="card-title">Nightmanager</div>
+            <h3 class="card-title">The Loop &amp; Night Shift <span class="card-arrow" aria-hidden="true">↗</span></h3>
             <p class="card-description">AFK implementation workflow with human review.</p>
           </a>
           <a href="https://github.com/asabya/nightmanager/tree/main/specs" class="card fade-in fade-in-delay-3" target="_blank" rel="noopener">
-            <div class="card-title">Specifications</div>
+            <h3 class="card-title">Specifications <span class="card-arrow" aria-hidden="true">↗</span></h3>
             <p class="card-description">Design specs and implementation details.</p>
           </a>
         </div>
@@ -645,38 +776,34 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
+      <div class="footer-brand"><span aria-hidden="true">🌙</span> The Nightmanager for Pi</div>
       <div class="footer-links">
         <a href="https://github.com/asabya/nightmanager" class="footer-link" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/asabya/nightmanager/blob/main/README.md" class="footer-link" target="_blank" rel="noopener">Docs</a>
-        <a href="https://github.com/asabya/nightmanager/blob/main/README.md#loop" class="footer-link" target="_blank" rel="noopener">Nightmanager</a>
+        <a href="https://github.com/asabya/nightmanager/blob/main/README.md#loop" class="footer-link" target="_blank" rel="noopener">Night Shift</a>
         <a href="https://github.com/asabya/nightmanager/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
       </div>
-      <p class="footer-copy">MIT License — The Nightmanager for Pi</p>
+      <p class="footer-copy">MIT License &middot; Built for solo developers and small teams</p>
     </div>
   </footer>
 
   <script>
-    // Intersection Observer for fade-in animations
-    document.addEventListener('DOMContentLoaded', function() {
-      const observerOptions = {
-        root: null,
-        rootMargin: '0px 0px -50px 0px',
-        threshold: 0.1
-      };
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+    // Reveal-on-scroll (respects reduced motion via CSS)
+    document.addEventListener('DOMContentLoaded', function () {
+      var els = document.querySelectorAll('.fade-in');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
             observer.unobserve(entry.target);
           }
         });
-      }, observerOptions);
-
-      // Observe all fade-in elements
-      document.querySelectorAll('.fade-in').forEach(el => {
-        observer.observe(el);
-      });
+      }, { root: null, rootMargin: '0px 0px -60px 0px', threshold: 0.1 });
+      els.forEach(function (el) { observer.observe(el); });
     });
   </script>
 </body>
