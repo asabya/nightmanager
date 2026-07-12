@@ -15,21 +15,28 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "bin": {
+    "nightmanager": "dist/bin/nightmanager.js"
+  },
   "files": [
     "src",
     "README.md",
     "skills",
-    "prompts"
+    "prompts",
+    "integrations",
+    "dist"
   ],
   "scripts": {
-    "build": "npm run check:generated && npm run typecheck",
+    "build": "npm run check:generated && npm run typecheck && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "generate": "tsx scripts/generate-prompts.ts",
     "check:generated": "npm run generate && git diff --exit-code -- src/shared/generated-prompts.ts integrations/claude-code/agents",
+    "install:claude:test": "tsx bin/nightmanager.ts install claude --dry-run",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:e2e": "vitest run tests/e2e"
+    "test:e2e": "vitest run tests/e2e",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "pi-web-access": "^0.13.0"
